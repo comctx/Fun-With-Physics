@@ -2,214 +2,260 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Rube Goldberg Creator</title>
-
 <style>
-*{
-  box-sizing:border-box;
+*{box-sizing:border-box}
+:root{
+  --bg:#161b22;
+  --panel:#222a34;
+  --panel2:#303a47;
+  --line:#465362;
+  --ink:#fff;
+  --muted:#c7d2df;
+  --accent:#55d9ff;
+  --green:#168c4a;
+  --gold:#f4c542;
+  --red:#9e3f47;
 }
-
-body{
-  margin:0;
-  font-family:Arial,Helvetica,sans-serif;
-  background:#181d24;
-  color:white;
-  overflow:hidden;
-}
-
-#app{
-  height:100vh;
-  display:flex;
-  flex-direction:column;
-}
-
-header{
-  min-height:64px;
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:10px;
-  padding:10px 14px;
-  background:#242b35;
-  border-bottom:1px solid #3a4350;
-}
-
-header h1{
-  margin:0;
-  font-size:22px;
-}
-
-#status{
-  font-size:13px;
-  color:#cbd6e3;
-}
-
-.topButtons{
-  display:flex;
-  gap:8px;
-}
-
+html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font-family:Arial,Helvetica,sans-serif;overflow:hidden}
+button,select{font:inherit}
 button{
   border:1px solid #4d5968;
-  background:#303946;
-  color:white;
+  background:var(--panel2);
+  color:#fff;
   border-radius:10px;
-  padding:10px 13px;
+  padding:9px 11px;
+  min-height:40px;
   font-weight:700;
   cursor:pointer;
 }
-
-button:active{
-  transform:scale(.97);
+button:active{transform:scale(.97)}
+button:disabled{opacity:.42;cursor:default}
+#app{
+  height:100dvh;
+  min-height:100vh;
+  display:flex;
+  flex-direction:column;
+  padding-top:env(safe-area-inset-top);
+  padding-bottom:env(safe-area-inset-bottom);
 }
-
-.run{
-  background:#168c4a;
+header{
+  flex:0 0 auto;
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:10px;
+  padding:9px 11px;
+  background:var(--panel);
+  border-bottom:1px solid #3a4350;
 }
-
-.reset{
-  background:#8a3940;
+.brand h1{margin:0;font-size:20px}
+#status{font-size:12px;color:var(--muted);margin-top:3px;max-width:620px}
+.topButtons{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.run{background:var(--green)}
+.danger{background:var(--red)}
+.modebar{
+  flex:0 0 auto;
+  display:flex;
+  align-items:center;
+  gap:8px;
+  padding:7px 10px;
+  background:#1d242d;
+  border-bottom:1px solid #343f4c;
+  overflow-x:auto;
 }
-
-#workspace{
-  flex:1;
-  position:relative;
-  overflow:hidden;
+.modebar button.active{outline:2px solid var(--accent)}
+.modebar .goal{
+  margin-left:auto;
+  min-width:280px;
+  color:#dbe5ef;
+  font-size:12px;
+  text-align:right;
 }
-
+#workspace{flex:1;min-height:0;position:relative;overflow:hidden}
 canvas{
   display:block;
   width:100%;
   height:100%;
   touch-action:none;
   background:
-    linear-gradient(#27303a 1px, transparent 1px),
-    linear-gradient(90deg,#27303a 1px, transparent 1px),
-    #1d232b;
+    linear-gradient(#27303a 1px,transparent 1px),
+    linear-gradient(90deg,#27303a 1px,transparent 1px),
+    #1c222a;
   background-size:40px 40px;
 }
-
-#scoreBox{
+#hud{
   position:absolute;
-  top:12px;
-  left:12px;
-  background:rgba(20,25,31,.86);
-  border:1px solid #475361;
-  border-radius:12px;
-  padding:10px 12px;
+  z-index:3;
+  top:10px;
+  left:10px;
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
   pointer-events:none;
 }
-
-#scoreBox strong{
-  display:block;
-  font-size:15px;
+.hudCard{
+  background:rgba(20,25,31,.9);
+  border:1px solid #475361;
+  border-radius:12px;
+  padding:8px 10px;
+  backdrop-filter:blur(5px);
+  min-width:125px;
 }
-
-#scoreBox span{
-  font-size:12px;
-  color:#c8d1dd;
-}
-
+.hudCard strong{display:block;font-size:14px}
+.hudCard span{font-size:11px;color:#c8d1dd}
+#starRow{letter-spacing:2px;color:var(--gold);font-size:18px}
 #selectionPanel{
   position:absolute;
   z-index:8;
   left:50%;
   bottom:12px;
   transform:translateX(-50%);
-  width:min(720px,calc(100% - 20px));
+  width:min(760px,calc(100% - 20px));
   display:none;
   grid-template-columns:repeat(7,minmax(0,1fr));
   gap:7px;
   padding:9px;
   border:1px solid #526070;
   border-radius:14px;
-  background:rgba(29,35,43,.96);
+  background:rgba(29,35,43,.97);
   box-shadow:0 12px 30px rgba(0,0,0,.28);
 }
 #selectionPanel.show{display:grid}
-#selectionPanel button{padding:8px 6px;font-size:12px}
-#selectionLabel{
-  grid-column:1/-1;
-  color:#dce5ef;
-  font-size:12px;
-  text-align:center;
-}
-.danger{background:#8a3940}
-
+#selectionPanel button{padding:7px 5px;font-size:12px}
+#selectionLabel{grid-column:1/-1;color:#dce5ef;font-size:12px;text-align:center}
 #tray{
+  flex:0 0 auto;
   display:grid;
-  grid-template-columns:repeat(9,minmax(74px,1fr));
+  grid-template-columns:repeat(9,minmax(78px,1fr));
   gap:7px;
   padding:8px;
-  background:#242b35;
+  background:var(--panel);
   border-top:1px solid #3a4350;
   overflow-x:auto;
 }
-
 .partButton{
-  min-width:76px;
-  min-height:58px;
-  padding:7px 4px;
+  min-width:82px;
+  min-height:61px;
+  padding:7px 5px;
   font-size:12px;
   text-align:center;
-  background:#303946;
 }
-
-.partButton .icon{
-  display:block;
-  font-size:23px;
-  margin-bottom:3px;
+.partButton .icon{display:block;font-size:23px;margin-bottom:3px}
+.partButton.locked{opacity:.28}
+.overlay{
+  position:absolute;
+  inset:0;
+  z-index:30;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  padding:18px;
+  background:rgba(8,12,16,.78);
 }
-
-@media(max-width:800px){
-  header{
-    flex-wrap:wrap;
-  }
-
-  header h1{
-    font-size:18px;
-  }
-
-  #tray{
-    grid-template-columns:repeat(9,86px);
-  }
-  #selectionPanel{
-    grid-template-columns:repeat(4,1fr);
-  }
-  .topButtons{
-    flex-wrap:wrap;
-  }
+.overlay.open{display:flex}
+.modal{
+  width:min(590px,100%);
+  max-height:88vh;
+  overflow:auto;
+  background:#fff;
+  color:#17202a;
+  border-radius:20px;
+  padding:20px;
+  box-shadow:0 22px 60px rgba(0,0,0,.4);
+}
+.modal h2{margin:0 0 8px}
+.modal p,.modal li{line-height:1.45}
+.modal .actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:14px}
+.modal .actions button{flex:1;background:#26313c}
+.levelGrid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:10px;
+  margin-top:12px;
+}
+.levelCard{
+  border:1px solid #d6dde4;
+  border-radius:14px;
+  padding:12px;
+  background:#f8fafc;
+}
+.levelCard h3{margin:0 0 5px;font-size:16px}
+.levelCard p{font-size:13px;margin:4px 0 8px}
+.levelCard button{width:100%}
+#successCard{text-align:center}
+#successStars{font-size:42px;letter-spacing:5px;color:#f4c542;margin:8px 0}
+#successTitle{font-size:28px;margin:6px 0}
+.confetti{
+  position:absolute;
+  width:10px;
+  height:18px;
+  border-radius:3px;
+  pointer-events:none;
+  animation:fall 1.6s linear forwards;
+}
+@keyframes fall{
+  from{transform:translateY(-40px) rotate(0deg);opacity:1}
+  to{transform:translateY(110vh) rotate(700deg);opacity:0}
+}
+.pulse{animation:pulse .55s ease-in-out 3}
+@keyframes pulse{50%{transform:scale(1.13)}}
+@media(max-width:850px){
+  header{flex-wrap:wrap}
+  .brand h1{font-size:18px}
+  .topButtons{width:100%;justify-content:flex-start}
+  .topButtons button{flex:1;padding:7px 5px;font-size:12px}
+  .modebar .goal{min-width:230px}
+  #tray{grid-template-columns:repeat(9,88px)}
+  #selectionPanel{grid-template-columns:repeat(4,1fr)}
+  .levelGrid{grid-template-columns:1fr}
 }
 </style>
 </head>
-
 <body>
-
 <div id="app">
 
 <header>
-  <div>
+  <div class="brand">
     <h1>⚙️ Rube Goldberg Creator</h1>
     <div id="status">Build something ridiculous. Get the ball to ring the bell.</div>
   </div>
-
   <div class="topButtons">
     <button id="undoBtn">↶ Undo</button>
+    <button id="redoBtn">↷ Redo</button>
     <button id="saveBtn">💾 Save</button>
     <button id="loadBtn">📂 Load</button>
+    <button id="soundBtn">🔊 Sound</button>
+    <button id="tutorialBtn">?</button>
     <button id="clearBtn">Clear</button>
     <button id="runBtn" class="run">▶ RUN</button>
-    <button id="resetBtn" class="reset">Reset</button>
   </div>
 </header>
+
+<div class="modebar">
+  <button id="sandboxModeBtn" class="active">🧰 Sandbox</button>
+  <button id="puzzleModeBtn">🧩 Puzzles</button>
+  <button id="challengeModeBtn">🏆 Challenge</button>
+  <div id="goalText" class="goal">Goal: Ring the bell any way you want.</div>
+</div>
 
 <div id="workspace">
   <canvas id="game"></canvas>
 
-  <div id="scoreBox">
-    <strong id="score">Absurdity Score: 0</strong>
-    <span id="pieceCount">Pieces: 0</span>
+  <div id="hud">
+    <div class="hudCard">
+      <strong id="score">Absurdity: 0</strong>
+      <span id="pieceCount">Pieces: 0</span>
+    </div>
+    <div class="hudCard">
+      <strong id="starRow">☆☆☆</strong>
+      <span id="modeLabel">Sandbox Mode</span>
+    </div>
+    <div class="hudCard" id="budgetCard" hidden>
+      <strong id="budgetText">Parts left: 0</strong>
+      <span>Use the allowed pieces</span>
+    </div>
   </div>
 
   <div id="selectionPanel">
@@ -222,85 +268,286 @@ canvas{
     <button id="duplicateBtn">⧉ Copy</button>
     <button id="deleteBtn" class="danger">Delete</button>
   </div>
+
+  <div id="tutorialOverlay" class="overlay">
+    <div class="modal">
+      <h2 id="tutorialTitle">Welcome!</h2>
+      <p id="tutorialText"></p>
+      <div class="actions">
+        <button id="tutorialBackBtn">Back</button>
+        <button id="tutorialNextBtn">Next</button>
+        <button id="tutorialCloseBtn">Skip</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="puzzleOverlay" class="overlay">
+    <div class="modal">
+      <h2>Choose a Puzzle</h2>
+      <p>Each puzzle gives you a limited set of parts. Make the ball ring the bell.</p>
+      <div id="levelGrid" class="levelGrid"></div>
+      <div class="actions">
+        <button id="closePuzzleBtn">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="successOverlay" class="overlay">
+    <div class="modal" id="successCard">
+      <div id="successTitle">🔔 DING!</div>
+      <div id="successStars">★★★</div>
+      <p id="successMessage"></p>
+      <div class="actions">
+        <button id="keepBuildingBtn">Keep Building</button>
+        <button id="nextPuzzleBtn">Next Puzzle</button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <div id="tray">
-
-  <button class="partButton" data-part="ball">
-    <span class="icon">🔴</span>
-    Ball
-  </button>
-
-  <button class="partButton" data-part="ramp">
-    <span class="icon">📐</span>
-    Ramp
-  </button>
-
-  <button class="partButton" data-part="domino">
-    <span class="icon">▮</span>
-    Domino
-  </button>
-
-  <button class="partButton" data-part="spring">
-    <span class="icon">🌀</span>
-    Spring
-  </button>
-
-  <button class="partButton" data-part="fan">
-    <span class="icon">🌀</span>
-    Fan
-  </button>
-
-  <button class="partButton" data-part="magnet">
-    <span class="icon">🧲</span>
-    Magnet
-  </button>
-
-  <button class="partButton" data-part="pendulum">
-    <span class="icon">🕰️</span>
-    Pendulum
-  </button>
-
-  <button class="partButton" data-part="blast">
-    <span class="icon">💥</span>
-    Blast
-  </button>
-
-  <button class="partButton" data-part="bell">
-    <span class="icon">🔔</span>
-    Bell
-  </button>
-
+  <button class="partButton" data-part="ball"><span class="icon">🔴</span>Ball</button>
+  <button class="partButton" data-part="ramp"><span class="icon">📐</span>Ramp</button>
+  <button class="partButton" data-part="domino"><span class="icon">▮</span>Domino</button>
+  <button class="partButton" data-part="spring"><span class="icon">🌀</span>Spring</button>
+  <button class="partButton" data-part="fan"><span class="icon">🌀</span>Fan</button>
+  <button class="partButton" data-part="magnet"><span class="icon">🧲</span>Magnet</button>
+  <button class="partButton" data-part="pendulum"><span class="icon">🕰️</span>Pendulum</button>
+  <button class="partButton" data-part="blast"><span class="icon">💥</span>Blast</button>
+  <button class="partButton" data-part="bell"><span class="icon">🔔</span>Bell</button>
 </div>
-
 </div>
 
 <script>
-const canvas = document.getElementById("game");
-const ctx = canvas.getContext("2d");
+const canvas=document.getElementById('game');
+const ctx=canvas.getContext('2d');
 
-let width = 0;
-let height = 0;
+let width=0,height=0;
+let objects=[];
+let history=[];
+let future=[];
+let running=false;
+let won=false;
+let selected=null;
+let dragging=false;
+let dragOffsetX=0,dragOffsetY=0;
+let lastTime=performance.now();
+let runSnapshot=null;
+let flash=0;
 
-let objects = [];
-let history = [];
+let gameMode='sandbox';
+let currentPuzzleIndex=-1;
+let activeChallenge=null;
+let soundEnabled=true;
+let audioCtx=null;
+let tutorialIndex=0;
 
-let running = false;
-let won = false;
+const gravity=760;
+const SAVE_KEY='rube_goldberg_creator_machine_v3';
+const FIRST_TUTORIAL_KEY='rube_goldberg_tutorial_seen_v1';
 
-let selected = null;
-let dragging = false;
-let dragOffsetX = 0;
-let dragOffsetY = 0;
+const puzzles=[
+  {
+    title:'Warm-Up Ramp',
+    goal:'Ring the bell using only ramps and one spring.',
+    maxParts:5,
+    allowed:['ball','ramp','spring','bell'],
+    setup(){
+      return [
+        makeObject('ball',80,80),
+        makeObject('bell',Math.max(180,width-85),Math.max(180,height-95))
+      ];
+    }
+  },
+  {
+    title:'Domino Delivery',
+    goal:'Use dominoes to help the ball reach the bell.',
+    maxParts:8,
+    allowed:['ball','ramp','domino','spring','bell'],
+    setup(){
+      return [
+        makeObject('ball',70,90),
+        makeObject('bell',Math.max(190,width-90),Math.max(190,height-95))
+      ];
+    }
+  },
+  {
+    title:'Wind Tunnel',
+    goal:'Use a fan to push the ball toward the bell.',
+    maxParts:7,
+    allowed:['ball','ramp','fan','spring','bell'],
+    setup(){
+      return [
+        makeObject('ball',75,95),
+        makeObject('bell',Math.max(190,width-90),Math.max(190,height-95))
+      ];
+    }
+  },
+  {
+    title:'Magnetic Madness',
+    goal:'Use a magnet somewhere in your successful machine.',
+    maxParts:9,
+    allowed:['ball','ramp','spring','magnet','domino','bell'],
+    requiredTypes:['magnet'],
+    setup(){
+      return [
+        makeObject('ball',70,85),
+        makeObject('bell',Math.max(190,width-90),Math.max(190,height-100))
+      ];
+    }
+  }
+];
 
-let lastTime = performance.now();
+const challenges=[
+  {text:'Ring the bell using at least 12 parts.',test:()=>objects.length>=12},
+  {text:'Ring the bell using at least 3 dominoes.',test:()=>objects.filter(o=>o.type==='domino').length>=3},
+  {text:'Ring the bell using a fan and a spring.',test:()=>objects.some(o=>o.type==='fan')&&objects.some(o=>o.type==='spring')},
+  {text:'Ring the bell with an Absurdity Score of at least 120.',test:()=>calculateAbsurdity()>=120}
+];
 
-const gravity = 760;
-const SAVE_KEY = 'rube_goldberg_creator_machine_v2';
+const tutorialSlides=[
+  {
+    title:'1. Build Your Machine',
+    text:'Tap a part along the bottom to add it. Drag parts anywhere in the workspace.'
+  },
+  {
+    title:'2. Select and Adjust',
+    text:'Tap a part to select it. Then rotate it, resize it, flip its direction, copy it, or delete it.'
+  },
+  {
+    title:'3. Press RUN',
+    text:'RUN starts gravity and the chain reaction. Press STOP to return to the exact machine you built.'
+  },
+  {
+    title:'4. Ring the Bell',
+    text:'The goal is simple: get the red ball to touch the bell. The more ridiculous the route, the better your score.'
+  },
+  {
+    title:'5. Try Other Modes',
+    text:'Sandbox gives you everything. Puzzle mode limits your parts. Challenge mode gives you special goals.'
+  }
+];
+
+function ensureAudio(){
+  if(!soundEnabled) return null;
+  if(!audioCtx){
+    audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+  }
+  if(audioCtx.state==='suspended') audioCtx.resume();
+  return audioCtx;
+}
+
+function tone(freq,duration=.08,type='sine',volume=.08,startDelay=0){
+  const ac=ensureAudio();
+  if(!ac) return;
+  const osc=ac.createOscillator();
+  const gain=ac.createGain();
+  const start=ac.currentTime+startDelay;
+  osc.type=type;
+  osc.frequency.setValueAtTime(freq,start);
+  gain.gain.setValueAtTime(volume,start);
+  gain.gain.exponentialRampToValueAtTime(.0001,start+duration);
+  osc.connect(gain);
+  gain.connect(ac.destination);
+  osc.start(start);
+  osc.stop(start+duration);
+}
+
+function playSound(kind){
+  if(!soundEnabled) return;
+  if(kind==='domino') tone(160,.06,'square',.035);
+  if(kind==='spring'){
+    tone(290,.08,'sine',.07);
+    tone(520,.12,'sine',.05,.05);
+  }
+  if(kind==='fan') tone(95,.08,'sawtooth',.018);
+  if(kind==='impact') tone(120,.04,'triangle',.035);
+  if(kind==='bell'){
+    tone(880,.42,'sine',.12);
+    tone(1320,.5,'sine',.08,.03);
+    tone(1760,.6,'sine',.045,.05);
+  }
+}
+
+function cloneMachine(machine=objects){
+  return JSON.parse(JSON.stringify(machine));
+}
 
 function pushHistory(){
   history.push(JSON.stringify(objects));
-  if(history.length>60) history.shift();
+  if(history.length>80) history.shift();
+  future=[];
+  updateUndoRedoButtons();
+}
+
+function undo(){
+  if(running||!history.length) return;
+  future.push(JSON.stringify(objects));
+  objects=JSON.parse(history.pop());
+  setSelected(null);
+  updateScore();
+  updateUndoRedoButtons();
+}
+
+function redo(){
+  if(running||!future.length) return;
+  history.push(JSON.stringify(objects));
+  objects=JSON.parse(future.pop());
+  setSelected(null);
+  updateScore();
+  updateUndoRedoButtons();
+}
+
+function updateUndoRedoButtons(){
+  document.getElementById('undoBtn').disabled=running||!history.length;
+  document.getElementById('redoBtn').disabled=running||!future.length;
+}
+
+function resize(){
+  const rect=canvas.getBoundingClientRect();
+  width=Math.max(1,rect.width);
+  height=Math.max(1,rect.height);
+  const dpr=Math.min(2,window.devicePixelRatio||1);
+  canvas.width=Math.floor(width*dpr);
+  canvas.height=Math.floor(height*dpr);
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+}
+window.addEventListener('resize',resize);
+resize();
+
+function makeObject(type,x,y){
+  const base={
+    id:Date.now()+Math.random(),
+    type,x,y,
+    angle:0,
+    vx:0,vy:0,
+    scale:1,
+    active:true
+  };
+  if(type==='ball') return {...base,radius:16};
+  if(type==='ramp') return {...base,width:130,height:15,angle:-.22};
+  if(type==='domino') return {...base,width:16,height:60,falling:false,angularVelocity:0,sounded:false};
+  if(type==='spring') return {...base,width:58,height:22,compressed:false,cooldown:0};
+  if(type==='fan') return {...base,radius:28,direction:1,fanTick:0};
+  if(type==='magnet') return {...base,radius:28,strength:900};
+  if(type==='pendulum') return {...base,length:105,swing:.72,velocity:0};
+  if(type==='blast') return {...base,radius:26,triggered:false};
+  if(type==='bell') return {...base,width:54,height:64,rung:false};
+  return base;
+}
+
+function defaultMachine(){
+  objects=[];
+  objects.push(makeObject('ball',85,90));
+  const ramp=makeObject('ramp',175,180);
+  ramp.angle=.20;
+  objects.push(ramp);
+  objects.push(makeObject('bell',Math.max(180,width-90),Math.max(180,height-100)));
+  history=[];
+  future=[];
+  setSelected(null);
+  updateScore();
+  updateUndoRedoButtons();
 }
 
 function setSelected(o){
@@ -314,498 +561,296 @@ function setSelected(o){
   }
 }
 
-function resize(){
-  const rect = canvas.getBoundingClientRect();
-  width = rect.width;
-  height = rect.height;
-
-  canvas.width = Math.floor(width * devicePixelRatio);
-  canvas.height = Math.floor(height * devicePixelRatio);
-
-  ctx.setTransform(
-    devicePixelRatio,
-    0,
-    0,
-    devicePixelRatio,
-    0,
-    0
-  );
+function allowedPart(type){
+  if(gameMode!=='puzzle'||currentPuzzleIndex<0) return true;
+  const p=puzzles[currentPuzzleIndex];
+  return p.allowed.includes(type);
 }
 
-window.addEventListener("resize",resize);
-resize();
-
-function makeObject(type,x,y){
-
-  const base = {
-    id:Date.now()+Math.random(),
-    type,
-    x,
-    y,
-    angle:0,
-    vx:0,
-    vy:0,
-    scale:1,
-    active:true
-  };
-
-  if(type==="ball"){
-    return {
-      ...base,
-      radius:16,
-      movable:true
-    };
-  }
-
-  if(type==="ramp"){
-    return {
-      ...base,
-      width:120,
-      height:14,
-      angle:-0.25
-    };
-  }
-
-  if(type==="domino"){
-    return {
-      ...base,
-      width:16,
-      height:58,
-      falling:false,
-      angularVelocity:0
-    };
-  }
-
-  if(type==="spring"){
-    return {
-      ...base,
-      width:55,
-      height:20,
-      compressed:false
-    };
-  }
-
-  if(type==="fan"){
-    return {
-      ...base,
-      radius:28,
-      direction:1
-    };
-  }
-
-  if(type==="magnet"){
-    return {
-      ...base,
-      radius:28,
-      strength:700
-    };
-  }
-
-  if(type==="pendulum"){
-    return {
-      ...base,
-      length:100,
-      swing:0.65,
-      velocity:0
-    };
-  }
-
-  if(type==="blast"){
-    return {
-      ...base,
-      radius:26,
-      triggered:false
-    };
-  }
-
-  if(type==="bell"){
-    return {
-      ...base,
-      width:50,
-      height:60,
-      rung:false
-    };
-  }
-
-  return base;
+function budgetUsed(){
+  if(gameMode!=='puzzle'||currentPuzzleIndex<0) return 0;
+  const fixed=objects.filter(o=>o.type==='ball'||o.type==='bell').length;
+  return Math.max(0,objects.length-fixed);
 }
 
-function defaultMachine(){
-
-  objects = [];
-
-  objects.push(
-    makeObject("ball",80,100)
-  );
-
-  const ramp = makeObject(
-    "ramp",
-    170,
-    180
-  );
-
-  ramp.angle = .22;
-  objects.push(ramp);
-
-  const bell = makeObject(
-    "bell",
-    width-90,
-    height-100
-  );
-
-  objects.push(bell);
-
-  updateScore();
+function budgetLimit(){
+  if(gameMode!=='puzzle'||currentPuzzleIndex<0) return Infinity;
+  return puzzles[currentPuzzleIndex].maxParts;
 }
-
-defaultMachine();
 
 function addPart(type){
-
   if(running) return;
 
+  if(!allowedPart(type)){
+    document.getElementById('status').textContent='That part is not allowed in this puzzle.';
+    return;
+  }
+
+  if(gameMode==='puzzle' && !['ball','bell'].includes(type) && budgetUsed()>=budgetLimit()){
+    document.getElementById('status').textContent='You have used all available puzzle parts.';
+    return;
+  }
+
+  if(type==='ball'&&objects.some(o=>o.type==='ball')){
+    document.getElementById('status').textContent='Only one main ball is needed.';
+    return;
+  }
+  if(type==='bell'&&objects.some(o=>o.type==='bell')){
+    document.getElementById('status').textContent='You already have a bell.';
+    return;
+  }
+
   pushHistory();
-
-  let x = width/2;
-  let y = height/2;
-
-  if(type==="ball"){
-    const existing =
-      objects.find(o=>o.type==="ball");
-
-    if(existing){
-      document.getElementById("status")
-        .textContent =
-        "Only one main ball is needed.";
-      return;
-    }
-  }
-
-  if(type==="bell"){
-    const existing =
-      objects.find(o=>o.type==="bell");
-
-    if(existing){
-      document.getElementById("status")
-        .textContent =
-        "You already have a bell.";
-      return;
-    }
-  }
-
-  const added=makeObject(type,x,y);
-  objects.push(added);
-  setSelected(added);
-
+  const o=makeObject(type,width/2,height/2);
+  objects.push(o);
+  setSelected(o);
   updateScore();
 }
 
-document
-.querySelectorAll(".partButton")
-.forEach(button=>{
-
-  button.addEventListener("click",()=>{
-    addPart(button.dataset.part);
+document.querySelectorAll('.partButton').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    ensureAudio();
+    addPart(btn.dataset.part);
   });
-
 });
 
-function updateScore(){
-
-  const count = objects.length;
-
-  let absurdity = 0;
-
+function calculateAbsurdity(){
+  let score=0;
   objects.forEach(o=>{
-
-    if(o.type==="domino") absurdity += 8;
-    if(o.type==="spring") absurdity += 14;
-    if(o.type==="fan") absurdity += 18;
-    if(o.type==="magnet") absurdity += 22;
-    if(o.type==="pendulum") absurdity += 25;
-    if(o.type==="blast") absurdity += 30;
-    if(o.type==="ramp") absurdity += 5;
-
+    if(o.type==='ramp') score+=5;
+    if(o.type==='domino') score+=8;
+    if(o.type==='spring') score+=14;
+    if(o.type==='fan') score+=18;
+    if(o.type==='magnet') score+=22;
+    if(o.type==='pendulum') score+=25;
+    if(o.type==='blast') score+=30;
   });
-
-  if(count>10){
-    absurdity +=
-      (count-10)*5;
-  }
-
-  document.getElementById("score")
-    .textContent =
-    "Absurdity Score: "+absurdity;
-
-  document.getElementById("pieceCount")
-    .textContent =
-    "Pieces: "+count;
+  if(objects.length>10) score+=(objects.length-10)*5;
+  return score;
 }
 
-function pointerPosition(e){
+function calculateStars(){
+  const score=calculateAbsurdity();
+  let stars=1;
+  if(score>=60||objects.length>=8) stars=2;
+  if(score>=125||objects.length>=13) stars=3;
 
-  const rect =
-    canvas.getBoundingClientRect();
+  if(gameMode==='puzzle'&&currentPuzzleIndex>=0){
+    const left=Math.max(0,budgetLimit()-budgetUsed());
+    if(left>=2) stars=Math.max(stars,3);
+    else if(left>=1) stars=Math.max(stars,2);
+  }
+  return Math.min(3,stars);
+}
 
-  const p =
-    e.touches
-    ? e.touches[0]
-    : e;
+function renderStars(stars=calculateStars()){
+  document.getElementById('starRow').textContent='★'.repeat(stars)+'☆'.repeat(3-stars);
+}
 
-  return {
-    x:p.clientX-rect.left,
-    y:p.clientY-rect.top
-  };
+function updateScore(){
+  const score=calculateAbsurdity();
+  document.getElementById('score').textContent='Absurdity: '+score;
+  document.getElementById('pieceCount').textContent='Pieces: '+objects.length;
+  renderStars();
+  updateBudget();
+}
+
+function updateBudget(){
+  const card=document.getElementById('budgetCard');
+  if(gameMode==='puzzle'&&currentPuzzleIndex>=0){
+    card.hidden=false;
+    const left=Math.max(0,budgetLimit()-budgetUsed());
+    document.getElementById('budgetText').textContent='Parts left: '+left;
+  }else{
+    card.hidden=true;
+  }
+  updateTrayLocks();
+}
+
+function updateTrayLocks(){
+  document.querySelectorAll('.partButton').forEach(btn=>{
+    const locked=!allowedPart(btn.dataset.part);
+    btn.classList.toggle('locked',locked);
+    btn.disabled=locked||running;
+  });
+}
+
+function posFromEvent(e){
+  const rect=canvas.getBoundingClientRect();
+  const p=e.touches?e.touches[0]:e;
+  return {x:p.clientX-rect.left,y:p.clientY-rect.top};
+}
+
+function objectRadius(o){
+  if(o.type==='ball') return o.radius*(o.scale||1);
+  if(['fan','magnet','blast'].includes(o.type)) return 36*(o.scale||1);
+  if(o.type==='pendulum') return 42*(o.scale||1);
+  if(o.type==='bell') return 42*(o.scale||1);
+  if(o.type==='spring') return 42*(o.scale||1);
+  if(o.type==='domino') return 38*(o.scale||1);
+  if(o.type==='ramp') return Math.max(45,(o.width*(o.scale||1))/2);
+  return 40;
 }
 
 function hitTest(o,x,y){
-
-  if(o.type==="ball"){
-    return (
-      Math.hypot(
-        x-o.x,
-        y-o.y
-      ) < 26
-    );
+  if(o.type==='ramp'){
+    const cos=Math.cos(-o.angle),sin=Math.sin(-o.angle);
+    const dx=x-o.x,dy=y-o.y;
+    const lx=dx*cos-dy*sin;
+    const ly=dx*sin+dy*cos;
+    return Math.abs(lx)<(o.width*(o.scale||1))/2+12&&Math.abs(ly)<28;
   }
-
-  if(
-    o.type==="fan" ||
-    o.type==="magnet" ||
-    o.type==="blast"
-  ){
-    return (
-      Math.hypot(
-        x-o.x,
-        y-o.y
-      ) < 38
-    );
-  }
-
-  if(o.type==="pendulum"){
-    return (
-      Math.hypot(
-        x-o.x,
-        y-o.y
-      ) < 40
-    );
-  }
-
-  return (
-    x>o.x-60 &&
-    x<o.x+60 &&
-    y>o.y-60 &&
-    y<o.y+60
-  );
+  return Math.hypot(x-o.x,y-o.y)<objectRadius(o);
 }
 
 function pointerDown(e){
-
   if(running) return;
-
-  const p =
-    pointerPosition(e);
-
+  const p=posFromEvent(e);
   setSelected(null);
 
-  for(
-    let i=objects.length-1;
-    i>=0;
-    i--
-  ){
-
-    if(hitTest(
-      objects[i],
-      p.x,
-      p.y
-    )){
-      setSelected(objects[i]);
-
-      dragging = true;
-
-      dragOffsetX =
-        p.x-selected.x;
-
-      dragOffsetY =
-        p.y-selected.y;
-
+  for(let i=objects.length-1;i>=0;i--){
+    const o=objects[i];
+    if(hitTest(o,p.x,p.y)){
       pushHistory();
-
-      break;
+      setSelected(o);
+      dragging=true;
+      dragOffsetX=p.x-o.x;
+      dragOffsetY=p.y-o.y;
+      return;
     }
   }
 }
 
 function pointerMove(e){
-
-  if(
-    !dragging ||
-    !selected ||
-    running
-  ) return;
-
-  const p =
-    pointerPosition(e);
-
+  if(!dragging||!selected||running) return;
+  const p=posFromEvent(e);
   selected.x=Math.max(15,Math.min(width-15,p.x-dragOffsetX));
   selected.y=Math.max(15,Math.min(height-15,p.y-dragOffsetY));
 }
 
-function pointerUp(){
-  dragging=false;
-}
+function pointerUp(){dragging=false}
 
-canvas.addEventListener(
-  "mousedown",
-  pointerDown
-);
+canvas.addEventListener('mousedown',pointerDown);
+canvas.addEventListener('mousemove',pointerMove);
+window.addEventListener('mouseup',pointerUp);
+canvas.addEventListener('touchstart',e=>{e.preventDefault();pointerDown(e)},{passive:false});
+canvas.addEventListener('touchmove',e=>{e.preventDefault();pointerMove(e)},{passive:false});
+canvas.addEventListener('touchend',e=>{e.preventDefault();pointerUp()},{passive:false});
 
-canvas.addEventListener(
-  "mousemove",
-  pointerMove
-);
-
-window.addEventListener(
-  "mouseup",
-  pointerUp
-);
-
-canvas.addEventListener(
-  "touchstart",
-  e=>{
-    e.preventDefault();
-    pointerDown(e);
-  },
-  {passive:false}
-);
-
-canvas.addEventListener(
-  "touchmove",
-  e=>{
-    e.preventDefault();
-    pointerMove(e);
-  },
-  {passive:false}
-);
-
-canvas.addEventListener(
-  "touchend",
-  pointerUp
-);
-
-canvas.addEventListener(
-  "dblclick",
-  e=>{
-
-    if(running) return;
-
-    const p =
-      pointerPosition(e);
-
-    for(
-      let i=objects.length-1;
-      i>=0;
-      i--
-    ){
-
-      const o =
-        objects[i];
-
-      if(hitTest(o,p.x,p.y)){
-
-        if(o.type==="ramp"){
-          o.angle += Math.PI/8;
-        }
-
-        if(o.type==="fan"){
-          o.direction *= -1;
-        }
-
-        break;
-      }
-    }
-  }
-);
-
-function startRun(){
-
-  running=true;
-  won=false;
-
-  document.getElementById("status")
-    .textContent =
-    "Machine running...";
-
-  objects.forEach(o=>{
-
-    if(o.type==="ball"){
-      o.vx=0;
-      o.vy=0;
-    }
-
-    if(o.type==="domino"){
-      o.falling=false;
-      o.angle=0;
-      o.angularVelocity=0;
-    }
-
-    if(o.type==="blast"){
-      o.triggered=false;
-    }
-
-    if(o.type==="bell"){
-      o.rung=false;
-    }
-  });
-}
-
-function resetSimulation(){
-
-  running=false;
-  won=false;
-
-  if(history.length){
-    objects =
-      JSON.parse(
-        history[history.length-1]
-      );
-  }
-
-  document.getElementById("status")
-    .textContent =
-    "Build something ridiculous.";
-
+function modifySelected(fn){
+  if(running||!selected) return;
+  pushHistory();
+  fn(selected);
   updateScore();
 }
 
+document.getElementById('rotateLeftBtn').addEventListener('click',()=>modifySelected(o=>o.angle-=Math.PI/12));
+document.getElementById('rotateRightBtn').addEventListener('click',()=>modifySelected(o=>o.angle+=Math.PI/12));
+document.getElementById('smallerBtn').addEventListener('click',()=>modifySelected(o=>o.scale=Math.max(.55,(o.scale||1)-.15)));
+document.getElementById('largerBtn').addEventListener('click',()=>modifySelected(o=>o.scale=Math.min(2.2,(o.scale||1)+.15)));
+document.getElementById('flipBtn').addEventListener('click',()=>modifySelected(o=>{
+  if(o.type==='fan') o.direction=(o.direction||1)*-1;
+  else if(o.type==='pendulum') o.swing*=-1;
+  else o.angle+=Math.PI;
+}));
+
+document.getElementById('duplicateBtn').addEventListener('click',()=>{
+  if(running||!selected||selected.type==='ball'||selected.type==='bell') return;
+  if(gameMode==='puzzle'&&budgetUsed()>=budgetLimit()){
+    document.getElementById('status').textContent='No puzzle parts left.';
+    return;
+  }
+  pushHistory();
+  const copy=cloneMachine([selected])[0];
+  copy.id=Date.now()+Math.random();
+  copy.x=Math.min(width-20,copy.x+28);
+  copy.y=Math.min(height-20,copy.y+28);
+  copy.vx=0;copy.vy=0;
+  if(copy.type==='domino'){copy.falling=false;copy.angularVelocity=0;copy.sounded=false}
+  if(copy.type==='blast') copy.triggered=false;
+  objects.push(copy);
+  setSelected(copy);
+  updateScore();
+});
+
+document.getElementById('deleteBtn').addEventListener('click',()=>{
+  if(running||!selected) return;
+  pushHistory();
+  objects=objects.filter(o=>o.id!==selected.id);
+  setSelected(null);
+  updateScore();
+});
+
+function resetRunState(){
+  objects.forEach(o=>{
+    o.vx=0;o.vy=0;
+    if(o.type==='domino'){o.falling=false;o.angularVelocity=0;o.sounded=false}
+    if(o.type==='spring'){o.compressed=false;o.cooldown=0}
+    if(o.type==='blast') o.triggered=false;
+    if(o.type==='bell') o.rung=false;
+    if(o.type==='pendulum') o.velocity=0;
+    if(o.type==='fan') o.fanTick=0;
+  });
+}
+
+function startRun(){
+  if(running) return;
+  ensureAudio();
+
+  if(!objects.some(o=>o.type==='ball')||!objects.some(o=>o.type==='bell')){
+    document.getElementById('status').textContent='You need both a ball and a bell.';
+    return;
+  }
+
+  runSnapshot=cloneMachine(objects);
+  resetRunState();
+  running=true;
+  won=false;
+  setSelected(null);
+  document.getElementById('runBtn').textContent='■ STOP';
+  document.getElementById('status').textContent='Machine running...';
+  updateUndoRedoButtons();
+  updateTrayLocks();
+}
+
+function stopRun(){
+  if(!running&&!runSnapshot) return;
+  running=false;
+  if(runSnapshot) objects=cloneMachine(runSnapshot);
+  runSnapshot=null;
+  document.getElementById('runBtn').textContent='▶ RUN';
+  document.getElementById('status').textContent='Back to building.';
+  updateScore();
+  updateUndoRedoButtons();
+  updateTrayLocks();
+}
+
+document.getElementById('runBtn').addEventListener('click',()=>{
+  if(running) stopRun(); else startRun();
+});
+
 function groundCollision(ball){
+  const r=ball.radius*(ball.scale||1);
 
-  if(
-    ball.y+ball.radius >
-    height-5
-  ){
-    ball.y =
-      height-5-ball.radius;
-
-    ball.vy *= -.52;
-
-    ball.vx *= .97;
+  if(ball.y+r>height-5){
+    if(ball.vy>65) playSound('impact');
+    ball.y=height-5-r;
+    if(ball.vy>0) ball.vy*=-.42;
+    ball.vx*=.985;
+    if(Math.abs(ball.vy)<24) ball.vy=0;
+    if(Math.abs(ball.vx)<3) ball.vx=0;
   }
 
-  if(
-    ball.x-ball.radius<0
-  ){
-    ball.x=ball.radius;
-    ball.vx*=-.6;
+  if(ball.x-r<0){
+    playSound('impact');
+    ball.x=r;ball.vx=Math.abs(ball.vx)*.55;
   }
-
-  if(
-    ball.x+ball.radius>width
-  ){
-    ball.x=
-      width-ball.radius;
-
-    ball.vx*=-.6;
+  if(ball.x+r>width){
+    playSound('impact');
+    ball.x=width-r;ball.vx=-Math.abs(ball.vx)*.55;
+  }
+  if(ball.y-r<0){
+    ball.y=r;ball.vy=Math.abs(ball.vy)*.4;
   }
 }
 
@@ -823,17 +868,14 @@ function rampCollision(ball,ramp){
   const localY=-dx*sin+dy*cos;
 
   if(Math.abs(localX)>half+radius) return;
-  if(localY<-radius-thickness || localY>radius+thickness) return;
+  if(localY<-radius-thickness||localY>radius+thickness) return;
 
   const target=-radius-thickness;
-  if(localY>target && ball.vy>=-180){
+  if(localY>target&&ball.vy>=-180){
     const correction=localY-target;
-    const nx=-sin;
-    const ny=cos;
-
+    const nx=-sin,ny=cos;
     ball.x-=nx*correction;
     ball.y-=ny*correction;
-
     const tangent=ball.vx*cos+ball.vy*sin;
     ball.vx=tangent*cos;
     ball.vy=tangent*sin;
@@ -841,812 +883,476 @@ function rampCollision(ball,ramp){
 }
 
 function updateBall(ball,dt){
-
-  ball.vy +=
-    gravity*dt;
+  ball.vy+=gravity*dt;
 
   objects.forEach(o=>{
-
     if(o===ball) return;
 
-    if(o.type==="ramp"){
-      rampCollision(ball,o);
-    }
+    if(o.type==='ramp') rampCollision(ball,o);
 
-    if(o.type==="fan"){
+    if(o.type==='fan'){
       const s=o.scale||1;
-      const dx=ball.x-o.x;
-      const dy=ball.y-o.y;
-      const cos=Math.cos(o.angle||0);
-      const sin=Math.sin(o.angle||0);
+      const dx=ball.x-o.x,dy=ball.y-o.y;
+      const cos=Math.cos(o.angle||0),sin=Math.sin(o.angle||0);
       const forward=dx*cos+dy*sin;
       const side=-dx*sin+dy*cos;
       const range=220*s;
       const dir=o.direction||1;
       const projected=forward*dir;
 
-      if(projected>0 && projected<range && Math.abs(side)<65*s){
+      if(projected>0&&projected<range&&Math.abs(side)<65*s){
         const force=(1-projected/range)*620;
         ball.vx+=cos*dir*force*dt;
         ball.vy+=sin*dir*force*dt;
+        o.fanTick=(o.fanTick||0)-dt;
+        if(o.fanTick<=0){
+          playSound('fan');
+          o.fanTick=.28;
+        }
       }
     }
 
-    if(o.type==="magnet"){
-
-      const dx =
-        o.x-ball.x;
-
-      const dy =
-        o.y-ball.y;
-
-      const distance =
-        Math.max(
-          35,
-          Math.hypot(dx,dy)
-        );
-
-      if(distance<230){
-
-        const force =
-          o.strength /
-          distance;
-
-        ball.vx +=
-          dx/distance*
-          force*
-          30*
-          dt;
-
-        ball.vy +=
-          dy/distance*
-          force*
-          30*
-          dt;
+    if(o.type==='magnet'){
+      const dx=o.x-ball.x,dy=o.y-ball.y;
+      const dist=Math.max(35,Math.hypot(dx,dy));
+      const range=260*(o.scale||1);
+      if(dist<range){
+        const force=(1-dist/range)*1050;
+        ball.vx+=(dx/dist)*force*dt;
+        ball.vy+=(dy/dist)*force*dt;
       }
     }
 
-    if(o.type==="spring"){
+    if(o.type==='spring'){
       if(!o.cooldown) o.cooldown=0;
       if(o.cooldown>0) o.cooldown-=dt;
 
       const s=o.scale||1;
-      const dx=ball.x-o.x;
-      const dy=ball.y-o.y;
-      const cos=Math.cos(o.angle||0);
-      const sin=Math.sin(o.angle||0);
+      const dx=ball.x-o.x,dy=ball.y-o.y;
+      const cos=Math.cos(o.angle||0),sin=Math.sin(o.angle||0);
       const lx=dx*cos+dy*sin;
       const ly=-dx*sin+dy*cos;
 
-      if(o.cooldown<=0 && Math.abs(lx)<34*s && Math.abs(ly)<35*s){
+      if(o.cooldown<=0&&Math.abs(lx)<34*s&&Math.abs(ly)<35*s){
         const launch=680*s;
         ball.vx+=-sin*launch;
         ball.vy+=-cos*launch;
         o.compressed=true;
         o.cooldown=.35;
+        playSound('spring');
         setTimeout(()=>{o.compressed=false},120);
       }
     }
 
-    if(o.type==="blast"){
-
-      const distance =
-        Math.hypot(
-          ball.x-o.x,
-          ball.y-o.y
-        );
-
-      if(
-        distance<45 &&
-        !o.triggered
-      ){
-
+    if(o.type==='blast'){
+      const dist=Math.hypot(ball.x-o.x,ball.y-o.y);
+      if(dist<50*(o.scale||1)&&!o.triggered){
         o.triggered=true;
-
-        const dx =
-          ball.x-o.x;
-
-        const dy =
-          ball.y-o.y;
-
-        const len =
-          Math.max(
-            1,
-            Math.hypot(dx,dy)
-          );
-
-        ball.vx +=
-          dx/len*600;
-
-        ball.vy +=
-          dy/len*600-300;
+        const dx=ball.x-o.x,dy=ball.y-o.y;
+        const len=Math.max(1,Math.hypot(dx,dy));
+        ball.vx+=(dx/len)*600;
+        ball.vy+=(dy/len)*600-260;
+        tone(80,.18,'sawtooth',.07);
       }
     }
 
-    if(o.type==="bell"){
-
-      const distance =
-        Math.hypot(
-          ball.x-o.x,
-          ball.y-o.y
-        );
-
-      if(
-        distance<45 &&
-        !o.rung
-      ){
-
+    if(o.type==='bell'){
+      const dist=Math.hypot(ball.x-o.x,ball.y-o.y);
+      if(dist<46*(o.scale||1)&&!o.rung){
         o.rung=true;
         winGame();
       }
     }
 
-    if(o.type==="domino"){
-
-      if(
-        Math.abs(ball.x-o.x)<28 &&
-        Math.abs(ball.y-o.y)<55
-      ){
-
+    if(o.type==='domino'){
+      const s=o.scale||1;
+      if(!o.falling&&Math.abs(ball.x-o.x)<28*s&&Math.abs(ball.y-o.y)<48*s){
         o.falling=true;
-
-        if(
-          ball.x<o.x
-        ){
-          o.angularVelocity=
-            .9;
-        }else{
-          o.angularVelocity=
-            -.9;
-        }
-
-        ball.vx +=
-          o.angularVelocity*
-          80;
+        o.angularVelocity=ball.x<o.x?.9:-.9;
+        ball.vx+=o.angularVelocity*70;
+        playSound('domino');
+        o.sounded=true;
       }
     }
-
   });
 
-  ball.x +=
-    ball.vx*dt;
-
-  ball.y +=
-    ball.vy*dt;
-
+  ball.x+=ball.vx*dt;
+  ball.y+=ball.vy*dt;
   groundCollision(ball);
 }
 
 function updateDominoes(dt){
-
-  const dominoes =
-    objects.filter(
-      o=>o.type==="domino"
-    );
+  const dominoes=objects.filter(o=>o.type==='domino');
 
   dominoes.forEach(d=>{
+    if(!d.falling) return;
 
-    if(d.falling){
+    const sign=Math.sign(d.angularVelocity||1);
+    d.angularVelocity+=sign*3.2*dt;
+    d.angle+=d.angularVelocity*dt;
 
-      d.angularVelocity +=
-        Math.sign(
-          d.angularVelocity
-        )*
-        2.2*
-        dt;
-
-      d.angle +=
-        d.angularVelocity*
-        dt;
-
-      if(
-        Math.abs(d.angle)>
-        Math.PI/2
-      ){
-        d.angle =
-          Math.sign(d.angle)*
-          Math.PI/2;
-      }
-
-      dominoes.forEach(other=>{
-
-        if(other===d) return;
-
-        if(
-          Math.abs(
-            other.x-d.x
-          )<48 &&
-          Math.abs(
-            other.y-d.y
-          )<40 &&
-          Math.abs(d.angle)>.45
-        ){
-
-          other.falling=true;
-
-          other.angularVelocity =
-            Math.sign(
-              d.angularVelocity
-            )*.8;
-        }
-
-      });
-
+    if(Math.abs(d.angle)>Math.PI/2){
+      d.angle=sign*Math.PI/2;
+      d.angularVelocity=0;
     }
 
+    const reach=54*(d.scale||1);
+    dominoes.forEach(other=>{
+      if(other===d||other.falling) return;
+      if(Math.hypot(other.x-d.x,other.y-d.y)<reach&&Math.abs(d.angle)>.45){
+        other.falling=true;
+        other.angularVelocity=sign*.85;
+        playSound('domino');
+        other.sounded=true;
+      }
+    });
   });
 }
 
 function updatePendulums(dt){
+  const ball=objects.find(o=>o.type==='ball');
 
-  objects
-  .filter(
-    o=>o.type==="pendulum"
-  )
-  .forEach(p=>{
-
-    if(!running) return;
-
-    p.velocity +=
-      (-gravity /
-      p.length *
-      Math.sin(p.swing))*
-      dt;
-
-    p.velocity *= .999;
-
-    p.swing +=
-      p.velocity*dt;
-
-    const bx =
-      p.x+
-      Math.sin(p.swing)*
-      p.length;
-
-    const by =
-      p.y+
-      Math.cos(p.swing)*
-      p.length;
-
-    const ball =
-      objects.find(
-        o=>o.type==="ball"
-      );
+  objects.filter(o=>o.type==='pendulum').forEach(p=>{
+    const len=p.length*(p.scale||1);
+    p.velocity+=(-gravity/len*Math.sin(p.swing))*dt;
+    p.velocity*=.999;
+    p.swing+=p.velocity*dt;
 
     if(ball){
+      const bx=p.x+Math.sin(p.swing)*len;
+      const by=p.y+Math.cos(p.swing)*len;
+      const dx=ball.x-bx,dy=ball.y-by;
+      const dist=Math.hypot(dx,dy);
+      const hit=18*(p.scale||1)+ball.radius*(ball.scale||1);
 
-      const distance =
-        Math.hypot(
-          ball.x-bx,
-          ball.y-by
-        );
-
-      if(distance<34){
-
-        ball.vx +=
-          Math.cos(
-            p.swing
-          )*
-          p.velocity*
-          250;
-
-        ball.vy +=
-          Math.sin(
-            p.swing
-          )*
-          p.velocity*
-          250;
+      if(dist<hit&&dist>0){
+        const tangential=p.velocity*len;
+        ball.vx+=Math.cos(p.swing)*tangential*.55;
+        ball.vy+=-Math.sin(p.swing)*tangential*.55;
       }
     }
   });
 }
 
-function winGame(){
+function puzzleRequirementsMet(){
+  if(gameMode!=='puzzle'||currentPuzzleIndex<0) return true;
+  const p=puzzles[currentPuzzleIndex];
+  if(!p.requiredTypes) return true;
+  return p.requiredTypes.every(type=>objects.some(o=>o.type===type));
+}
 
+function challengeRequirementsMet(){
+  return gameMode!=='challenge'||!activeChallenge||activeChallenge.test();
+}
+
+function winGame(){
   if(won) return;
+
+  if(!puzzleRequirementsMet()){
+    document.getElementById('status').textContent='The bell rang, but this puzzle requires the special part shown in the goal.';
+    return;
+  }
+
+  if(!challengeRequirementsMet()){
+    document.getElementById('status').textContent='The bell rang, but the challenge goal was not completed yet.';
+    return;
+  }
 
   won=true;
   running=false;
+  runSnapshot=null;
+  document.getElementById('runBtn').textContent='▶ RUN';
+  playSound('bell');
 
-  const scoreText =
-    document
-    .getElementById("score")
-    .textContent;
-
-  document
-  .getElementById("status")
-  .textContent =
-  "🔔 DING! Success! "+scoreText;
-
+  const stars=calculateStars();
+  showSuccess(stars);
   flash=1;
+
+  updateUndoRedoButtons();
+  updateTrayLocks();
 }
 
-let flash=0;
+function showSuccess(stars){
+  const overlay=document.getElementById('successOverlay');
+  document.getElementById('successStars').textContent='★'.repeat(stars)+'☆'.repeat(3-stars);
+
+  let message='Machine complete! Absurdity Score: '+calculateAbsurdity()+'.';
+  if(gameMode==='puzzle') message+=' Puzzle solved with '+Math.max(0,budgetLimit()-budgetUsed())+' parts left.';
+  if(gameMode==='challenge') message+=' Challenge completed!';
+
+  document.getElementById('successMessage').textContent=message;
+  overlay.classList.add('open');
+  document.getElementById('successCard').classList.add('pulse');
+  launchConfetti();
+}
+
+function launchConfetti(){
+  const workspace=document.getElementById('workspace');
+  const colors=['#f4c542','#55d9ff','#ff6b6b','#78d26b','#c58cff','#fff'];
+  for(let i=0;i<55;i++){
+    const d=document.createElement('div');
+    d.className='confetti';
+    d.style.left=Math.random()*100+'%';
+    d.style.top=(-20-Math.random()*80)+'px';
+    d.style.background=colors[i%colors.length];
+    d.style.animationDelay=(Math.random()*.45)+'s';
+    d.style.transform='rotate('+(Math.random()*180)+'deg)';
+    workspace.appendChild(d);
+    setTimeout(()=>d.remove(),2200);
+  }
+}
 
 function drawBall(o){
-
-  ctx.beginPath();
-
-  ctx.arc(
-    o.x,
-    o.y,
-    o.radius,
-    0,
-    Math.PI*2
-  );
-
-  ctx.fillStyle="#ff4d4d";
-  ctx.fill();
-
-  ctx.strokeStyle="#fff";
-  ctx.lineWidth=2;
-  ctx.stroke();
+  const r=o.radius*(o.scale||1);
+  ctx.beginPath();ctx.arc(o.x,o.y,r,0,Math.PI*2);
+  ctx.fillStyle='#ff4d4d';ctx.fill();
+  ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.stroke();
 }
 
 function drawRamp(o){
-
   ctx.save();
-
-  ctx.translate(o.x,o.y);
-  ctx.rotate(o.angle);
-  ctx.scale(o.scale||1,o.scale||1);
-
-  ctx.fillStyle="#c9954d";
-
-  ctx.fillRect(
-    -o.width/2,
-    -o.height/2,
-    o.width,
-    o.height
-  );
-
+  ctx.translate(o.x,o.y);ctx.rotate(o.angle);ctx.scale(o.scale||1,o.scale||1);
+  ctx.fillStyle='#c9954d';ctx.fillRect(-o.width/2,-o.height/2,o.width,o.height);
+  ctx.fillStyle='#e9bd79';ctx.fillRect(-o.width/2,-o.height/2,o.width,3);
   ctx.restore();
 }
 
 function drawDomino(o){
-
   ctx.save();
-
-  ctx.translate(
-    o.x,
-    o.y
-  );
-
-  ctx.rotate(
-    o.angle
-  );
-  ctx.scale(o.scale||1,o.scale||1);
-
-  ctx.fillStyle="#f2f2f2";
-
-  ctx.fillRect(
-    -o.width/2,
-    -o.height/2,
-    o.width,
-    o.height
-  );
-
-  ctx.fillStyle="#222";
-
-  ctx.beginPath();
-  ctx.arc(0,-13,2.5,0,Math.PI*2);
-  ctx.arc(0,13,2.5,0,Math.PI*2);
-  ctx.fill();
-
+  ctx.translate(o.x,o.y);ctx.rotate(o.angle);ctx.scale(o.scale||1,o.scale||1);
+  ctx.fillStyle='#f2f2f2';ctx.fillRect(-o.width/2,-o.height/2,o.width,o.height);
+  ctx.fillStyle='#222';
+  ctx.beginPath();ctx.arc(0,-13,2.5,0,Math.PI*2);ctx.arc(0,13,2.5,0,Math.PI*2);ctx.fill();
   ctx.restore();
 }
 
 function drawSpring(o){
   ctx.save();
-  ctx.translate(o.x,o.y);
-  ctx.rotate(o.angle||0);
-  ctx.scale(o.scale||1,o.scale||1);
-
-  ctx.strokeStyle="#efc84a";
-  ctx.lineWidth=4;
-  ctx.beginPath();
-
+  ctx.translate(o.x,o.y);ctx.rotate(o.angle||0);ctx.scale(o.scale||1,o.scale||1);
+  ctx.strokeStyle='#efc84a';ctx.lineWidth=4;ctx.beginPath();
   const h=o.compressed?10:25;
-
   for(let i=0;i<=8;i++){
     const x=-25+i*(50/8);
     const y=Math.sin(i*Math.PI)*h/2;
-    if(i===0) ctx.moveTo(x,y);
-    else ctx.lineTo(x,y);
+    if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
   }
-
-  ctx.stroke();
-  ctx.restore();
+  ctx.stroke();ctx.restore();
 }
 
 function drawFan(o){
-
   ctx.save();
-
-  ctx.translate(o.x,o.y);
-  ctx.rotate(o.angle||0);
-  ctx.scale(o.scale||1,o.scale||1);
-
-  ctx.fillStyle="#7ac8ff";
-
-  ctx.beginPath();
-  ctx.arc(0,0,24,0,Math.PI*2);
-  ctx.fill();
-
-  ctx.strokeStyle="#fff";
-  ctx.lineWidth=4;
-
+  ctx.translate(o.x,o.y);ctx.rotate(o.angle||0);ctx.scale(o.scale||1,o.scale||1);
+  ctx.fillStyle='#7ac8ff';ctx.beginPath();ctx.arc(0,0,24,0,Math.PI*2);ctx.fill();
+  ctx.strokeStyle='#fff';ctx.lineWidth=4;
   for(let i=0;i<4;i++){
-
-    ctx.rotate(
-      Math.PI/2
-    );
-
-    ctx.beginPath();
-    ctx.moveTo(0,0);
-    ctx.lineTo(17,0);
-    ctx.stroke();
+    ctx.rotate(Math.PI/2);ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(17,0);ctx.stroke();
   }
-
+  ctx.strokeStyle='rgba(122,200,255,.24)';ctx.lineWidth=2;
+  for(let y=-16;y<=16;y+=16){
+    ctx.beginPath();ctx.moveTo((o.direction||1)*32,y);ctx.lineTo((o.direction||1)*150,y);ctx.stroke();
+  }
   ctx.restore();
-
-  ctx.strokeStyle =
-    "rgba(122,200,255,.22)";
-
-  for(let i=0;i<3;i++){
-
-    ctx.beginPath();
-
-    ctx.moveTo(
-      o.x+
-      o.direction*30,
-      o.y-14+i*14
-    );
-
-    ctx.lineTo(
-      o.x+
-      o.direction*150,
-      o.y-14+i*14
-    );
-
-    ctx.stroke();
-  }
 }
 
 function drawMagnet(o){
-
-  ctx.font="42px Arial";
-  ctx.textAlign="center";
-  ctx.textBaseline="middle";
-
-  ctx.fillText(
-    "🧲",
-    o.x,
-    o.y
-  );
+  ctx.save();ctx.translate(o.x,o.y);ctx.rotate(o.angle||0);ctx.scale(o.scale||1,o.scale||1);
+  ctx.font='42px Arial';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('🧲',0,0);ctx.restore();
 }
 
 function drawPendulum(o){
-
-  const bx =
-    o.x+
-    Math.sin(o.swing)*
-    o.length;
-
-  const by =
-    o.y+
-    Math.cos(o.swing)*
-    o.length;
-
-  ctx.strokeStyle="#d0d8e0";
-  ctx.lineWidth=3;
-
-  ctx.beginPath();
-  ctx.moveTo(o.x,o.y);
-  ctx.lineTo(bx,by);
-  ctx.stroke();
-
-  ctx.fillStyle="#d1a34f";
-
-  ctx.beginPath();
-  ctx.arc(
-    bx,
-    by,
-    18,
-    0,
-    Math.PI*2
-  );
-  ctx.fill();
-
-  ctx.fillStyle="#aaa";
-
-  ctx.beginPath();
-  ctx.arc(
-    o.x,
-    o.y,
-    7,
-    0,
-    Math.PI*2
-  );
-  ctx.fill();
+  const len=o.length*(o.scale||1);
+  const bx=o.x+Math.sin(o.swing)*len;
+  const by=o.y+Math.cos(o.swing)*len;
+  ctx.strokeStyle='#d0d8e0';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(o.x,o.y);ctx.lineTo(bx,by);ctx.stroke();
+  ctx.fillStyle='#d1a34f';ctx.beginPath();ctx.arc(bx,by,18*(o.scale||1),0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='#aaa';ctx.beginPath();ctx.arc(o.x,o.y,7,0,Math.PI*2);ctx.fill();
 }
 
 function drawBlast(o){
-
-  ctx.font =
-    o.triggered
-    ? "56px Arial"
-    : "42px Arial";
-
-  ctx.textAlign="center";
-  ctx.textBaseline="middle";
-
-  ctx.fillText(
-    o.triggered
-      ? "💥"
-      : "🧨",
-    o.x,
-    o.y
-  );
+  ctx.save();ctx.translate(o.x,o.y);ctx.rotate(o.angle||0);ctx.scale(o.scale||1,o.scale||1);
+  ctx.font=o.triggered?'56px Arial':'42px Arial';ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.fillText(o.triggered?'💥':'✨',0,0);ctx.restore();
 }
 
 function drawBell(o){
-
-  ctx.save();
-
-  ctx.translate(o.x,o.y);
-
-  if(o.rung){
-    ctx.rotate(
-      Math.sin(
-        performance.now()*.03
-      )*.18
-    );
-  }
-
-  ctx.font="52px Arial";
-  ctx.textAlign="center";
-  ctx.textBaseline="middle";
-
-  ctx.fillText(
-    "🔔",
-    0,
-    0
-  );
-
-  ctx.restore();
+  ctx.save();ctx.translate(o.x,o.y);
+  ctx.rotate(o.rung?Math.sin(performance.now()*.03)*.18:(o.angle||0));
+  ctx.scale(o.scale||1,o.scale||1);
+  ctx.font='52px Arial';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('🔔',0,0);ctx.restore();
 }
 
 function drawSelection(){
-
-  if(
-    !selected ||
-    running
-  ) return;
-
-  ctx.strokeStyle="#55d9ff";
-  ctx.lineWidth=2;
-
-  ctx.setLineDash(
-    [6,5]
-  );
-
-  ctx.beginPath();
-
-  ctx.arc(
-    selected.x,
-    selected.y,
-    38,
-    0,
-    Math.PI*2
-  );
-
-  ctx.stroke();
-
-  ctx.setLineDash([]);
+  if(!selected||running) return;
+  const r=objectRadius(selected)+8;
+  ctx.strokeStyle='#55d9ff';ctx.lineWidth=2;ctx.setLineDash([6,5]);
+  ctx.beginPath();ctx.arc(selected.x,selected.y,r,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);
 }
 
 function draw(){
-
-  ctx.clearRect(
-    0,
-    0,
-    width,
-    height
-  );
-
-  ctx.fillStyle=
-    "rgba(255,255,255,.08)";
-
-  ctx.fillRect(
-    0,
-    height-5,
-    width,
-    5
-  );
+  ctx.clearRect(0,0,width,height);
+  ctx.fillStyle='rgba(255,255,255,.08)';ctx.fillRect(0,height-5,width,5);
 
   objects.forEach(o=>{
-
-    if(o.type==="ball")
-      drawBall(o);
-
-    if(o.type==="ramp")
-      drawRamp(o);
-
-    if(o.type==="domino")
-      drawDomino(o);
-
-    if(o.type==="spring")
-      drawSpring(o);
-
-    if(o.type==="fan")
-      drawFan(o);
-
-    if(o.type==="magnet")
-      drawMagnet(o);
-
-    if(o.type==="pendulum")
-      drawPendulum(o);
-
-    if(o.type==="blast")
-      drawBlast(o);
-
-    if(o.type==="bell")
-      drawBell(o);
+    if(o.type==='ball') drawBall(o);
+    else if(o.type==='ramp') drawRamp(o);
+    else if(o.type==='domino') drawDomino(o);
+    else if(o.type==='spring') drawSpring(o);
+    else if(o.type==='fan') drawFan(o);
+    else if(o.type==='magnet') drawMagnet(o);
+    else if(o.type==='pendulum') drawPendulum(o);
+    else if(o.type==='blast') drawBlast(o);
+    else if(o.type==='bell') drawBell(o);
   });
 
   drawSelection();
 
   if(flash>0){
-
-    ctx.fillStyle=
-      `rgba(255,220,70,${flash*.35})`;
-
-    ctx.fillRect(
-      0,
-      0,
-      width,
-      height
-    );
-
+    ctx.fillStyle='rgba(255,220,70,'+(flash*.35)+')';
+    ctx.fillRect(0,0,width,height);
     flash-=.03;
   }
 }
 
 function update(dt){
-
   if(!running) return;
-
-  const ball =
-    objects.find(
-      o=>o.type==="ball"
-    );
-
-  if(ball){
-    updateBall(
-      ball,
-      dt
-    );
-  }
-
+  const ball=objects.find(o=>o.type==='ball');
+  if(ball) updateBall(ball,dt);
   updateDominoes(dt);
   updatePendulums(dt);
 }
 
 function loop(time){
-
-  let dt =
-    (time-lastTime)/1000;
-
+  let dt=(time-lastTime)/1000;
   lastTime=time;
-
-  dt=Math.min(
-    dt,
-    .03
-  );
-
+  dt=Math.min(dt,.025);
   update(dt);
   draw();
-
   requestAnimationFrame(loop);
 }
-
 requestAnimationFrame(loop);
 
-document
-.getElementById("runBtn")
-.addEventListener(
-  "click",
-  startRun
-);
+function setMode(mode){
+  if(running) stopRun();
 
-document
-.getElementById("resetBtn")
-.addEventListener(
-  "click",
-  ()=>{
-    location.reload();
+  gameMode=mode;
+  document.getElementById('sandboxModeBtn').classList.toggle('active',mode==='sandbox');
+  document.getElementById('puzzleModeBtn').classList.toggle('active',mode==='puzzle');
+  document.getElementById('challengeModeBtn').classList.toggle('active',mode==='challenge');
+
+  if(mode==='sandbox'){
+    currentPuzzleIndex=-1;
+    activeChallenge=null;
+    document.getElementById('modeLabel').textContent='Sandbox Mode';
+    document.getElementById('goalText').textContent='Goal: Ring the bell any way you want.';
+    defaultMachine();
   }
-);
 
-document
-.getElementById("clearBtn")
-.addEventListener(
-  "click",
-  ()=>{
-
-    if(running) return;
-
-    if(!confirm(
-      "Clear the entire machine?"
-    )) return;
-
-    history.push(
-      JSON.stringify(objects)
-    );
-
-    objects=[];
-
-    updateScore();
+  if(mode==='puzzle'){
+    document.getElementById('modeLabel').textContent='Puzzle Mode';
+    openPuzzleChooser();
   }
-);
 
-document
-.getElementById("undoBtn")
-.addEventListener(
-  "click",
-  ()=>{
-    if(running || !history.length) return;
-    objects=JSON.parse(history.pop());
-    setSelected(null);
-    updateScore();
+  if(mode==='challenge'){
+    currentPuzzleIndex=-1;
+    activeChallenge=challenges[Math.floor(Math.random()*challenges.length)];
+    document.getElementById('modeLabel').textContent='Challenge Mode';
+    document.getElementById('goalText').textContent='Challenge: '+activeChallenge.text;
+    defaultMachine();
   }
-);
 
-function modifySelected(fn){
-  if(running || !selected) return;
-  pushHistory();
-  fn(selected);
-  updateScore();
+  updateBudget();
 }
 
-document.getElementById('rotateLeftBtn').addEventListener('click',()=>modifySelected(o=>o.angle-=Math.PI/12));
-document.getElementById('rotateRightBtn').addEventListener('click',()=>modifySelected(o=>o.angle+=Math.PI/12));
-document.getElementById('smallerBtn').addEventListener('click',()=>modifySelected(o=>o.scale=Math.max(.55,(o.scale||1)-.15)));
-document.getElementById('largerBtn').addEventListener('click',()=>modifySelected(o=>o.scale=Math.min(2.2,(o.scale||1)+.15)));
-document.getElementById('flipBtn').addEventListener('click',()=>modifySelected(o=>{
-  if(o.type==='fan') o.direction=(o.direction||1)*-1;
-  else if(o.type==='pendulum') o.swing*=-1;
-  else o.angle+=Math.PI;
-}));
+function openPuzzleChooser(){
+  const grid=document.getElementById('levelGrid');
+  grid.innerHTML='';
 
-document.getElementById('duplicateBtn').addEventListener('click',()=>{
-  if(running || !selected || selected.type==='ball' || selected.type==='bell') return;
-  pushHistory();
-  const copy=JSON.parse(JSON.stringify(selected));
-  copy.id=Date.now()+Math.random();
-  copy.x=Math.min(width-20,copy.x+28);
-  copy.y=Math.min(height-20,copy.y+28);
-  copy.vx=0;
-  copy.vy=0;
-  if(copy.type==='domino'){copy.falling=false;copy.angularVelocity=0}
-  if(copy.type==='blast') copy.triggered=false;
-  objects.push(copy);
-  setSelected(copy);
+  puzzles.forEach((p,i)=>{
+    const card=document.createElement('div');
+    card.className='levelCard';
+    card.innerHTML='<h3>'+(i+1)+'. '+p.title+'</h3><p>'+p.goal+'</p><p><strong>Part limit:</strong> '+p.maxParts+'</p><button type="button">Play</button>';
+    card.querySelector('button').addEventListener('click',()=>startPuzzle(i));
+    grid.appendChild(card);
+  });
+
+  document.getElementById('puzzleOverlay').classList.add('open');
+}
+
+function startPuzzle(index){
+  gameMode='puzzle';
+  currentPuzzleIndex=index;
+  activeChallenge=null;
+  const p=puzzles[index];
+
+  document.getElementById('sandboxModeBtn').classList.remove('active');
+  document.getElementById('puzzleModeBtn').classList.add('active');
+  document.getElementById('challengeModeBtn').classList.remove('active');
+
+  objects=p.setup();
+  history=[];
+  future=[];
+  setSelected(null);
+  document.getElementById('goalText').textContent='Puzzle: '+p.goal;
+  document.getElementById('modeLabel').textContent='Puzzle '+(index+1);
+  document.getElementById('puzzleOverlay').classList.remove('open');
+  document.getElementById('status').textContent='Puzzle loaded. Build your solution.';
   updateScore();
+  updateUndoRedoButtons();
+}
+
+function renderTutorial(){
+  const slide=tutorialSlides[tutorialIndex];
+  document.getElementById('tutorialTitle').textContent=slide.title;
+  document.getElementById('tutorialText').textContent=slide.text;
+  document.getElementById('tutorialBackBtn').disabled=tutorialIndex===0;
+  document.getElementById('tutorialNextBtn').textContent=tutorialIndex===tutorialSlides.length-1?'Finish':'Next';
+}
+
+function openTutorial(){
+  tutorialIndex=0;
+  renderTutorial();
+  document.getElementById('tutorialOverlay').classList.add('open');
+}
+
+document.getElementById('tutorialBackBtn').addEventListener('click',()=>{
+  if(tutorialIndex>0){tutorialIndex--;renderTutorial()}
+});
+document.getElementById('tutorialNextBtn').addEventListener('click',()=>{
+  if(tutorialIndex<tutorialSlides.length-1){
+    tutorialIndex++;
+    renderTutorial();
+  }else{
+    localStorage.setItem(FIRST_TUTORIAL_KEY,'yes');
+    document.getElementById('tutorialOverlay').classList.remove('open');
+  }
+});
+document.getElementById('tutorialCloseBtn').addEventListener('click',()=>{
+  localStorage.setItem(FIRST_TUTORIAL_KEY,'yes');
+  document.getElementById('tutorialOverlay').classList.remove('open');
 });
 
-document.getElementById('deleteBtn').addEventListener('click',()=>{
-  if(running || !selected) return;
+document.getElementById('undoBtn').addEventListener('click',undo);
+document.getElementById('redoBtn').addEventListener('click',redo);
+
+document.getElementById('clearBtn').addEventListener('click',()=>{
+  if(running) return;
+  if(!confirm('Clear the entire machine?')) return;
   pushHistory();
-  objects=objects.filter(o=>o.id!==selected.id);
+  objects=[];
   setSelected(null);
   updateScore();
 });
 
 document.getElementById('saveBtn').addEventListener('click',()=>{
   if(running) return;
-  localStorage.setItem(SAVE_KEY,JSON.stringify(objects));
+  const payload={
+    version:3,
+    savedAt:Date.now(),
+    mode:gameMode,
+    puzzleIndex:currentPuzzleIndex,
+    objects
+  };
+  localStorage.setItem(SAVE_KEY,JSON.stringify(payload));
   document.getElementById('status').textContent='Machine saved on this device.';
 });
 
@@ -1658,8 +1364,10 @@ document.getElementById('loadBtn').addEventListener('click',()=>{
     return;
   }
   try{
+    const payload=JSON.parse(raw);
     pushHistory();
-    objects=JSON.parse(raw);
+    objects=Array.isArray(payload)?payload:payload.objects;
+    if(!Array.isArray(objects)) throw new Error('Bad save');
     setSelected(null);
     updateScore();
     document.getElementById('status').textContent='Saved machine loaded.';
@@ -1668,7 +1376,54 @@ document.getElementById('loadBtn').addEventListener('click',()=>{
   }
 });
 
-</script>
+document.getElementById('soundBtn').addEventListener('click',()=>{
+  soundEnabled=!soundEnabled;
+  document.getElementById('soundBtn').textContent=soundEnabled?'🔊 Sound':'🔇 Muted';
+  if(soundEnabled) ensureAudio();
+});
 
+document.getElementById('tutorialBtn').addEventListener('click',openTutorial);
+document.getElementById('sandboxModeBtn').addEventListener('click',()=>setMode('sandbox'));
+document.getElementById('puzzleModeBtn').addEventListener('click',()=>setMode('puzzle'));
+document.getElementById('challengeModeBtn').addEventListener('click',()=>setMode('challenge'));
+document.getElementById('closePuzzleBtn').addEventListener('click',()=>{
+  document.getElementById('puzzleOverlay').classList.remove('open');
+  if(currentPuzzleIndex<0){
+    gameMode='sandbox';
+    document.getElementById('puzzleModeBtn').classList.remove('active');
+    document.getElementById('sandboxModeBtn').classList.add('active');
+    document.getElementById('modeLabel').textContent='Sandbox Mode';
+    document.getElementById('goalText').textContent='Goal: Ring the bell any way you want.';
+  }
+});
+
+document.getElementById('keepBuildingBtn').addEventListener('click',()=>{
+  document.getElementById('successOverlay').classList.remove('open');
+  if(gameMode==='puzzle'&&currentPuzzleIndex>=0){
+    startPuzzle(currentPuzzleIndex);
+  }else{
+    won=false;
+    document.getElementById('status').textContent='Keep making it more ridiculous!';
+  }
+});
+
+document.getElementById('nextPuzzleBtn').addEventListener('click',()=>{
+  document.getElementById('successOverlay').classList.remove('open');
+  if(gameMode==='puzzle'){
+    const next=(currentPuzzleIndex+1)%puzzles.length;
+    startPuzzle(next);
+  }else{
+    setMode('challenge');
+  }
+});
+
+defaultMachine();
+
+setTimeout(()=>{
+  if(localStorage.getItem(FIRST_TUTORIAL_KEY)!=='yes'){
+    openTutorial();
+  }
+},450);
+</script>
 </body>
 </html>
