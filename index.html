@@ -111,6 +111,32 @@ canvas{
   color:#c8d1dd;
 }
 
+#selectionPanel{
+  position:absolute;
+  z-index:8;
+  left:50%;
+  bottom:12px;
+  transform:translateX(-50%);
+  width:min(720px,calc(100% - 20px));
+  display:none;
+  grid-template-columns:repeat(7,minmax(0,1fr));
+  gap:7px;
+  padding:9px;
+  border:1px solid #526070;
+  border-radius:14px;
+  background:rgba(29,35,43,.96);
+  box-shadow:0 12px 30px rgba(0,0,0,.28);
+}
+#selectionPanel.show{display:grid}
+#selectionPanel button{padding:8px 6px;font-size:12px}
+#selectionLabel{
+  grid-column:1/-1;
+  color:#dce5ef;
+  font-size:12px;
+  text-align:center;
+}
+.danger{background:#8a3940}
+
 #tray{
   display:grid;
   grid-template-columns:repeat(9,minmax(74px,1fr));
@@ -148,6 +174,12 @@ canvas{
   #tray{
     grid-template-columns:repeat(9,86px);
   }
+  #selectionPanel{
+    grid-template-columns:repeat(4,1fr);
+  }
+  .topButtons{
+    flex-wrap:wrap;
+  }
 }
 </style>
 </head>
@@ -164,6 +196,8 @@ canvas{
 
   <div class="topButtons">
     <button id="undoBtn">↶ Undo</button>
+    <button id="saveBtn">💾 Save</button>
+    <button id="loadBtn">📂 Load</button>
     <button id="clearBtn">Clear</button>
     <button id="runBtn" class="run">▶ RUN</button>
     <button id="resetBtn" class="reset">Reset</button>
@@ -176,6 +210,17 @@ canvas{
   <div id="scoreBox">
     <strong id="score">Absurdity Score: 0</strong>
     <span id="pieceCount">Pieces: 0</span>
+  </div>
+
+  <div id="selectionPanel">
+    <div id="selectionLabel">Selected</div>
+    <button id="rotateLeftBtn">↺ Rotate</button>
+    <button id="rotateRightBtn">↻ Rotate</button>
+    <button id="smallerBtn">− Size</button>
+    <button id="largerBtn">＋ Size</button>
+    <button id="flipBtn">⇆ Flip</button>
+    <button id="duplicateBtn">⧉ Copy</button>
+    <button id="deleteBtn" class="danger">Delete</button>
   </div>
 </div>
 
@@ -250,7 +295,24 @@ let dragOffsetY = 0;
 
 let lastTime = performance.now();
 
-const gravity = 700;
+const gravity = 760;
+const SAVE_KEY = 'rube_goldberg_creator_machine_v2';
+
+function pushHistory(){
+  history.push(JSON.stringify(objects));
+  if(history.length>60) history.shift();
+}
+
+function setSelected(o){
+  selected=o||null;
+  const panel=document.getElementById('selectionPanel');
+  if(selected){
+    panel.classList.add('show');
+    document.getElementById('selectionLabel').textContent='Selected: '+selected.type.toUpperCase();
+  }else{
+    panel.classList.remove('show');
+  }
+}
 
 function resize(){
   const rect = canvas.getBoundingClientRect();
@@ -283,6 +345,7 @@ function makeObject(type,x,y){
     angle:0,
     vx:0,
     vy:0,
+    scale:1,
     active:true
   };
 
@@ -401,9 +464,7 @@ function addPart(type){
 
   if(running) return;
 
-  history.push(
-    JSON.stringify(objects)
-  );
+  pushHistory();
 
   let x = width/2;
   let y = height/2;
@@ -432,9 +493,9 @@ function addPart(type){
     }
   }
 
-  objects.push(
-    makeObject(type,x,y)
-  );
+  const added=makeObject(type,x,y);
+  objects.push(added);
+  setSelected(added);
 
   updateScore();
 }
@@ -545,7 +606,7 @@ function pointerDown(e){
   const p =
     pointerPosition(e);
 
-  selected = null;
+  setSelected(null);
 
   for(
     let i=objects.length-1;
@@ -558,8 +619,7 @@ function pointerDown(e){
       p.x,
       p.y
     )){
-      selected =
-        objects[i];
+      setSelected(objects[i]);
 
       dragging = true;
 
@@ -569,9 +629,7 @@ function pointerDown(e){
       dragOffsetY =
         p.y-selected.y;
 
-      history.push(
-        JSON.stringify(objects)
-      );
+      pushHistory();
 
       break;
     }
@@ -589,11 +647,8 @@ function pointerMove(e){
   const p =
     pointerPosition(e);
 
-  selected.x =
-    p.x-dragOffsetX;
-
-  selected.y =
-    p.y-dragOffsetY;
+  selected.x=Math.max(15,Math.min(width-15,p.x-dragOffsetX));
+  selected.y=Math.max(15,Math.min(height-15,p.y-dragOffsetY));
 }
 
 function pointerUp(){
@@ -755,67 +810,33 @@ function groundCollision(ball){
 }
 
 function rampCollision(ball,ramp){
+  const scale=ramp.scale||1;
+  const half=(ramp.width*scale)/2;
+  const thickness=Math.max(7,(ramp.height*scale)/2);
+  const radius=ball.radius*(ball.scale||1);
 
-  const cos =
-    Math.cos(ramp.angle);
+  const cos=Math.cos(ramp.angle);
+  const sin=Math.sin(ramp.angle);
+  const dx=ball.x-ramp.x;
+  const dy=ball.y-ramp.y;
+  const localX=dx*cos+dy*sin;
+  const localY=-dx*sin+dy*cos;
 
-  const sin =
-    Math.sin(ramp.angle);
+  if(Math.abs(localX)>half+radius) return;
+  if(localY<-radius-thickness || localY>radius+thickness) return;
 
-  const dx =
-    ball.x-ramp.x;
+  const target=-radius-thickness;
+  if(localY>target && ball.vy>=-180){
+    const correction=localY-target;
+    const nx=-sin;
+    const ny=cos;
 
-  const dy =
-    ball.y-ramp.y;
+    ball.x-=nx*correction;
+    ball.y-=ny*correction;
 
-  const localX =
-    dx*cos+
-    dy*sin;
-
-  const localY =
-    -dx*sin+
-    dy*cos;
-
-  if(
-    Math.abs(localX)
-      < ramp.width/2 &&
-    localY >
-      -ball.radius-8 &&
-    localY <
-      ball.radius
-  ){
-
-    const normalX =
-      -sin;
-
-    const normalY =
-      cos;
-
-    ball.x +=
-      normalX*
-      (ball.radius-localY);
-
-    ball.y +=
-      normalY*
-      (ball.radius-localY);
-
-    const tangentVelocity =
-      ball.vx*cos+
-      ball.vy*sin;
-
-    ball.vx =
-      tangentVelocity*cos;
-
-    ball.vy =
-      tangentVelocity*sin;
-
-    ball.vx +=
-      Math.cos(ramp.angle)*
-      18;
-
-    ball.vy +=
-      Math.sin(ramp.angle)*
-      18;
+    const tangent=ball.vx*cos+ball.vy*sin;
+    ball.vx=tangent*cos;
+    ball.vy=tangent*sin;
   }
 }
 
@@ -833,20 +854,21 @@ function updateBall(ball,dt){
     }
 
     if(o.type==="fan"){
+      const s=o.scale||1;
+      const dx=ball.x-o.x;
+      const dy=ball.y-o.y;
+      const cos=Math.cos(o.angle||0);
+      const sin=Math.sin(o.angle||0);
+      const forward=dx*cos+dy*sin;
+      const side=-dx*sin+dy*cos;
+      const range=220*s;
+      const dir=o.direction||1;
+      const projected=forward*dir;
 
-      const distance =
-        Math.hypot(
-          ball.x-o.x,
-          ball.y-o.y
-        );
-
-      if(distance<190){
-
-        ball.vx +=
-          o.direction*
-          420*
-          dt;
-
+      if(projected>0 && projected<range && Math.abs(side)<65*s){
+        const force=(1-projected/range)*620;
+        ball.vx+=cos*dir*force*dt;
+        ball.vy+=sin*dir*force*dt;
       }
     }
 
@@ -885,30 +907,24 @@ function updateBall(ball,dt){
     }
 
     if(o.type==="spring"){
+      if(!o.cooldown) o.cooldown=0;
+      if(o.cooldown>0) o.cooldown-=dt;
 
-      if(
-        Math.abs(ball.x-o.x)<38 &&
-        ball.y >
-          o.y-35 &&
-        ball.y <
-          o.y+20 &&
-        ball.vy>0
-      ){
+      const s=o.scale||1;
+      const dx=ball.x-o.x;
+      const dy=ball.y-o.y;
+      const cos=Math.cos(o.angle||0);
+      const sin=Math.sin(o.angle||0);
+      const lx=dx*cos+dy*sin;
+      const ly=-dx*sin+dy*cos;
 
-        ball.vy =
-          -650;
-
-        ball.vx +=
-          120;
-
+      if(o.cooldown<=0 && Math.abs(lx)<34*s && Math.abs(ly)<35*s){
+        const launch=680*s;
+        ball.vx+=-sin*launch;
+        ball.vy+=-cos*launch;
         o.compressed=true;
-
-        setTimeout(
-          ()=>{
-            o.compressed=false;
-          },
-          180
-        );
+        o.cooldown=.35;
+        setTimeout(()=>{o.compressed=false},120);
       }
     }
 
@@ -1173,6 +1189,7 @@ function drawRamp(o){
 
   ctx.translate(o.x,o.y);
   ctx.rotate(o.angle);
+  ctx.scale(o.scale||1,o.scale||1);
 
   ctx.fillStyle="#c9954d";
 
@@ -1198,6 +1215,7 @@ function drawDomino(o){
   ctx.rotate(
     o.angle
   );
+  ctx.scale(o.scale||1,o.scale||1);
 
   ctx.fillStyle="#f2f2f2";
 
@@ -1219,37 +1237,26 @@ function drawDomino(o){
 }
 
 function drawSpring(o){
+  ctx.save();
+  ctx.translate(o.x,o.y);
+  ctx.rotate(o.angle||0);
+  ctx.scale(o.scale||1,o.scale||1);
 
   ctx.strokeStyle="#efc84a";
   ctx.lineWidth=4;
-
   ctx.beginPath();
 
-  const h =
-    o.compressed
-    ? 10
-    : 25;
+  const h=o.compressed?10:25;
 
   for(let i=0;i<=8;i++){
-
-    const x =
-      o.x-25+
-      i*(50/8);
-
-    const y =
-      o.y+
-      Math.sin(
-        i*Math.PI
-      )*
-      h/2;
-
-    if(i===0)
-      ctx.moveTo(x,y);
-    else
-      ctx.lineTo(x,y);
+    const x=-25+i*(50/8);
+    const y=Math.sin(i*Math.PI)*h/2;
+    if(i===0) ctx.moveTo(x,y);
+    else ctx.lineTo(x,y);
   }
 
   ctx.stroke();
+  ctx.restore();
 }
 
 function drawFan(o){
@@ -1257,6 +1264,8 @@ function drawFan(o){
   ctx.save();
 
   ctx.translate(o.x,o.y);
+  ctx.rotate(o.angle||0);
+  ctx.scale(o.scale||1,o.scale||1);
 
   ctx.fillStyle="#7ac8ff";
 
@@ -1587,20 +1596,77 @@ document
 .addEventListener(
   "click",
   ()=>{
-
-    if(
-      running ||
-      !history.length
-    ) return;
-
-    objects=
-      JSON.parse(
-        history.pop()
-      );
-
+    if(running || !history.length) return;
+    objects=JSON.parse(history.pop());
+    setSelected(null);
     updateScore();
   }
 );
+
+function modifySelected(fn){
+  if(running || !selected) return;
+  pushHistory();
+  fn(selected);
+  updateScore();
+}
+
+document.getElementById('rotateLeftBtn').addEventListener('click',()=>modifySelected(o=>o.angle-=Math.PI/12));
+document.getElementById('rotateRightBtn').addEventListener('click',()=>modifySelected(o=>o.angle+=Math.PI/12));
+document.getElementById('smallerBtn').addEventListener('click',()=>modifySelected(o=>o.scale=Math.max(.55,(o.scale||1)-.15)));
+document.getElementById('largerBtn').addEventListener('click',()=>modifySelected(o=>o.scale=Math.min(2.2,(o.scale||1)+.15)));
+document.getElementById('flipBtn').addEventListener('click',()=>modifySelected(o=>{
+  if(o.type==='fan') o.direction=(o.direction||1)*-1;
+  else if(o.type==='pendulum') o.swing*=-1;
+  else o.angle+=Math.PI;
+}));
+
+document.getElementById('duplicateBtn').addEventListener('click',()=>{
+  if(running || !selected || selected.type==='ball' || selected.type==='bell') return;
+  pushHistory();
+  const copy=JSON.parse(JSON.stringify(selected));
+  copy.id=Date.now()+Math.random();
+  copy.x=Math.min(width-20,copy.x+28);
+  copy.y=Math.min(height-20,copy.y+28);
+  copy.vx=0;
+  copy.vy=0;
+  if(copy.type==='domino'){copy.falling=false;copy.angularVelocity=0}
+  if(copy.type==='blast') copy.triggered=false;
+  objects.push(copy);
+  setSelected(copy);
+  updateScore();
+});
+
+document.getElementById('deleteBtn').addEventListener('click',()=>{
+  if(running || !selected) return;
+  pushHistory();
+  objects=objects.filter(o=>o.id!==selected.id);
+  setSelected(null);
+  updateScore();
+});
+
+document.getElementById('saveBtn').addEventListener('click',()=>{
+  if(running) return;
+  localStorage.setItem(SAVE_KEY,JSON.stringify(objects));
+  document.getElementById('status').textContent='Machine saved on this device.';
+});
+
+document.getElementById('loadBtn').addEventListener('click',()=>{
+  if(running) return;
+  const raw=localStorage.getItem(SAVE_KEY);
+  if(!raw){
+    document.getElementById('status').textContent='No saved machine yet.';
+    return;
+  }
+  try{
+    pushHistory();
+    objects=JSON.parse(raw);
+    setSelected(null);
+    updateScore();
+    document.getElementById('status').textContent='Saved machine loaded.';
+  }catch(err){
+    document.getElementById('status').textContent='Saved machine could not be loaded.';
+  }
+});
 
 </script>
 
