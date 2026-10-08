@@ -158,6 +158,27 @@ canvas{
   margin-bottom:2px;
 }
 .partButton.locked{opacity:.28}
+#fluidTray{
+  flex:0 0 auto;
+  display:none;
+  grid-template-columns:repeat(8,minmax(82px,1fr));
+  gap:7px;
+  padding:8px;
+  background:#173142;
+  border-top:1px solid #31566b;
+  overflow-x:auto;
+}
+#fluidTray.show{display:grid}
+.fluidButton{
+  min-width:76px;
+  min-height:50px;
+  padding:5px 4px;
+  font-size:11px;
+  text-align:center;
+  background:#21465c;
+}
+.fluidButton .icon{display:block;font-size:20px;margin-bottom:2px}
+.fluidButton.active{outline:2px solid #55d9ff}
 .overlay{
   position:absolute;
   inset:0;
@@ -222,6 +243,7 @@ canvas{
   .topButtons button{flex:1;padding:7px 5px;font-size:12px}
   .modebar .goal{min-width:230px}
   #tray{grid-template-columns:repeat(9,78px)}
+  #fluidTray{grid-template-columns:repeat(8,78px)}
   #selectionPanel{grid-template-columns:repeat(4,1fr)}
   .levelGrid{grid-template-columns:1fr}
 }
@@ -251,6 +273,7 @@ canvas{
   <button id="sandboxModeBtn" class="active">🧰 Sandbox</button>
   <button id="puzzleModeBtn">🧩 Puzzles</button>
   <button id="challengeModeBtn">🏆 Challenge</button>
+  <button id="fluidModeBtn">🌊 Fluid Physics</button>
   <div id="goalText" class="goal">Goal: Ring the bell any way you want.</div>
 </div>
 
@@ -330,6 +353,17 @@ canvas{
   <button class="partButton" data-part="blast"><span class="icon">💥</span>Blast</button>
   <button class="partButton" data-part="bell"><span class="icon">🔔</span>Bell</button>
 </div>
+
+<div id="fluidTray">
+  <button class="fluidButton active" data-fluid="fill"><span class="icon">🪣</span>Fill Container</button>
+  <button class="fluidButton" data-fluid="pipes"><span class="icon">🚰</span>Pipes & Pumps</button>
+  <button class="fluidButton" data-fluid="dam"><span class="icon">🌊</span>Dam & Canal</button>
+  <button class="fluidButton" data-fluid="wheel"><span class="icon">⚙️</span>Water Wheel</button>
+  <button class="fluidButton" data-fluid="float"><span class="icon">🛟</span>Float / Sink</button>
+  <button class="fluidButton" id="fluidActionBtn"><span class="icon">💧</span>Start Water</button>
+  <button class="fluidButton" id="fluidObjectBtn"><span class="icon">🪵</span>Add Object</button>
+  <button class="fluidButton" id="fluidResetBtn"><span class="icon">↻</span>Reset</button>
+</div>
 </div>
 
 <script>
@@ -355,6 +389,24 @@ let activeChallenge=null;
 let soundEnabled=true;
 let audioCtx=null;
 let tutorialIndex=0;
+
+let fluidActivity='fill';
+let fluidParticles=[];
+let fluidObjects=[];
+let fluidRunning=false;
+let fluidGateOpen=false;
+let fluidWheelAngle=0;
+let fluidWheelSpeed=0;
+let fluidFill=0;
+let fluidSuccess=false;
+let floatObjectIndex=0;
+
+const fluidMaterials=[
+  {name:'Wood',emoji:'🪵',density:.65},
+  {name:'Plastic',emoji:'🧴',density:.85},
+  {name:'Metal',emoji:'🔩',density:1.8},
+  {name:'Rock',emoji:'🪨',density:2.4}
+];
 
 const gravity=760;
 const SAVE_KEY='rube_goldberg_creator_machine_v3';
@@ -718,6 +770,7 @@ function hitTest(o,x,y){
 }
 
 function pointerDown(e){
+  if(gameMode==='fluid') return;
   if(running) return;
   const p=posFromEvent(e);
   setSelected(null);
@@ -1204,6 +1257,12 @@ function drawSelection(){
 
 function draw(){
   ctx.clearRect(0,0,width,height);
+
+  if(gameMode==='fluid'){
+    drawFluid();
+    return;
+  }
+
   ctx.fillStyle='rgba(255,255,255,.08)';ctx.fillRect(0,height-5,width,5);
 
   objects.forEach(o=>{
@@ -1228,6 +1287,11 @@ function draw(){
 }
 
 function update(dt){
+  if(gameMode==='fluid'){
+    updateFluid(dt);
+    return;
+  }
+
   if(!running) return;
   const ball=objects.find(o=>o.type==='ball');
   if(ball) updateBall(ball,dt);
@@ -1252,6 +1316,17 @@ function setMode(mode){
   document.getElementById('sandboxModeBtn').classList.toggle('active',mode==='sandbox');
   document.getElementById('puzzleModeBtn').classList.toggle('active',mode==='puzzle');
   document.getElementById('challengeModeBtn').classList.toggle('active',mode==='challenge');
+  document.getElementById('fluidModeBtn').classList.toggle('active',mode==='fluid');
+
+  document.getElementById('tray').style.display=mode==='fluid'?'none':'grid';
+  document.getElementById('fluidTray').classList.toggle('show',mode==='fluid');
+  document.getElementById('selectionPanel').classList.remove('show');
+  document.getElementById('runBtn').style.display=mode==='fluid'?'none':'inline-block';
+  document.getElementById('undoBtn').style.display=mode==='fluid'?'none':'inline-block';
+  document.getElementById('redoBtn').style.display=mode==='fluid'?'none':'inline-block';
+  document.getElementById('saveBtn').style.display=mode==='fluid'?'none':'inline-block';
+  document.getElementById('loadBtn').style.display=mode==='fluid'?'none':'inline-block';
+  document.getElementById('clearBtn').style.display=mode==='fluid'?'none':'inline-block';
 
   if(mode==='sandbox'){
     currentPuzzleIndex=-1;
@@ -1272,6 +1347,14 @@ function setMode(mode){
     document.getElementById('modeLabel').textContent='Challenge Mode';
     document.getElementById('goalText').textContent='Challenge: '+activeChallenge.text;
     defaultMachine();
+  }
+
+  if(mode==='fluid'){
+    currentPuzzleIndex=-1;
+    activeChallenge=null;
+    document.getElementById('modeLabel').textContent='Fluid Physics';
+    document.getElementById('status').textContent='Explore how water flows, fills, floats, sinks, and makes things move.';
+    setFluidActivity('fill');
   }
 
   updateBudget();
@@ -1301,6 +1384,7 @@ function startPuzzle(index){
   document.getElementById('sandboxModeBtn').classList.remove('active');
   document.getElementById('puzzleModeBtn').classList.add('active');
   document.getElementById('challengeModeBtn').classList.remove('active');
+  document.getElementById('fluidModeBtn').classList.remove('active');
 
   objects=p.setup();
   history=[];
@@ -1400,6 +1484,7 @@ document.getElementById('tutorialBtn').addEventListener('click',openTutorial);
 document.getElementById('sandboxModeBtn').addEventListener('click',()=>setMode('sandbox'));
 document.getElementById('puzzleModeBtn').addEventListener('click',()=>setMode('puzzle'));
 document.getElementById('challengeModeBtn').addEventListener('click',()=>setMode('challenge'));
+document.getElementById('fluidModeBtn').addEventListener('click',()=>setMode('fluid'));
 document.getElementById('closePuzzleBtn').addEventListener('click',()=>{
   document.getElementById('puzzleOverlay').classList.remove('open');
   if(currentPuzzleIndex<0){
@@ -1430,6 +1515,439 @@ document.getElementById('nextPuzzleBtn').addEventListener('click',()=>{
     setMode('challenge');
   }
 });
+
+
+function resetFluidScene(){
+  fluidParticles=[];
+  fluidObjects=[];
+  fluidRunning=false;
+  fluidGateOpen=false;
+  fluidWheelAngle=0;
+  fluidWheelSpeed=0;
+  fluidFill=0;
+  fluidSuccess=false;
+  updateFluidActionLabel();
+}
+
+function setFluidActivity(activity){
+  fluidActivity=activity;
+  resetFluidScene();
+
+  document.querySelectorAll('.fluidButton[data-fluid]').forEach(btn=>{
+    btn.classList.toggle('active',btn.dataset.fluid===activity);
+  });
+
+  const objectBtn=document.getElementById('fluidObjectBtn');
+  objectBtn.style.display=activity==='float'?'block':'none';
+
+  if(activity==='fill'){
+    document.getElementById('goalText').textContent='Fluid Physics: Fill the container to the target line.';
+    document.getElementById('status').textContent='Turn on the water and watch the container fill.';
+  }
+  if(activity==='pipes'){
+    document.getElementById('goalText').textContent='Fluid Physics: Pump water through the pipe into the tank.';
+    document.getElementById('status').textContent='Start the pump and follow the water through the pipe.';
+  }
+  if(activity==='dam'){
+    document.getElementById('goalText').textContent='Fluid Physics: Open and close the dam gate to control the canal.';
+    document.getElementById('status').textContent='Release the reservoir into the canal.';
+  }
+  if(activity==='wheel'){
+    document.getElementById('goalText').textContent='Fluid Physics: Use flowing water to spin the water wheel.';
+    document.getElementById('status').textContent='Start the water and watch energy turn the wheel.';
+  }
+  if(activity==='float'){
+    document.getElementById('goalText').textContent='Fluid Physics: Compare objects that float and sink.';
+    document.getElementById('status').textContent='Add wood, plastic, metal, and rock to compare buoyancy.';
+  }
+
+  updateFluidActionLabel();
+}
+
+function updateFluidActionLabel(){
+  const btn=document.getElementById('fluidActionBtn');
+
+  if(fluidActivity==='dam'){
+    btn.querySelector('.icon').textContent=fluidGateOpen?'🚧':'🌊';
+    btn.lastChild.textContent=fluidGateOpen?' Close Gate':' Open Gate';
+    return;
+  }
+
+  btn.querySelector('.icon').textContent=fluidRunning?'⏸️':'💧';
+  btn.lastChild.textContent=fluidRunning?' Stop Water':' Start Water';
+}
+
+function spawnWater(x,y,vx=0,vy=0,count=1){
+  for(let i=0;i<count;i++){
+    fluidParticles.push({
+      x:x+(Math.random()-.5)*8,
+      y:y+(Math.random()-.5)*6,
+      vx:vx+(Math.random()-.5)*24,
+      vy:vy+Math.random()*20,
+      r:3+Math.random()*2,
+      age:0
+    });
+  }
+  if(fluidParticles.length>900){
+    fluidParticles.splice(0,fluidParticles.length-900);
+  }
+}
+
+function updateFluid(dt){
+  if(gameMode!=='fluid') return;
+
+  if(fluidActivity==='fill'&&fluidRunning){
+    spawnWater(width*.5,55,0,15,3);
+  }
+
+  if(fluidActivity==='pipes'&&fluidRunning){
+    spawnWater(80,85,150,15,3);
+  }
+
+  if(fluidActivity==='dam'&&fluidGateOpen){
+    spawnWater(width*.32,Math.max(120,height*.42),170,20,4);
+  }
+
+  if(fluidActivity==='wheel'&&fluidRunning){
+    spawnWater(width*.42,55,40,10,3);
+  }
+
+  fluidParticles.forEach(p=>{
+    p.age+=dt;
+    p.vy+=420*dt;
+    p.x+=p.vx*dt;
+    p.y+=p.vy*dt;
+
+    if(fluidActivity==='pipes'){
+      const topY=Math.min(160,height*.30);
+      const pipeBottom=Math.min(height-130,topY+150);
+
+      if(p.x>75&&p.x<width*.58&&p.y>topY-14&&p.y<topY+18){
+        p.y=topY;
+        p.vy*=.05;
+        p.vx=Math.max(120,p.vx);
+      }
+      if(p.x>width*.56&&p.x<width*.60&&p.y<pipeBottom){
+        p.x=width*.58;
+        p.vx*=.1;
+        p.vy=Math.max(120,p.vy);
+      }
+      if(p.y>pipeBottom&&p.x>width*.56){
+        p.vx=85;
+      }
+    }
+
+    if(fluidActivity==='dam'){
+      const canalY=Math.max(170,height*.55);
+      if(p.y>canalY){
+        p.y=canalY;
+        p.vy*=.08;
+        p.vx*=.995;
+      }
+    }
+
+    if(fluidActivity==='wheel'){
+      const wx=width*.58,wy=Math.min(height*.62,260);
+      const d=Math.hypot(p.x-wx,p.y-wy);
+      if(d<66){
+        fluidWheelSpeed+=.9*dt;
+        p.vx+=80;
+        p.vy*=.4;
+      }
+    }
+
+    if(fluidActivity==='fill'){
+      const box={x:width*.35,y:height*.50,w:width*.30,h:Math.min(190,height*.35)};
+      const inside=p.x>box.x&&p.x<box.x+box.w&&p.y>box.y;
+      if(inside&&p.y>box.y+box.h-fluidFill){
+        p.y=box.y+box.h-fluidFill;
+        p.vy=0;
+        p.vx*=.7;
+      }
+
+      if(inside&&p.y>box.y+box.h-8){
+        fluidFill=Math.min(box.h*.88,fluidFill+2.2);
+      }
+
+      if(!fluidSuccess&&fluidFill>=box.h*.68){
+        fluidSuccess=true;
+        fluidRunning=false;
+        document.getElementById('status').textContent='Success! You filled the container to the target line.';
+        launchConfetti();
+        tone(660,.18,'sine',.07);
+        tone(880,.28,'sine',.05,.08);
+        updateFluidActionLabel();
+      }
+    }
+
+    if(p.y>height+30||p.x>width+80||p.x<-80){
+      p.dead=true;
+    }
+  });
+
+  fluidParticles=fluidParticles.filter(p=>!p.dead&&p.age<10);
+
+  fluidObjects.forEach(o=>{
+    if(o.settled) return;
+    o.vy+=420*dt;
+    o.y+=o.vy*dt;
+
+    const waterTop=height*.58;
+    const tankBottom=height-18;
+
+    if(o.y>waterTop){
+      if(o.density<1){
+        const target=waterTop+20;
+        o.vy+=(target-o.y)*5*dt;
+        o.vy*=.94;
+        if(Math.abs(o.y-target)<3&&Math.abs(o.vy)<8){
+          o.y=target;
+          o.vy=0;
+          o.settled=true;
+          o.result='FLOATS';
+        }
+      }else{
+        o.vy*=.98;
+        if(o.y>tankBottom-18){
+          o.y=tankBottom-18;
+          o.vy=0;
+          o.settled=true;
+          o.result='SINKS';
+        }
+      }
+    }
+  });
+
+  fluidWheelSpeed*=.992;
+  fluidWheelAngle+=fluidWheelSpeed;
+}
+
+function drawWaterParticles(){
+  ctx.fillStyle='rgba(68,175,255,.78)';
+  fluidParticles.forEach(p=>{
+    ctx.beginPath();
+    ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+    ctx.fill();
+  });
+}
+
+function drawFluid(){
+  ctx.fillStyle='#102535';
+  ctx.fillRect(0,0,width,height);
+
+  const grd=ctx.createLinearGradient(0,0,0,height);
+  grd.addColorStop(0,'#18384a');
+  grd.addColorStop(1,'#0e2230');
+  ctx.fillStyle=grd;
+  ctx.fillRect(0,0,width,height);
+
+  ctx.fillStyle='rgba(255,255,255,.05)';
+  for(let x=0;x<width;x+=40) ctx.fillRect(x,0,1,height);
+  for(let y=0;y<height;y+=40) ctx.fillRect(0,y,width,1);
+
+  if(fluidActivity==='fill') drawFillScene();
+  if(fluidActivity==='pipes') drawPipesScene();
+  if(fluidActivity==='dam') drawDamScene();
+  if(fluidActivity==='wheel') drawWheelScene();
+  if(fluidActivity==='float') drawFloatScene();
+
+  drawWaterParticles();
+}
+
+function drawFillScene(){
+  const box={x:width*.35,y:height*.50,w:width*.30,h:Math.min(190,height*.35)};
+
+  ctx.strokeStyle='#d9edf8';
+  ctx.lineWidth=6;
+  ctx.strokeRect(box.x,box.y,box.w,box.h);
+
+  if(fluidFill>0){
+    ctx.fillStyle='rgba(46,157,230,.58)';
+    ctx.fillRect(box.x+3,box.y+box.h-fluidFill,box.w-6,fluidFill-3);
+  }
+
+  ctx.setLineDash([8,7]);
+  ctx.strokeStyle='#f4c542';
+  ctx.lineWidth=3;
+  ctx.beginPath();
+  ctx.moveTo(box.x+5,box.y+box.h-box.h*.68);
+  ctx.lineTo(box.x+box.w-5,box.y+box.h-box.h*.68);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  ctx.fillStyle='#fff';
+  ctx.font='bold 16px Arial';
+  ctx.fillText('TARGET',box.x+box.w+12,box.y+box.h-box.h*.68+5);
+
+  ctx.fillStyle='#a9d8f5';
+  ctx.fillRect(width*.5-7,20,14,42);
+  ctx.fillStyle='#fff';
+  ctx.font='bold 18px Arial';
+  ctx.textAlign='center';
+  ctx.fillText('Faucet',width*.5,18);
+  ctx.textAlign='left';
+}
+
+function drawPipesScene(){
+  const topY=Math.min(160,height*.30);
+  const rightX=width*.58;
+  const bottomY=Math.min(height-130,topY+150);
+
+  ctx.strokeStyle='#a8bbc8';
+  ctx.lineWidth=28;
+  ctx.lineCap='round';
+  ctx.beginPath();
+  ctx.moveTo(72,topY);
+  ctx.lineTo(rightX,topY);
+  ctx.lineTo(rightX,bottomY);
+  ctx.lineTo(width*.76,bottomY);
+  ctx.stroke();
+
+  ctx.strokeStyle='#536775';
+  ctx.lineWidth=16;
+  ctx.stroke();
+
+  ctx.fillStyle='#6e9fba';
+  ctx.fillRect(35,topY-38,75,76);
+  ctx.fillStyle='#fff';
+  ctx.font='bold 15px Arial';
+  ctx.fillText('PUMP',47,topY+5);
+
+  const tankX=width*.73,tankY=bottomY+18,tankW=Math.min(180,width*.22),tankH=Math.min(150,height-bottomY-32);
+  ctx.strokeStyle='#d9edf8';
+  ctx.lineWidth=5;
+  ctx.strokeRect(tankX,tankY,tankW,tankH);
+
+  ctx.fillStyle='#fff';
+  ctx.fillText('Tank',tankX+8,tankY-10);
+}
+
+function drawDamScene(){
+  const waterY=Math.max(120,height*.34);
+  const canalY=Math.max(170,height*.55);
+
+  ctx.fillStyle='rgba(44,142,215,.62)';
+  ctx.fillRect(0,waterY,width*.32,height-waterY);
+
+  ctx.fillStyle='#777f87';
+  ctx.fillRect(width*.30,waterY-35,36,height-waterY+35);
+
+  if(fluidGateOpen){
+    ctx.clearRect(width*.30,canalY-34,36,70);
+    ctx.fillStyle='rgba(44,142,215,.55)';
+    ctx.fillRect(width*.32,canalY,width*.68,70);
+  }else{
+    ctx.fillStyle='#c6cbd0';
+    ctx.fillRect(width*.30,canalY-35,36,70);
+  }
+
+  ctx.fillStyle='#715a43';
+  ctx.fillRect(width*.32,canalY+70,width*.68,16);
+
+  ctx.fillStyle='#fff';
+  ctx.font='bold 18px Arial';
+  ctx.fillText('Reservoir',24,waterY-14);
+  ctx.fillText(fluidGateOpen?'Gate OPEN':'Gate CLOSED',width*.34,canalY-14);
+  ctx.fillText('Canal',width*.68,canalY+58);
+}
+
+function drawWheelScene(){
+  const wx=width*.58,wy=Math.min(height*.62,260),r=58;
+
+  ctx.strokeStyle='#b98446';
+  ctx.lineWidth=10;
+  ctx.beginPath();
+  ctx.arc(wx,wy,r,0,Math.PI*2);
+  ctx.stroke();
+
+  ctx.save();
+  ctx.translate(wx,wy);
+  ctx.rotate(fluidWheelAngle);
+  ctx.strokeStyle='#d7a75f';
+  ctx.lineWidth=8;
+  for(let i=0;i<8;i++){
+    ctx.rotate(Math.PI/4);
+    ctx.beginPath();
+    ctx.moveTo(0,0);
+    ctx.lineTo(r,0);
+    ctx.stroke();
+  }
+  ctx.restore();
+
+  ctx.fillStyle='#a9d8f5';
+  ctx.fillRect(width*.42-7,20,14,45);
+
+  ctx.fillStyle='#fff';
+  ctx.font='bold 17px Arial';
+  ctx.fillText('Water Wheel',wx-r,wy+r+32);
+  ctx.fillText('Flowing water transfers energy and makes the wheel rotate.',Math.max(20,width*.22),height-28);
+}
+
+function drawFloatScene(){
+  const waterTop=height*.58;
+
+  ctx.fillStyle='rgba(43,145,217,.58)';
+  ctx.fillRect(width*.18,waterTop,width*.64,height-waterTop-8);
+
+  ctx.strokeStyle='#d9edf8';
+  ctx.lineWidth=5;
+  ctx.strokeRect(width*.18,waterTop,width*.64,height-waterTop-8);
+
+  ctx.fillStyle='#fff';
+  ctx.font='bold 18px Arial';
+  ctx.fillText('Water',width*.20,waterTop-12);
+
+  fluidObjects.forEach(o=>{
+    ctx.font='34px Arial';
+    ctx.textAlign='center';
+    ctx.fillText(o.emoji,o.x,o.y);
+
+    ctx.font='bold 13px Arial';
+    ctx.fillStyle=o.result==='FLOATS'?'#7ee48d':o.result==='SINKS'?'#ff8989':'#fff';
+    ctx.fillText(o.name+(o.result?' — '+o.result:''),o.x,o.y+30);
+    ctx.fillStyle='#fff';
+  });
+  ctx.textAlign='left';
+}
+
+function addFloatObject(){
+  if(fluidActivity!=='float') return;
+
+  const material=fluidMaterials[floatObjectIndex%fluidMaterials.length];
+  floatObjectIndex++;
+
+  fluidObjects.push({
+    ...material,
+    x:width*.32+((floatObjectIndex-1)%4)*width*.12,
+    y:75,
+    vy:0,
+    settled:false,
+    result:''
+  });
+
+  document.getElementById('status').textContent=material.name+' added. Watch whether it floats or sinks.';
+  document.getElementById('fluidObjectBtn').lastChild.textContent=' Add '+fluidMaterials[floatObjectIndex%fluidMaterials.length].name;
+}
+
+document.querySelectorAll('.fluidButton[data-fluid]').forEach(btn=>{
+  btn.addEventListener('click',()=>setFluidActivity(btn.dataset.fluid));
+});
+
+document.getElementById('fluidActionBtn').addEventListener('click',()=>{
+  ensureAudio();
+
+  if(fluidActivity==='dam'){
+    fluidGateOpen=!fluidGateOpen;
+    fluidRunning=fluidGateOpen;
+  }else{
+    fluidRunning=!fluidRunning;
+  }
+
+  updateFluidActionLabel();
+});
+
+document.getElementById('fluidObjectBtn').addEventListener('click',addFloatObject);
+document.getElementById('fluidResetBtn').addEventListener('click',()=>setFluidActivity(fluidActivity));
 
 defaultMachine();
 
