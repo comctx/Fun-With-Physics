@@ -1,0 +1,1608 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rube Goldberg Creator</title>
+
+<style>
+*{
+  box-sizing:border-box;
+}
+
+body{
+  margin:0;
+  font-family:Arial,Helvetica,sans-serif;
+  background:#181d24;
+  color:white;
+  overflow:hidden;
+}
+
+#app{
+  height:100vh;
+  display:flex;
+  flex-direction:column;
+}
+
+header{
+  min-height:64px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  padding:10px 14px;
+  background:#242b35;
+  border-bottom:1px solid #3a4350;
+}
+
+header h1{
+  margin:0;
+  font-size:22px;
+}
+
+#status{
+  font-size:13px;
+  color:#cbd6e3;
+}
+
+.topButtons{
+  display:flex;
+  gap:8px;
+}
+
+button{
+  border:1px solid #4d5968;
+  background:#303946;
+  color:white;
+  border-radius:10px;
+  padding:10px 13px;
+  font-weight:700;
+  cursor:pointer;
+}
+
+button:active{
+  transform:scale(.97);
+}
+
+.run{
+  background:#168c4a;
+}
+
+.reset{
+  background:#8a3940;
+}
+
+#workspace{
+  flex:1;
+  position:relative;
+  overflow:hidden;
+}
+
+canvas{
+  display:block;
+  width:100%;
+  height:100%;
+  touch-action:none;
+  background:
+    linear-gradient(#27303a 1px, transparent 1px),
+    linear-gradient(90deg,#27303a 1px, transparent 1px),
+    #1d232b;
+  background-size:40px 40px;
+}
+
+#scoreBox{
+  position:absolute;
+  top:12px;
+  left:12px;
+  background:rgba(20,25,31,.86);
+  border:1px solid #475361;
+  border-radius:12px;
+  padding:10px 12px;
+  pointer-events:none;
+}
+
+#scoreBox strong{
+  display:block;
+  font-size:15px;
+}
+
+#scoreBox span{
+  font-size:12px;
+  color:#c8d1dd;
+}
+
+#tray{
+  display:grid;
+  grid-template-columns:repeat(9,minmax(74px,1fr));
+  gap:7px;
+  padding:8px;
+  background:#242b35;
+  border-top:1px solid #3a4350;
+  overflow-x:auto;
+}
+
+.partButton{
+  min-width:76px;
+  min-height:58px;
+  padding:7px 4px;
+  font-size:12px;
+  text-align:center;
+  background:#303946;
+}
+
+.partButton .icon{
+  display:block;
+  font-size:23px;
+  margin-bottom:3px;
+}
+
+@media(max-width:800px){
+  header{
+    flex-wrap:wrap;
+  }
+
+  header h1{
+    font-size:18px;
+  }
+
+  #tray{
+    grid-template-columns:repeat(9,86px);
+  }
+}
+</style>
+</head>
+
+<body>
+
+<div id="app">
+
+<header>
+  <div>
+    <h1>⚙️ Rube Goldberg Creator</h1>
+    <div id="status">Build something ridiculous. Get the ball to ring the bell.</div>
+  </div>
+
+  <div class="topButtons">
+    <button id="undoBtn">↶ Undo</button>
+    <button id="clearBtn">Clear</button>
+    <button id="runBtn" class="run">▶ RUN</button>
+    <button id="resetBtn" class="reset">Reset</button>
+  </div>
+</header>
+
+<div id="workspace">
+  <canvas id="game"></canvas>
+
+  <div id="scoreBox">
+    <strong id="score">Absurdity Score: 0</strong>
+    <span id="pieceCount">Pieces: 0</span>
+  </div>
+</div>
+
+<div id="tray">
+
+  <button class="partButton" data-part="ball">
+    <span class="icon">🔴</span>
+    Ball
+  </button>
+
+  <button class="partButton" data-part="ramp">
+    <span class="icon">📐</span>
+    Ramp
+  </button>
+
+  <button class="partButton" data-part="domino">
+    <span class="icon">▮</span>
+    Domino
+  </button>
+
+  <button class="partButton" data-part="spring">
+    <span class="icon">🌀</span>
+    Spring
+  </button>
+
+  <button class="partButton" data-part="fan">
+    <span class="icon">🌀</span>
+    Fan
+  </button>
+
+  <button class="partButton" data-part="magnet">
+    <span class="icon">🧲</span>
+    Magnet
+  </button>
+
+  <button class="partButton" data-part="pendulum">
+    <span class="icon">🕰️</span>
+    Pendulum
+  </button>
+
+  <button class="partButton" data-part="blast">
+    <span class="icon">💥</span>
+    Blast
+  </button>
+
+  <button class="partButton" data-part="bell">
+    <span class="icon">🔔</span>
+    Bell
+  </button>
+
+</div>
+
+</div>
+
+<script>
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+
+let width = 0;
+let height = 0;
+
+let objects = [];
+let history = [];
+
+let running = false;
+let won = false;
+
+let selected = null;
+let dragging = false;
+let dragOffsetX = 0;
+let dragOffsetY = 0;
+
+let lastTime = performance.now();
+
+const gravity = 700;
+
+function resize(){
+  const rect = canvas.getBoundingClientRect();
+  width = rect.width;
+  height = rect.height;
+
+  canvas.width = Math.floor(width * devicePixelRatio);
+  canvas.height = Math.floor(height * devicePixelRatio);
+
+  ctx.setTransform(
+    devicePixelRatio,
+    0,
+    0,
+    devicePixelRatio,
+    0,
+    0
+  );
+}
+
+window.addEventListener("resize",resize);
+resize();
+
+function makeObject(type,x,y){
+
+  const base = {
+    id:Date.now()+Math.random(),
+    type,
+    x,
+    y,
+    angle:0,
+    vx:0,
+    vy:0,
+    active:true
+  };
+
+  if(type==="ball"){
+    return {
+      ...base,
+      radius:16,
+      movable:true
+    };
+  }
+
+  if(type==="ramp"){
+    return {
+      ...base,
+      width:120,
+      height:14,
+      angle:-0.25
+    };
+  }
+
+  if(type==="domino"){
+    return {
+      ...base,
+      width:16,
+      height:58,
+      falling:false,
+      angularVelocity:0
+    };
+  }
+
+  if(type==="spring"){
+    return {
+      ...base,
+      width:55,
+      height:20,
+      compressed:false
+    };
+  }
+
+  if(type==="fan"){
+    return {
+      ...base,
+      radius:28,
+      direction:1
+    };
+  }
+
+  if(type==="magnet"){
+    return {
+      ...base,
+      radius:28,
+      strength:700
+    };
+  }
+
+  if(type==="pendulum"){
+    return {
+      ...base,
+      length:100,
+      swing:0.65,
+      velocity:0
+    };
+  }
+
+  if(type==="blast"){
+    return {
+      ...base,
+      radius:26,
+      triggered:false
+    };
+  }
+
+  if(type==="bell"){
+    return {
+      ...base,
+      width:50,
+      height:60,
+      rung:false
+    };
+  }
+
+  return base;
+}
+
+function defaultMachine(){
+
+  objects = [];
+
+  objects.push(
+    makeObject("ball",80,100)
+  );
+
+  const ramp = makeObject(
+    "ramp",
+    170,
+    180
+  );
+
+  ramp.angle = .22;
+  objects.push(ramp);
+
+  const bell = makeObject(
+    "bell",
+    width-90,
+    height-100
+  );
+
+  objects.push(bell);
+
+  updateScore();
+}
+
+defaultMachine();
+
+function addPart(type){
+
+  if(running) return;
+
+  history.push(
+    JSON.stringify(objects)
+  );
+
+  let x = width/2;
+  let y = height/2;
+
+  if(type==="ball"){
+    const existing =
+      objects.find(o=>o.type==="ball");
+
+    if(existing){
+      document.getElementById("status")
+        .textContent =
+        "Only one main ball is needed.";
+      return;
+    }
+  }
+
+  if(type==="bell"){
+    const existing =
+      objects.find(o=>o.type==="bell");
+
+    if(existing){
+      document.getElementById("status")
+        .textContent =
+        "You already have a bell.";
+      return;
+    }
+  }
+
+  objects.push(
+    makeObject(type,x,y)
+  );
+
+  updateScore();
+}
+
+document
+.querySelectorAll(".partButton")
+.forEach(button=>{
+
+  button.addEventListener("click",()=>{
+    addPart(button.dataset.part);
+  });
+
+});
+
+function updateScore(){
+
+  const count = objects.length;
+
+  let absurdity = 0;
+
+  objects.forEach(o=>{
+
+    if(o.type==="domino") absurdity += 8;
+    if(o.type==="spring") absurdity += 14;
+    if(o.type==="fan") absurdity += 18;
+    if(o.type==="magnet") absurdity += 22;
+    if(o.type==="pendulum") absurdity += 25;
+    if(o.type==="blast") absurdity += 30;
+    if(o.type==="ramp") absurdity += 5;
+
+  });
+
+  if(count>10){
+    absurdity +=
+      (count-10)*5;
+  }
+
+  document.getElementById("score")
+    .textContent =
+    "Absurdity Score: "+absurdity;
+
+  document.getElementById("pieceCount")
+    .textContent =
+    "Pieces: "+count;
+}
+
+function pointerPosition(e){
+
+  const rect =
+    canvas.getBoundingClientRect();
+
+  const p =
+    e.touches
+    ? e.touches[0]
+    : e;
+
+  return {
+    x:p.clientX-rect.left,
+    y:p.clientY-rect.top
+  };
+}
+
+function hitTest(o,x,y){
+
+  if(o.type==="ball"){
+    return (
+      Math.hypot(
+        x-o.x,
+        y-o.y
+      ) < 26
+    );
+  }
+
+  if(
+    o.type==="fan" ||
+    o.type==="magnet" ||
+    o.type==="blast"
+  ){
+    return (
+      Math.hypot(
+        x-o.x,
+        y-o.y
+      ) < 38
+    );
+  }
+
+  if(o.type==="pendulum"){
+    return (
+      Math.hypot(
+        x-o.x,
+        y-o.y
+      ) < 40
+    );
+  }
+
+  return (
+    x>o.x-60 &&
+    x<o.x+60 &&
+    y>o.y-60 &&
+    y<o.y+60
+  );
+}
+
+function pointerDown(e){
+
+  if(running) return;
+
+  const p =
+    pointerPosition(e);
+
+  selected = null;
+
+  for(
+    let i=objects.length-1;
+    i>=0;
+    i--
+  ){
+
+    if(hitTest(
+      objects[i],
+      p.x,
+      p.y
+    )){
+      selected =
+        objects[i];
+
+      dragging = true;
+
+      dragOffsetX =
+        p.x-selected.x;
+
+      dragOffsetY =
+        p.y-selected.y;
+
+      history.push(
+        JSON.stringify(objects)
+      );
+
+      break;
+    }
+  }
+}
+
+function pointerMove(e){
+
+  if(
+    !dragging ||
+    !selected ||
+    running
+  ) return;
+
+  const p =
+    pointerPosition(e);
+
+  selected.x =
+    p.x-dragOffsetX;
+
+  selected.y =
+    p.y-dragOffsetY;
+}
+
+function pointerUp(){
+  dragging=false;
+}
+
+canvas.addEventListener(
+  "mousedown",
+  pointerDown
+);
+
+canvas.addEventListener(
+  "mousemove",
+  pointerMove
+);
+
+window.addEventListener(
+  "mouseup",
+  pointerUp
+);
+
+canvas.addEventListener(
+  "touchstart",
+  e=>{
+    e.preventDefault();
+    pointerDown(e);
+  },
+  {passive:false}
+);
+
+canvas.addEventListener(
+  "touchmove",
+  e=>{
+    e.preventDefault();
+    pointerMove(e);
+  },
+  {passive:false}
+);
+
+canvas.addEventListener(
+  "touchend",
+  pointerUp
+);
+
+canvas.addEventListener(
+  "dblclick",
+  e=>{
+
+    if(running) return;
+
+    const p =
+      pointerPosition(e);
+
+    for(
+      let i=objects.length-1;
+      i>=0;
+      i--
+    ){
+
+      const o =
+        objects[i];
+
+      if(hitTest(o,p.x,p.y)){
+
+        if(o.type==="ramp"){
+          o.angle += Math.PI/8;
+        }
+
+        if(o.type==="fan"){
+          o.direction *= -1;
+        }
+
+        break;
+      }
+    }
+  }
+);
+
+function startRun(){
+
+  running=true;
+  won=false;
+
+  document.getElementById("status")
+    .textContent =
+    "Machine running...";
+
+  objects.forEach(o=>{
+
+    if(o.type==="ball"){
+      o.vx=0;
+      o.vy=0;
+    }
+
+    if(o.type==="domino"){
+      o.falling=false;
+      o.angle=0;
+      o.angularVelocity=0;
+    }
+
+    if(o.type==="blast"){
+      o.triggered=false;
+    }
+
+    if(o.type==="bell"){
+      o.rung=false;
+    }
+  });
+}
+
+function resetSimulation(){
+
+  running=false;
+  won=false;
+
+  if(history.length){
+    objects =
+      JSON.parse(
+        history[history.length-1]
+      );
+  }
+
+  document.getElementById("status")
+    .textContent =
+    "Build something ridiculous.";
+
+  updateScore();
+}
+
+function groundCollision(ball){
+
+  if(
+    ball.y+ball.radius >
+    height-5
+  ){
+    ball.y =
+      height-5-ball.radius;
+
+    ball.vy *= -.52;
+
+    ball.vx *= .97;
+  }
+
+  if(
+    ball.x-ball.radius<0
+  ){
+    ball.x=ball.radius;
+    ball.vx*=-.6;
+  }
+
+  if(
+    ball.x+ball.radius>width
+  ){
+    ball.x=
+      width-ball.radius;
+
+    ball.vx*=-.6;
+  }
+}
+
+function rampCollision(ball,ramp){
+
+  const cos =
+    Math.cos(ramp.angle);
+
+  const sin =
+    Math.sin(ramp.angle);
+
+  const dx =
+    ball.x-ramp.x;
+
+  const dy =
+    ball.y-ramp.y;
+
+  const localX =
+    dx*cos+
+    dy*sin;
+
+  const localY =
+    -dx*sin+
+    dy*cos;
+
+  if(
+    Math.abs(localX)
+      < ramp.width/2 &&
+    localY >
+      -ball.radius-8 &&
+    localY <
+      ball.radius
+  ){
+
+    const normalX =
+      -sin;
+
+    const normalY =
+      cos;
+
+    ball.x +=
+      normalX*
+      (ball.radius-localY);
+
+    ball.y +=
+      normalY*
+      (ball.radius-localY);
+
+    const tangentVelocity =
+      ball.vx*cos+
+      ball.vy*sin;
+
+    ball.vx =
+      tangentVelocity*cos;
+
+    ball.vy =
+      tangentVelocity*sin;
+
+    ball.vx +=
+      Math.cos(ramp.angle)*
+      18;
+
+    ball.vy +=
+      Math.sin(ramp.angle)*
+      18;
+  }
+}
+
+function updateBall(ball,dt){
+
+  ball.vy +=
+    gravity*dt;
+
+  objects.forEach(o=>{
+
+    if(o===ball) return;
+
+    if(o.type==="ramp"){
+      rampCollision(ball,o);
+    }
+
+    if(o.type==="fan"){
+
+      const distance =
+        Math.hypot(
+          ball.x-o.x,
+          ball.y-o.y
+        );
+
+      if(distance<190){
+
+        ball.vx +=
+          o.direction*
+          420*
+          dt;
+
+      }
+    }
+
+    if(o.type==="magnet"){
+
+      const dx =
+        o.x-ball.x;
+
+      const dy =
+        o.y-ball.y;
+
+      const distance =
+        Math.max(
+          35,
+          Math.hypot(dx,dy)
+        );
+
+      if(distance<230){
+
+        const force =
+          o.strength /
+          distance;
+
+        ball.vx +=
+          dx/distance*
+          force*
+          30*
+          dt;
+
+        ball.vy +=
+          dy/distance*
+          force*
+          30*
+          dt;
+      }
+    }
+
+    if(o.type==="spring"){
+
+      if(
+        Math.abs(ball.x-o.x)<38 &&
+        ball.y >
+          o.y-35 &&
+        ball.y <
+          o.y+20 &&
+        ball.vy>0
+      ){
+
+        ball.vy =
+          -650;
+
+        ball.vx +=
+          120;
+
+        o.compressed=true;
+
+        setTimeout(
+          ()=>{
+            o.compressed=false;
+          },
+          180
+        );
+      }
+    }
+
+    if(o.type==="blast"){
+
+      const distance =
+        Math.hypot(
+          ball.x-o.x,
+          ball.y-o.y
+        );
+
+      if(
+        distance<45 &&
+        !o.triggered
+      ){
+
+        o.triggered=true;
+
+        const dx =
+          ball.x-o.x;
+
+        const dy =
+          ball.y-o.y;
+
+        const len =
+          Math.max(
+            1,
+            Math.hypot(dx,dy)
+          );
+
+        ball.vx +=
+          dx/len*600;
+
+        ball.vy +=
+          dy/len*600-300;
+      }
+    }
+
+    if(o.type==="bell"){
+
+      const distance =
+        Math.hypot(
+          ball.x-o.x,
+          ball.y-o.y
+        );
+
+      if(
+        distance<45 &&
+        !o.rung
+      ){
+
+        o.rung=true;
+        winGame();
+      }
+    }
+
+    if(o.type==="domino"){
+
+      if(
+        Math.abs(ball.x-o.x)<28 &&
+        Math.abs(ball.y-o.y)<55
+      ){
+
+        o.falling=true;
+
+        if(
+          ball.x<o.x
+        ){
+          o.angularVelocity=
+            .9;
+        }else{
+          o.angularVelocity=
+            -.9;
+        }
+
+        ball.vx +=
+          o.angularVelocity*
+          80;
+      }
+    }
+
+  });
+
+  ball.x +=
+    ball.vx*dt;
+
+  ball.y +=
+    ball.vy*dt;
+
+  groundCollision(ball);
+}
+
+function updateDominoes(dt){
+
+  const dominoes =
+    objects.filter(
+      o=>o.type==="domino"
+    );
+
+  dominoes.forEach(d=>{
+
+    if(d.falling){
+
+      d.angularVelocity +=
+        Math.sign(
+          d.angularVelocity
+        )*
+        2.2*
+        dt;
+
+      d.angle +=
+        d.angularVelocity*
+        dt;
+
+      if(
+        Math.abs(d.angle)>
+        Math.PI/2
+      ){
+        d.angle =
+          Math.sign(d.angle)*
+          Math.PI/2;
+      }
+
+      dominoes.forEach(other=>{
+
+        if(other===d) return;
+
+        if(
+          Math.abs(
+            other.x-d.x
+          )<48 &&
+          Math.abs(
+            other.y-d.y
+          )<40 &&
+          Math.abs(d.angle)>.45
+        ){
+
+          other.falling=true;
+
+          other.angularVelocity =
+            Math.sign(
+              d.angularVelocity
+            )*.8;
+        }
+
+      });
+
+    }
+
+  });
+}
+
+function updatePendulums(dt){
+
+  objects
+  .filter(
+    o=>o.type==="pendulum"
+  )
+  .forEach(p=>{
+
+    if(!running) return;
+
+    p.velocity +=
+      (-gravity /
+      p.length *
+      Math.sin(p.swing))*
+      dt;
+
+    p.velocity *= .999;
+
+    p.swing +=
+      p.velocity*dt;
+
+    const bx =
+      p.x+
+      Math.sin(p.swing)*
+      p.length;
+
+    const by =
+      p.y+
+      Math.cos(p.swing)*
+      p.length;
+
+    const ball =
+      objects.find(
+        o=>o.type==="ball"
+      );
+
+    if(ball){
+
+      const distance =
+        Math.hypot(
+          ball.x-bx,
+          ball.y-by
+        );
+
+      if(distance<34){
+
+        ball.vx +=
+          Math.cos(
+            p.swing
+          )*
+          p.velocity*
+          250;
+
+        ball.vy +=
+          Math.sin(
+            p.swing
+          )*
+          p.velocity*
+          250;
+      }
+    }
+  });
+}
+
+function winGame(){
+
+  if(won) return;
+
+  won=true;
+  running=false;
+
+  const scoreText =
+    document
+    .getElementById("score")
+    .textContent;
+
+  document
+  .getElementById("status")
+  .textContent =
+  "🔔 DING! Success! "+scoreText;
+
+  flash=1;
+}
+
+let flash=0;
+
+function drawBall(o){
+
+  ctx.beginPath();
+
+  ctx.arc(
+    o.x,
+    o.y,
+    o.radius,
+    0,
+    Math.PI*2
+  );
+
+  ctx.fillStyle="#ff4d4d";
+  ctx.fill();
+
+  ctx.strokeStyle="#fff";
+  ctx.lineWidth=2;
+  ctx.stroke();
+}
+
+function drawRamp(o){
+
+  ctx.save();
+
+  ctx.translate(o.x,o.y);
+  ctx.rotate(o.angle);
+
+  ctx.fillStyle="#c9954d";
+
+  ctx.fillRect(
+    -o.width/2,
+    -o.height/2,
+    o.width,
+    o.height
+  );
+
+  ctx.restore();
+}
+
+function drawDomino(o){
+
+  ctx.save();
+
+  ctx.translate(
+    o.x,
+    o.y
+  );
+
+  ctx.rotate(
+    o.angle
+  );
+
+  ctx.fillStyle="#f2f2f2";
+
+  ctx.fillRect(
+    -o.width/2,
+    -o.height/2,
+    o.width,
+    o.height
+  );
+
+  ctx.fillStyle="#222";
+
+  ctx.beginPath();
+  ctx.arc(0,-13,2.5,0,Math.PI*2);
+  ctx.arc(0,13,2.5,0,Math.PI*2);
+  ctx.fill();
+
+  ctx.restore();
+}
+
+function drawSpring(o){
+
+  ctx.strokeStyle="#efc84a";
+  ctx.lineWidth=4;
+
+  ctx.beginPath();
+
+  const h =
+    o.compressed
+    ? 10
+    : 25;
+
+  for(let i=0;i<=8;i++){
+
+    const x =
+      o.x-25+
+      i*(50/8);
+
+    const y =
+      o.y+
+      Math.sin(
+        i*Math.PI
+      )*
+      h/2;
+
+    if(i===0)
+      ctx.moveTo(x,y);
+    else
+      ctx.lineTo(x,y);
+  }
+
+  ctx.stroke();
+}
+
+function drawFan(o){
+
+  ctx.save();
+
+  ctx.translate(o.x,o.y);
+
+  ctx.fillStyle="#7ac8ff";
+
+  ctx.beginPath();
+  ctx.arc(0,0,24,0,Math.PI*2);
+  ctx.fill();
+
+  ctx.strokeStyle="#fff";
+  ctx.lineWidth=4;
+
+  for(let i=0;i<4;i++){
+
+    ctx.rotate(
+      Math.PI/2
+    );
+
+    ctx.beginPath();
+    ctx.moveTo(0,0);
+    ctx.lineTo(17,0);
+    ctx.stroke();
+  }
+
+  ctx.restore();
+
+  ctx.strokeStyle =
+    "rgba(122,200,255,.22)";
+
+  for(let i=0;i<3;i++){
+
+    ctx.beginPath();
+
+    ctx.moveTo(
+      o.x+
+      o.direction*30,
+      o.y-14+i*14
+    );
+
+    ctx.lineTo(
+      o.x+
+      o.direction*150,
+      o.y-14+i*14
+    );
+
+    ctx.stroke();
+  }
+}
+
+function drawMagnet(o){
+
+  ctx.font="42px Arial";
+  ctx.textAlign="center";
+  ctx.textBaseline="middle";
+
+  ctx.fillText(
+    "🧲",
+    o.x,
+    o.y
+  );
+}
+
+function drawPendulum(o){
+
+  const bx =
+    o.x+
+    Math.sin(o.swing)*
+    o.length;
+
+  const by =
+    o.y+
+    Math.cos(o.swing)*
+    o.length;
+
+  ctx.strokeStyle="#d0d8e0";
+  ctx.lineWidth=3;
+
+  ctx.beginPath();
+  ctx.moveTo(o.x,o.y);
+  ctx.lineTo(bx,by);
+  ctx.stroke();
+
+  ctx.fillStyle="#d1a34f";
+
+  ctx.beginPath();
+  ctx.arc(
+    bx,
+    by,
+    18,
+    0,
+    Math.PI*2
+  );
+  ctx.fill();
+
+  ctx.fillStyle="#aaa";
+
+  ctx.beginPath();
+  ctx.arc(
+    o.x,
+    o.y,
+    7,
+    0,
+    Math.PI*2
+  );
+  ctx.fill();
+}
+
+function drawBlast(o){
+
+  ctx.font =
+    o.triggered
+    ? "56px Arial"
+    : "42px Arial";
+
+  ctx.textAlign="center";
+  ctx.textBaseline="middle";
+
+  ctx.fillText(
+    o.triggered
+      ? "💥"
+      : "🧨",
+    o.x,
+    o.y
+  );
+}
+
+function drawBell(o){
+
+  ctx.save();
+
+  ctx.translate(o.x,o.y);
+
+  if(o.rung){
+    ctx.rotate(
+      Math.sin(
+        performance.now()*.03
+      )*.18
+    );
+  }
+
+  ctx.font="52px Arial";
+  ctx.textAlign="center";
+  ctx.textBaseline="middle";
+
+  ctx.fillText(
+    "🔔",
+    0,
+    0
+  );
+
+  ctx.restore();
+}
+
+function drawSelection(){
+
+  if(
+    !selected ||
+    running
+  ) return;
+
+  ctx.strokeStyle="#55d9ff";
+  ctx.lineWidth=2;
+
+  ctx.setLineDash(
+    [6,5]
+  );
+
+  ctx.beginPath();
+
+  ctx.arc(
+    selected.x,
+    selected.y,
+    38,
+    0,
+    Math.PI*2
+  );
+
+  ctx.stroke();
+
+  ctx.setLineDash([]);
+}
+
+function draw(){
+
+  ctx.clearRect(
+    0,
+    0,
+    width,
+    height
+  );
+
+  ctx.fillStyle=
+    "rgba(255,255,255,.08)";
+
+  ctx.fillRect(
+    0,
+    height-5,
+    width,
+    5
+  );
+
+  objects.forEach(o=>{
+
+    if(o.type==="ball")
+      drawBall(o);
+
+    if(o.type==="ramp")
+      drawRamp(o);
+
+    if(o.type==="domino")
+      drawDomino(o);
+
+    if(o.type==="spring")
+      drawSpring(o);
+
+    if(o.type==="fan")
+      drawFan(o);
+
+    if(o.type==="magnet")
+      drawMagnet(o);
+
+    if(o.type==="pendulum")
+      drawPendulum(o);
+
+    if(o.type==="blast")
+      drawBlast(o);
+
+    if(o.type==="bell")
+      drawBell(o);
+  });
+
+  drawSelection();
+
+  if(flash>0){
+
+    ctx.fillStyle=
+      `rgba(255,220,70,${flash*.35})`;
+
+    ctx.fillRect(
+      0,
+      0,
+      width,
+      height
+    );
+
+    flash-=.03;
+  }
+}
+
+function update(dt){
+
+  if(!running) return;
+
+  const ball =
+    objects.find(
+      o=>o.type==="ball"
+    );
+
+  if(ball){
+    updateBall(
+      ball,
+      dt
+    );
+  }
+
+  updateDominoes(dt);
+  updatePendulums(dt);
+}
+
+function loop(time){
+
+  let dt =
+    (time-lastTime)/1000;
+
+  lastTime=time;
+
+  dt=Math.min(
+    dt,
+    .03
+  );
+
+  update(dt);
+  draw();
+
+  requestAnimationFrame(loop);
+}
+
+requestAnimationFrame(loop);
+
+document
+.getElementById("runBtn")
+.addEventListener(
+  "click",
+  startRun
+);
+
+document
+.getElementById("resetBtn")
+.addEventListener(
+  "click",
+  ()=>{
+    location.reload();
+  }
+);
+
+document
+.getElementById("clearBtn")
+.addEventListener(
+  "click",
+  ()=>{
+
+    if(running) return;
+
+    if(!confirm(
+      "Clear the entire machine?"
+    )) return;
+
+    history.push(
+      JSON.stringify(objects)
+    );
+
+    objects=[];
+
+    updateScore();
+  }
+);
+
+document
+.getElementById("undoBtn")
+.addEventListener(
+  "click",
+  ()=>{
+
+    if(
+      running ||
+      !history.length
+    ) return;
+
+    objects=
+      JSON.parse(
+        history.pop()
+      );
+
+    updateScore();
+  }
+);
+
+</script>
+
+</body>
+</html>
