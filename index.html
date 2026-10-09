@@ -277,6 +277,45 @@ canvas{
 .presetCard h3{margin:0 0 5px;font-size:16px}
 .presetCard p{font-size:13px;margin:4px 0 8px}
 .presetCard button{width:100%}
+.saveSlotGrid{
+  display:grid;
+  grid-template-columns:1fr;
+  gap:9px;
+  margin-top:12px;
+}
+.saveSlot{
+  display:grid;
+  grid-template-columns:minmax(130px,1fr) auto auto auto;
+  gap:7px;
+  align-items:center;
+  padding:10px;
+  border:1px solid #d6dde4;
+  border-radius:12px;
+  background:#f8fafc;
+}
+.saveSlot input{
+  min-width:0;
+  padding:9px 10px;
+  border:1px solid #bcc8d2;
+  border-radius:9px;
+  font:inherit;
+}
+.saveSlot button{
+  min-width:72px;
+  padding:8px 10px;
+}
+.saveSlot .deleteSave{background:#a9424b}
+.saveSlotMeta{
+  grid-column:1/-1;
+  font-size:11px;
+  color:#66727d;
+}
+@media(max-width:620px){
+  .saveSlot{grid-template-columns:1fr 1fr 1fr}
+  .saveSlot input{grid-column:1/-1}
+  .saveSlot button{min-width:0}
+}
+
 .overlay{
   position:absolute;
   inset:0;
@@ -476,8 +515,8 @@ header{
   <div class="topButtons">
     <button id="undoBtn">↶ Undo</button>
     <button id="redoBtn">↷ Redo</button>
-    <button id="saveBtn">💾 Save</button>
-    <button id="loadBtn">📂 Load</button>
+    <button id="saveBtn">💾 Saves</button>
+    <button id="loadBtn">📂 Saved</button>
     <button id="soundBtn">🔊 Sound</button>
     <button id="tutorialBtn">?</button>
     <button id="clearBtn">Clear</button>
@@ -702,6 +741,15 @@ header{
     </div>
   </div>
 
+  <div id="machineSaveOverlay" class="overlay">
+    <div class="modal">
+      <h2>Saved Machines</h2>
+      <p>Keep up to five named Mechanics or Rube Goldberg machines on this device.</p>
+      <div id="machineSaveGrid" class="saveSlotGrid"></div>
+      <div class="actions"><button id="closeMachineSaveBtn">Close</button></div>
+    </div>
+  </div>
+
   <div id="explainOverlay" class="overlay">
     <div class="modal">
       <h2>What Happened?</h2>
@@ -780,6 +828,7 @@ let rubeSteam=[];
 
 const gravity=760;
 const SAVE_KEY='rube_goldberg_creator_machine_v3';
+const MULTI_SAVE_KEY='rube_goldberg_named_machines_v1';
 const FIRST_TUTORIAL_KEY='rube_goldberg_tutorial_seen_v1';
 
 const puzzles=[
@@ -2207,37 +2256,125 @@ document.getElementById('clearBtn').addEventListener('click',()=>{
   updateScore();
 });
 
-document.getElementById('saveBtn').addEventListener('click',()=>{
-  if(running) return;
-  const payload={
-    version:3,
-    savedAt:Date.now(),
-    mode:gameMode,
-    puzzleIndex:currentPuzzleIndex,
-    objects
-  };
-  localStorage.setItem(SAVE_KEY,JSON.stringify(payload));
-  document.getElementById('status').textContent='Machine saved on this device.';
-});
-
-document.getElementById('loadBtn').addEventListener('click',()=>{
-  if(running) return;
-  const raw=localStorage.getItem(SAVE_KEY);
-  if(!raw){
-    document.getElementById('status').textContent='No saved machine yet.';
-    return;
-  }
+function getNamedMachines(){
   try{
-    const payload=JSON.parse(raw);
-    pushHistory();
-    objects=Array.isArray(payload)?payload:payload.objects;
-    if(!Array.isArray(objects)) throw new Error('Bad save');
-    setSelected(null);
-    updateScore();
-    document.getElementById('status').textContent='Saved machine loaded.';
-  }catch(err){
-    document.getElementById('status').textContent='Saved machine could not be loaded.';
+    const data=JSON.parse(localStorage.getItem(MULTI_SAVE_KEY)||'[]');
+    return Array.isArray(data)?data:[];
+  }catch(e){
+    return [];
   }
+}
+
+function setNamedMachines(data){
+  localStorage.setItem(MULTI_SAVE_KEY,JSON.stringify(data));
+}
+
+function machineModeLabel(mode){
+  if(mode==='rube') return 'Rube Goldberg';
+  if(mode==='challenge') return 'Challenge';
+  if(mode==='puzzle') return 'Puzzle';
+  return 'Mechanics';
+}
+
+function renderMachineSaveGrid(){
+  const grid=document.getElementById('machineSaveGrid');
+  const saves=getNamedMachines();
+  grid.innerHTML='';
+
+  for(let i=0;i<5;i++){
+    const entry=saves[i]||null;
+    const slot=document.createElement('div');
+    slot.className='saveSlot';
+
+    const input=document.createElement('input');
+    input.type='text';
+    input.maxLength=32;
+    input.placeholder='Name this machine';
+    input.value=entry?.name||('Machine '+(i+1));
+
+    const save=document.createElement('button');
+    save.textContent=entry?'Overwrite':'Save';
+    save.addEventListener('click',()=>{
+      if(running) return;
+      if(entry&&!confirm('Overwrite "'+(entry.name||('Machine '+(i+1)))+'"?')) return;
+
+      const all=getNamedMachines();
+      while(all.length<5) all.push(null);
+      all[i]={
+        name:(input.value||('Machine '+(i+1))).trim(),
+        savedAt:Date.now(),
+        mode:gameMode,
+        puzzleIndex:currentPuzzleIndex,
+        objects:cloneMachine(objects)
+      };
+      setNamedMachines(all);
+      renderMachineSaveGrid();
+      document.getElementById('status').textContent='Saved "'+all[i].name+'".';
+    });
+
+    const load=document.createElement('button');
+    load.textContent='Load';
+    load.disabled=!entry;
+    load.addEventListener('click',()=>{
+      const all=getNamedMachines();
+      const saved=all[i];
+      if(!saved||!Array.isArray(saved.objects)) return;
+
+      pushHistory();
+      objects=cloneMachine(saved.objects);
+      setSelected(null);
+      mainLastTapId=null;
+      rubeLastTapId=null;
+
+      if(saved.mode==='rube') setMode('rube');
+      else setMode('sandbox');
+
+      // setMode creates a starter layout, so restore the saved objects afterward.
+      objects=cloneMachine(saved.objects);
+      setSelected(null);
+      updateScore();
+
+      document.getElementById('machineSaveOverlay').classList.remove('open');
+      document.getElementById('status').textContent='Loaded "'+(saved.name||('Machine '+(i+1)))+'".';
+    });
+
+    const del=document.createElement('button');
+    del.className='deleteSave';
+    del.textContent='Delete';
+    del.disabled=!entry;
+    del.addEventListener('click',()=>{
+      const all=getNamedMachines();
+      const saved=all[i];
+      if(!saved) return;
+      if(!confirm('Delete "'+(saved.name||('Machine '+(i+1)))+'"?')) return;
+      all[i]=null;
+      setNamedMachines(all);
+      renderMachineSaveGrid();
+      document.getElementById('status').textContent='Saved machine deleted.';
+    });
+
+    const meta=document.createElement('div');
+    meta.className='saveSlotMeta';
+    meta.textContent=entry
+      ?machineModeLabel(entry.mode)+' • '+new Date(entry.savedAt).toLocaleString()
+      :'Empty slot';
+
+    slot.append(input,save,load,del,meta);
+    grid.appendChild(slot);
+  }
+}
+
+function openMachineSaveManager(){
+  if(running) return;
+  renderMachineSaveGrid();
+  document.getElementById('machineSaveOverlay').classList.add('open');
+}
+
+document.getElementById('saveBtn').addEventListener('click',openMachineSaveManager);
+document.getElementById('loadBtn').addEventListener('click',openMachineSaveManager);
+document.getElementById('closeMachineSaveBtn').addEventListener('click',()=>document.getElementById('machineSaveOverlay').classList.remove('open'));
+document.getElementById('machineSaveOverlay').addEventListener('click',e=>{
+  if(e.target===e.currentTarget)e.currentTarget.classList.remove('open');
 });
 
 document.getElementById('soundBtn').addEventListener('click',()=>{
