@@ -2024,14 +2024,26 @@ function updateFluid(dt){
             p.vx*=.72;
           }
         }else if(drainInfo){
-          // Tank has reached the drain level: send incoming water toward the drain instead of overfilling.
-          const d=drainInfo.drain;
-          const pull=Math.min(1,dt*24);
-          p.x+=(d.x-p.x)*pull;
-          p.y+=(d.y-p.y)*pull;
+          // Tank has reached the drain level. Let incoming water fall naturally
+          // all the way down to the current water surface before the drain takes it away.
+          const surfaceLocalY=halfH-o.fill;
 
-          if(Math.hypot(p.x-d.x,p.y-d.y)<(d.r*(d.scale||1))+12){
-            p.dead=true;
+          if(ly>surfaceLocalY){
+            const d=drainInfo.drain;
+            const pull=Math.min(1,dt*18);
+
+            // Once the drop reaches the water surface, carry it toward the drain.
+            const worldSurfaceX=o.x+(lx*s)*Math.cos(a)-(surfaceLocalY*s)*Math.sin(a);
+            const worldSurfaceY=o.y+(lx*s)*Math.sin(a)+(surfaceLocalY*s)*Math.cos(a);
+            p.x+=(worldSurfaceX-p.x)*Math.min(1,dt*12);
+            p.y+=(worldSurfaceY-p.y)*Math.min(1,dt*12);
+
+            p.x+=(d.x-p.x)*pull;
+            p.y+=(d.y-p.y)*pull;
+
+            if(Math.hypot(p.x-d.x,p.y-d.y)<(d.r*(d.scale||1))+12){
+              p.dead=true;
+            }
           }
         }else{
           // No drain is connected: a truly full tank can overflow from the lower top corner.
@@ -2269,7 +2281,15 @@ function drawFluidPart(o){
   if(o.type==='tank'){
     ctx.strokeStyle='#d8eef8';
     ctx.lineWidth=5;
-    ctx.strokeRect(-o.w/2,-o.h/2,o.w,o.h);
+    ctx.lineCap='round';
+
+    // Open-top tank: left wall, bottom, and right wall.
+    ctx.beginPath();
+    ctx.moveTo(-o.w/2,-o.h/2);
+    ctx.lineTo(-o.w/2,o.h/2);
+    ctx.lineTo(o.w/2,o.h/2);
+    ctx.lineTo(o.w/2,-o.h/2);
+    ctx.stroke();
 
     if((o.fill||0)>0){
       ctx.fillStyle='rgba(46,157,230,.62)';
