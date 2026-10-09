@@ -2044,13 +2044,36 @@ function updateFluid(dt){
     if(inTank){
       const b=fluidBounds(inTank);
       const surface=b.y+b.h-(inTank.fill||0);
+      const radius=o.r*(o.scale||1);
+      const bottom=b.y+b.h-radius-4;
+
       if(o.density<1){
-        const target=surface+8;
-        o.vy+=(target-o.y)*4.5*dt;
-        o.vy*=.93;
-      }else if(o.y>b.y+b.h-o.r*(o.scale||1)-4){
-        o.y=b.y+b.h-o.r*(o.scale||1)-4;
-        o.vy=0;
+        // Buoyancy: once the wood is submerged, push it upward strongly.
+        const desiredY=surface+radius*.35;
+        const submersion=Math.max(0,(o.y+radius)-surface);
+
+        if(submersion>0){
+          const buoyancy=(1-o.density)*1500 + submersion*16;
+          o.vy-=buoyancy*dt;
+          o.vy*=.985;
+        }
+
+        // Keep the wood inside the tank while it rises.
+        if(o.y>bottom){
+          o.y=bottom;
+          if(o.vy>0) o.vy=0;
+        }
+
+        // Settle naturally at the surface instead of bobbing forever.
+        if(Math.abs(o.y-desiredY)<6 && Math.abs(o.vy)<45){
+          o.y=desiredY;
+          o.vy=0;
+        }
+      }else{
+        if(o.y>bottom){
+          o.y=bottom;
+          o.vy=0;
+        }
       }
     }else if(o.y>height-o.r*(o.scale||1)-5){
       o.y=height-o.r*(o.scale||1)-5;
