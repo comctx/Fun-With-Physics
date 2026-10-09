@@ -653,6 +653,7 @@ let fluidRunSnapshot=null;
 
 let labObjects=[];
 let labSelected=null;
+let labLastTapId=null;
 let labDragging=false;
 let labDragOffsetX=0;
 let labDragOffsetY=0;
@@ -1183,6 +1184,14 @@ function modifySelected(fn){
     return;
   }
 
+  if(gameMode==='air'||gameMode==='electric'){
+    if(!labSelected) return;
+    fn(labSelected);
+    document.getElementById('status').textContent=
+      labName(labSelected.type)+' adjusted.';
+    return;
+  }
+
   if(running||!selected) return;
   pushHistory();
   fn(selected);
@@ -1196,10 +1205,27 @@ document.getElementById('largerBtn').addEventListener('click',()=>modifySelected
 document.getElementById('flipBtn').addEventListener('click',()=>modifySelected(o=>{
   if(o.type==='fan') o.direction=(o.direction||1)*-1;
   else if(o.type==='pendulum') o.swing*=-1;
+  else if(['wire','battery','switch','bulb','motor','magnet','metalball','balloon','parachute','airjet','wind','dragblock'].includes(o.type)) o.angle=(o.angle||0)+Math.PI;
   else o.angle+=Math.PI;
 }));
 
 document.getElementById('duplicateBtn').addEventListener('click',()=>{
+  if(gameMode==='air'||gameMode==='electric'){
+    if(!labSelected) return;
+    const copy=JSON.parse(JSON.stringify(labSelected));
+    copy.id=labId++;
+    copy.x=Math.min(width-30,copy.x+28);
+    copy.y=Math.min(height-30,copy.y+28);
+    copy.vx=0;copy.vy=0;
+    if(copy.type==='motor') copy.spin=0;
+    labObjects.push(copy);
+    labSelected=copy;
+    document.getElementById('selectionLabel').textContent='Selected: '+labName(copy.type).toUpperCase();
+    document.getElementById('selectionPanel').classList.add('show');
+    document.getElementById('status').textContent=labName(copy.type)+' copied.';
+    return;
+  }
+
   if(gameMode==='fluid'){
     if(!fluidSelected) return;
     const copy=JSON.parse(JSON.stringify(fluidSelected));
@@ -1237,6 +1263,16 @@ document.getElementById('duplicateBtn').addEventListener('click',()=>{
 });
 
 document.getElementById('deleteBtn').addEventListener('click',()=>{
+  if(gameMode==='air'||gameMode==='electric'){
+    if(!labSelected) return;
+    labObjects=labObjects.filter(o=>o.id!==labSelected.id);
+    labSelected=null;
+    labLastTapId=null;
+    document.getElementById('selectionPanel').classList.remove('show');
+    document.getElementById('status').textContent='Lab component deleted.';
+    return;
+  }
+
   if(gameMode==='fluid'){
     if(!fluidSelected) return;
     fluidObjects=fluidObjects.filter(o=>o.id!==fluidSelected.id);
@@ -2127,6 +2163,7 @@ document.getElementById('nextPuzzleBtn').addEventListener('click',()=>{
 function resetLab(){
   labObjects=[];
   labSelected=null;
+  labLastTapId=null;
   labDragging=false;
   labRunning=false;
   document.getElementById('selectionPanel').classList.remove('show');
@@ -2160,6 +2197,8 @@ function addLabPart(type){
   const p=makeLabPart(type,width*.46+(labObjects.length%4)*24,height*.38+(labObjects.length%3)*20);
   labObjects.push(p);
   labSelected=p;
+  labLastTapId=null;
+  document.getElementById('selectionPanel').classList.remove('show');
   document.getElementById('status').textContent=labName(type)+' added. Drag it into place.';
 }
 
@@ -2186,8 +2225,20 @@ function labHit(x,y){
 
 function labPointerStart(e){
   const p=posFromEvent(e),hit=labHit(p.x,p.y);
+
+  if(!hit){
+    labSelected=null;
+    labLastTapId=null;
+    labDragging=false;
+    document.getElementById('selectionPanel').classList.remove('show');
+    return;
+  }
+
+  const wasAlreadySelected=labSelected&&labSelected.id===hit.id;
   labSelected=hit;
-  if(!hit){labDragging=false;return;}
+  hit._showControlsOnTap=wasAlreadySelected&&labLastTapId===hit.id;
+
+  document.getElementById('selectionPanel').classList.remove('show');
   labDragging=true;
   labDragOffsetX=p.x-hit.x;labDragOffsetY=p.y-hit.y;
   hit._sx=p.x;hit._sy=p.y;
@@ -2203,11 +2254,32 @@ function labPointerMove(e){
 
 function labPointerEnd(){
   if(!labSelected||!labDragging){labDragging=false;return;}
-  const moved=Math.hypot((labSelected.x+labDragOffsetX)-(labSelected._sx||0),(labSelected.y+labDragOffsetY)-(labSelected._sy||0));
+
+  const moved=Math.hypot(
+    (labSelected.x+labDragOffsetX)-(labSelected._sx||0),
+    (labSelected.y+labDragOffsetY)-(labSelected._sy||0)
+  );
+
   if(gameMode==='electric'&&labSelected.type==='switch'&&moved<8){
     labSelected.closed=!labSelected.closed;
     document.getElementById('status').textContent='Switch '+(labSelected.closed?'closed: circuit can conduct.':'open: circuit is broken.');
   }
+
+  const showControls=moved<8&&labSelected._showControlsOnTap===true;
+  labLastTapId=labSelected.id;
+
+  if(showControls){
+    document.getElementById('selectionLabel').textContent='Selected: '+labName(labSelected.type).toUpperCase();
+    document.getElementById('selectionPanel').classList.add('show');
+  }else{
+    document.getElementById('selectionPanel').classList.remove('show');
+    if(moved<8&&labSelected.type!=='switch'){
+      document.getElementById('status').textContent=
+        labName(labSelected.type)+' selected. Tap it again for edit controls, or drag to move it.';
+    }
+  }
+
+  labSelected._showControlsOnTap=false;
   labDragging=false;
 }
 
@@ -2279,7 +2351,7 @@ function drawLab(){
   for(let y=0;y<height;y+=40)ctx.fillRect(0,y,width,1);
 
   labObjects.forEach(o=>{
-    ctx.save();ctx.translate(o.x,o.y);
+    ctx.save();ctx.translate(o.x,o.y);ctx.rotate(o.angle||0);ctx.scale(o.scale||1,o.scale||1);
     if(o.type==='balloon'){ctx.fillStyle='#ff6f8d';ctx.beginPath();ctx.ellipse(0,0,23,30,0,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#eee';ctx.beginPath();ctx.moveTo(0,30);ctx.lineTo(0,55);ctx.stroke();}
     if(o.type==='parachute'){ctx.fillStyle='#f5c94e';ctx.beginPath();ctx.arc(0,-12,32,Math.PI,0);ctx.fill();ctx.strokeStyle='#eee';ctx.beginPath();ctx.moveTo(-28,-10);ctx.lineTo(-12,28);ctx.moveTo(28,-10);ctx.lineTo(12,28);ctx.stroke();ctx.fillStyle='#8a5d3b';ctx.fillRect(-13,24,26,18);}
     if(o.type==='airjet'){ctx.fillStyle='#607d8b';ctx.fillRect(-40,-24,80,48);ctx.fillStyle='#a7ebff';ctx.font='bold 12px Arial';ctx.textAlign='center';ctx.fillText('AIR JET',0,4);ctx.fillText('➜',52,5);}
@@ -2301,7 +2373,13 @@ function drawLab(){
     if(o.type==='motor'){ctx.strokeStyle='#aab7c1';ctx.lineWidth=5;ctx.beginPath();ctx.arc(0,0,30,0,Math.PI*2);ctx.stroke();ctx.save();ctx.rotate(o.spin||0);ctx.strokeStyle=o.powered?'#6ee7ff':'#667';for(let i=0;i<4;i++){ctx.rotate(Math.PI/2);ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(25,0);ctx.stroke();}ctx.restore();}
     if(o.type==='magnet'){ctx.fillStyle=o.powered?'#c74d5b':'#6c747b';ctx.fillRect(-45,-26,90,52);ctx.fillStyle='#fff';ctx.font='bold 11px Arial';ctx.textAlign='center';ctx.fillText('ELECTROMAGNET',0,4);}
     if(o.type==='metalball'){ctx.fillStyle='#c2cbd2';ctx.beginPath();ctx.arc(0,0,18,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#fff';ctx.stroke();}
-    if(o===labSelected){const b=labBounds(o);ctx.strokeStyle='#55d9ff';ctx.lineWidth=2;ctx.strokeRect(b.x-o.x-5,b.y-o.y-5,b.w+10,b.h+10);}
+    if(o===labSelected){
+      const lw=o.r?o.r*2:(o.w||60);
+      const lh=o.r?o.r*2:(o.h||50);
+      ctx.strokeStyle='#55d9ff';
+      ctx.lineWidth=2/(o.scale||1);
+      ctx.strokeRect(-lw/2-6,-lh/2-6,lw+12,lh+12);
+    }
     ctx.restore();
   });
 }
