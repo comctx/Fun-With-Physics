@@ -3051,8 +3051,14 @@ function updateSimpleMachines(dt){
     [...balls,...boulders,...crates].forEach(obj=>{
       if(obj.onLeverId!==l.id) return;
       const arm=(obj.leverLocalX||0)-localFulcrum;
-      const mass=obj.mass||1;
-      torque+=mass*(arm/Math.max(30,half));
+      const baseMass=obj.mass||1;
+      const size=obj.scale||1;
+
+      // Bigger loads act heavier in the educational model.
+      // Scale mass with visible area so a larger ball/boulder produces
+      // noticeably more lever torque without becoming uncontrollably strong.
+      const effectiveMass=baseMass*Math.pow(size,2);
+      torque+=effectiveMass*(arm/Math.max(30,half));
     });
 
     // Heavy loads create a visible but controlled pivoting motion.
@@ -3393,7 +3399,7 @@ function explainSimpleMachines(){
   const lever=labObjects.find(o=>o.type==='lever');
   if(lever){
     const f=Math.round((lever.fulcrum||.5)*100);
-    lines.push('Lever: the fulcrum is at about '+f+'% of the beam. The fulcrum stays fixed while the beam pivots around it. A heavier load farther from the fulcrum creates more torque, so that side drops and the opposite side rises.');
+    lines.push('Lever: the fulcrum is at about '+f+'% of the beam. The fulcrum stays fixed while the beam pivots around it. A heavier or larger load farther from the fulcrum creates more torque, so that side drops faster and the opposite side rises.');
   }
   if(labObjects.some(o=>o.type==='pulley1')) lines.push('Single pulley: mainly changes the direction of the pulling force. In this lab its mechanical advantage is about 1×.');
   if(labObjects.some(o=>o.type==='pulley2')) lines.push('Double pulley: shares the load across more supporting rope, increasing mechanical advantage while requiring more rope distance.');
