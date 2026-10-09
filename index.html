@@ -855,7 +855,10 @@ document.getElementById('duplicateBtn').addEventListener('click',()=>{
     copy.y=Math.min(height-20,copy.y+28);
     if(copy.type==='tank') copy.fill=0;
     if(copy.type==='wheel') copy.spin=0;
-    if(copy.type==='wood'||copy.type==='metal') copy.vy=0;
+    if(copy.type==='wood'||copy.type==='metal'){
+      copy.vy=0;
+      copy.held=true;
+    }
     fluidObjects.push(copy);
     setFluidSelected(copy);
     document.getElementById('status').textContent=fluidPartName(copy.type)+' copied.';
@@ -1599,8 +1602,8 @@ function makeFluidPart(type,x=width*.5,y=height*.45){
   if(type==='gate') return {...base,w:30,h:90,open:false};
   if(type==='canal') return {...base,w:190,h:34};
   if(type==='wheel') return {...base,r:52,spin:0};
-  if(type==='wood') return {...base,r:20,density:.65,vy:0,label:'WOOD'};
-  if(type==='metal') return {...base,r:20,density:1.8,vy:0,label:'METAL'};
+  if(type==='wood') return {...base,r:20,density:.65,vy:0,label:'WOOD',held:true};
+  if(type==='metal') return {...base,r:20,density:1.8,vy:0,label:'METAL',held:true};
   if(type==='drain') return {...base,r:28};
   if(type==='valve') return {...base,r:25,open:true};
   return base;
@@ -1614,7 +1617,13 @@ function addFluidPart(type){
   document.querySelectorAll('.fluidButton[data-fluid-part]').forEach(b=>{
     b.classList.toggle('active',b.dataset.fluidPart===type);
   });
-  document.getElementById('status').textContent=fluidPartName(type)+' added. Drag it into place. Overlap pipe ends slightly so the water transfers cleanly.';
+  if(type==='wood'||type==='metal'){
+    document.getElementById('status').textContent=
+      fluidPartName(type)+' added. Drag it where you want it, then release it to drop into the water.';
+  }else{
+    document.getElementById('status').textContent=
+      fluidPartName(type)+' added. Drag it into place. Overlap pipe ends slightly so the water transfers cleanly.';
+  }
 }
 
 function fluidPartName(type){
@@ -1692,7 +1701,10 @@ function fluidPointerStart(e){
     fluidDragOffsetY=p.y-hit.y;
     hit._pointerStartX=p.x;
     hit._pointerStartY=p.y;
-    if(hit.type==='wood'||hit.type==='metal') hit.vy=0;
+    if(hit.type==='wood'||hit.type==='metal'){
+      hit.vy=0;
+      hit.held=true;
+    }
   }else{
     fluidDragging=false;
   }
@@ -1722,6 +1734,13 @@ function fluidPointerEnd(){
       fluidSelected.open=!fluidSelected.open;
       document.getElementById('status').textContent=
         fluidPartName(fluidSelected.type)+' '+(fluidSelected.open?'opened.':'closed.');
+    }
+
+    if((fluidSelected.type==='wood'||fluidSelected.type==='metal') && moved>=8){
+      fluidSelected.held=false;
+      fluidSelected.vy=0;
+      document.getElementById('status').textContent=
+        fluidPartName(fluidSelected.type)+' released. Watch whether it floats or sinks.';
     }
   }
   fluidDragging=false;
@@ -1996,7 +2015,7 @@ function updateFluid(dt){
 
   // Float/sink objects stay where the user places them until water is running.
   fluidObjects.filter(o=>o.type==='wood'||o.type==='metal').forEach(o=>{
-    if(fluidDragging && fluidSelected===o){
+    if((fluidDragging && fluidSelected===o) || o.held){
       o.vy=0;
       return;
     }
@@ -2158,6 +2177,12 @@ function drawFluidPart(o){
     ctx.textAlign='center';
     ctx.textBaseline='middle';
     ctx.fillText(o.type==='wood'?'🪵':'🔩',0,0);
+
+    if(o.held){
+      ctx.font='bold 9px Arial';
+      ctx.fillStyle='#ffffff';
+      ctx.fillText('DRAG TO DROP',0,30);
+    }
   }
 
   if(o.type==='drain'){
@@ -2209,7 +2234,9 @@ document.getElementById('fluidActionBtn').addEventListener('click',()=>{
   fluidRunning=!fluidRunning;
 
   if(fluidRunning){
-    fluidObjects.filter(o=>o.type==='wood'||o.type==='metal').forEach(o=>o.vy=0);
+    fluidObjects.filter(o=>o.type==='wood'||o.type==='metal').forEach(o=>{
+      o.vy=0;
+    });
   }
 
   updateFluidActionLabel();
