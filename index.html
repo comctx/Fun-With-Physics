@@ -1990,9 +1990,10 @@ function updateFluid(dt){
       }
     });
 
-    // Drain removes water.
+    // Drain removes nearby water particles.
     fluidObjects.filter(o=>o.type==='drain').forEach(o=>{
-      if(Math.hypot(p.x-o.x,p.y-o.y)<o.r*(o.scale||1)){
+      const drainRadius=o.r*(o.scale||1);
+      if(Math.hypot(p.x-o.x,p.y-o.y)<drainRadius+10){
         p.dead=true;
       }
     });
@@ -2019,6 +2020,36 @@ function updateFluid(dt){
   });
 
   fluidParticles=fluidParticles.filter(p=>!p.dead);
+
+  // A drain placed against or inside a tank actively lowers that tank's water level.
+  if(fluidRunning){
+    const drains=fluidObjects.filter(o=>o.type==='drain');
+    const tanks=fluidObjects.filter(o=>o.type==='tank');
+
+    drains.forEach(d=>{
+      const dr=d.r*(d.scale||1);
+
+      tanks.forEach(t=>{
+        if((t.fill||0)<=0) return;
+
+        const b=fluidBounds(t);
+        const nearestX=Math.max(b.x,Math.min(d.x,b.x+b.w));
+        const nearestY=Math.max(b.y,Math.min(d.y,b.y+b.h));
+        const distance=Math.hypot(d.x-nearestX,d.y-nearestY);
+
+        // Drain works when placed just inside the tank or against an outside wall.
+        if(distance<=dr+18){
+          const drainRate=72*dt*(d.scale||1);
+          t.fill=Math.max(0,(t.fill||0)-drainRate);
+
+          if((t.fill||0)>0){
+            const outDir=d.x>=t.x?1:-1;
+            spawnWater(d.x+outDir*dr*.65,d.y,120*outDir,45,1);
+          }
+        }
+      });
+    });
+  }
 
   // Float/sink objects stay where the user places them until water is running.
   fluidObjects.filter(o=>o.type==='wood'||o.type==='metal').forEach(o=>{
@@ -2273,6 +2304,20 @@ function drawFluidPart(o){
     ctx.fillStyle='#0a1015';
     ctx.beginPath();ctx.arc(0,0,o.r,0,Math.PI*2);ctx.fill();
     ctx.strokeStyle='#87939d';ctx.lineWidth=3;ctx.stroke();
+
+    ctx.strokeStyle='#4e5963';
+    ctx.lineWidth=2;
+    for(let i=-12;i<=12;i+=8){
+      ctx.beginPath();
+      ctx.moveTo(i,-14);
+      ctx.lineTo(i,14);
+      ctx.stroke();
+    }
+
+    ctx.fillStyle='#dbe5ec';
+    ctx.font='bold 9px Arial';
+    ctx.textAlign='center';
+    ctx.fillText('DRAIN',0,40);
   }
 
   if(o.type==='valve'){
