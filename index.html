@@ -531,6 +531,7 @@ header{
   <button id="fluidModeBtn">🌊 Fluid Physics</button>
   <button id="airModeBtn">💨 Air Physics</button>
   <button id="electricModeBtn">⚡ Electricity</button>
+  <button id="simpleModeBtn">🛠️ Simple Machines</button>
   <button id="rubeModeBtn">🎭 Rube Goldberg</button>
   <div id="goalText" class="goal">Goal: Ring the bell any way you want.</div>
   <div id="hud">
@@ -663,6 +664,26 @@ header{
   <button class="labButton" id="electricClearBtn"><span class="icon">🗑️</span>Clear</button>
 </div>
 
+<div id="simpleTray" class="labTray">
+  <button class="labButton" data-simple-part="lever"><span class="icon">⚖️</span>Lever</button>
+  <button class="labButton" data-simple-part="pulley1"><span class="icon">🪢</span>Single Pulley</button>
+  <button class="labButton" data-simple-part="pulley2"><span class="icon">🪢</span>Double Pulley</button>
+  <button class="labButton" data-simple-part="gearSmall"><span class="icon">⚙️</span>Small Gear</button>
+  <button class="labButton" data-simple-part="gearLarge"><span class="icon">⚙️</span>Large Gear</button>
+  <button class="labButton" data-simple-part="wheelaxle"><span class="icon">🛞</span>Wheel & Axle</button>
+  <button class="labButton" data-simple-part="incline"><span class="icon">📐</span>Inclined Plane</button>
+  <button class="labButton" data-simple-part="wedge"><span class="icon">🔺</span>Wedge</button>
+  <button class="labButton" data-simple-part="crate"><span class="icon">📦</span>Crate</button>
+  <button class="labButton" data-simple-part="boulder"><span class="icon">🪨</span>Boulder</button>
+  <button class="labButton" data-simple-part="simpleBall"><span class="icon">🔴</span>Ball</button>
+  <button class="labButton" data-simple-part="simpleBell"><span class="icon">🔔</span>Bell</button>
+  <button class="labButton" id="fulcrumLeftBtn"><span class="icon">◀️</span>Fulcrum Left</button>
+  <button class="labButton" id="fulcrumRightBtn"><span class="icon">▶️</span>Fulcrum Right</button>
+  <button class="labButton" id="simpleRunBtn"><span class="icon">▶️</span>Run Lab</button>
+  <button class="labButton" id="simpleChallengeBtn"><span class="icon">🏆</span>Challenges</button>
+  <button class="labButton" id="simpleExplainBtn"><span class="icon">💡</span>What Happened?</button>
+  <button class="labButton" id="simpleClearBtn"><span class="icon">🗑️</span>Clear</button>
+</div>
 
 <div id="workspace">
   <canvas id="game"></canvas>
@@ -750,6 +771,20 @@ header{
     </div>
   </div>
 
+  <div id="simpleChallengeOverlay" class="overlay">
+    <div class="modal">
+      <h2>Simple Machines Challenges</h2>
+      <p>Choose a challenge, then arrange the parts and press Run Lab.</p>
+      <div class="levelGrid">
+        <div class="levelCard"><h3>1. Lift the Crate</h3><p>Use a lever or pulley to raise a heavy crate.</p><button data-simple-challenge="lift">Load Challenge</button></div>
+        <div class="levelCard"><h3>2. Ring the Bell</h3><p>Use gears and an inclined plane to transfer motion to the bell.</p><button data-simple-challenge="bell">Load Challenge</button></div>
+        <div class="levelCard"><h3>3. Move the Boulder</h3><p>Use a wheel & axle to transport a heavy boulder.</p><button data-simple-challenge="boulder">Load Challenge</button></div>
+        <div class="levelCard"><h3>4. Chain Reaction</h3><p>Combine at least three different simple machines.</p><button data-simple-challenge="chain">Load Challenge</button></div>
+      </div>
+      <div class="actions"><button id="closeSimpleChallengeBtn">Close</button></div>
+    </div>
+  </div>
+
   <div id="explainOverlay" class="overlay">
     <div class="modal">
       <h2>What Happened?</h2>
@@ -822,6 +857,8 @@ let labDragOffsetX=0;
 let labDragOffsetY=0;
 let labRunning=false;
 let labId=1;
+let simpleChallenge=null;
+let simpleChallengeComplete=false;
 
 let rubeParticles=[];
 let rubeSteam=[];
@@ -1233,7 +1270,7 @@ function pointerDown(e){
     fluidPointerStart(e);
     return;
   }
-  if(gameMode==='air'||gameMode==='electric'){
+  if(gameMode==='air'||gameMode==='electric'||gameMode==='simple'){
     labPointerStart(e);
     return;
   }
@@ -1279,7 +1316,7 @@ function pointerMove(e){
     fluidPointerMove(e);
     return;
   }
-  if(gameMode==='air'||gameMode==='electric'){
+  if(gameMode==='air'||gameMode==='electric'||gameMode==='simple'){
     labPointerMove(e);
     return;
   }
@@ -1291,7 +1328,7 @@ function pointerMove(e){
 
 function pointerUp(){
   if(gameMode==='fluid') fluidPointerEnd();
-  if(gameMode==='air'||gameMode==='electric') labPointerEnd();
+  if(gameMode==='air'||gameMode==='electric'||gameMode==='simple') labPointerEnd();
 
   if(selected&&dragging&&gameMode!=='fluid'&&gameMode!=='air'&&gameMode!=='electric'){
     const moved=Math.hypot(
@@ -2005,7 +2042,7 @@ function draw(){
     drawFluid();
     return;
   }
-  if(gameMode==='air'||gameMode==='electric'){
+  if(gameMode==='air'||gameMode==='electric'||gameMode==='simple'){
     drawLab();
     return;
   }
@@ -2045,7 +2082,7 @@ function update(dt){
     updateFluid(dt);
     return;
   }
-  if(gameMode==='air'||gameMode==='electric'){
+  if(gameMode==='air'||gameMode==='electric'||gameMode==='simple'){
     updateLab(dt);
     return;
   }
@@ -2083,14 +2120,16 @@ function setMode(mode){
   document.getElementById('fluidModeBtn').classList.toggle('active',mode==='fluid');
   document.getElementById('airModeBtn').classList.toggle('active',mode==='air');
   document.getElementById('electricModeBtn').classList.toggle('active',mode==='electric');
+  document.getElementById('simpleModeBtn').classList.toggle('active',mode==='simple');
   document.getElementById('rubeModeBtn').classList.toggle('active',mode==='rube');
 
-  const specialMode=mode==='fluid'||mode==='air'||mode==='electric';
+  const specialMode=mode==='fluid'||mode==='air'||mode==='electric'||mode==='simple';
   document.getElementById('tray').style.display=(specialMode||mode==='rube')?'none':'grid';
   document.getElementById('rubeTray').classList.toggle('show',mode==='rube');
   document.getElementById('fluidTray').classList.toggle('show',mode==='fluid');
   document.getElementById('airTray').classList.toggle('show',mode==='air');
   document.getElementById('electricTray').classList.toggle('show',mode==='electric');
+  document.getElementById('simpleTray').classList.toggle('show',mode==='simple');
   if(mode!=='fluid') document.getElementById('measureCard').classList.remove('show');
   if(mode!=='fluid') document.getElementById('selectionPanel').classList.remove('show');
   document.getElementById('runBtn').style.display=specialMode?'none':'inline-block';
@@ -2156,6 +2195,18 @@ function setMode(mode){
     document.getElementById('starRow').textContent='🔋⚡💡';
     document.getElementById('goalText').textContent='Electricity: build a simple powered circuit and test the switch.';
     document.getElementById('status').textContent='Add a battery, switch, and a bulb, motor, or electromagnet.';
+  }
+
+  if(mode==='simple'){
+    resetLab();
+    simpleChallenge=null;
+    simpleChallengeComplete=false;
+    document.getElementById('modeLabel').textContent='Simple Machines';
+    document.getElementById('score').textContent='6 Classical Machines';
+    document.getElementById('pieceCount').textContent='Force • Work • Motion';
+    document.getElementById('starRow').textContent='⚖️ ⚙️ 🛞';
+    document.getElementById('goalText').textContent='Simple Machines: change force, distance, speed, or direction.';
+    document.getElementById('status').textContent='Add a lever, pulley, gear, wheel & axle, inclined plane, or wedge.';
   }
 
   if(mode==='rube'){
@@ -2390,6 +2441,7 @@ document.getElementById('challengeModeBtn').addEventListener('click',()=>setMode
 document.getElementById('fluidModeBtn').addEventListener('click',()=>setMode('fluid'));
 document.getElementById('airModeBtn').addEventListener('click',()=>setMode('air'));
 document.getElementById('electricModeBtn').addEventListener('click',()=>setMode('electric'));
+document.getElementById('simpleModeBtn').addEventListener('click',()=>setMode('simple'));
 document.getElementById('rubeModeBtn').addEventListener('click',()=>setMode('rube'));
 document.getElementById('closePuzzleBtn').addEventListener('click',()=>{
   document.getElementById('puzzleOverlay').classList.remove('open');
@@ -2444,13 +2496,28 @@ function makeLabPart(type,x=width*.5,y=height*.45){
   if(type==='motor') return {...base,r:32,powered:false,spin:0};
   if(type==='magnet') return {...base,w:90,h:52,powered:false};
   if(type==='metalball') return {...base,r:18};
+  if(type==='lever') return {...base,w:190,h:18,fulcrum:.5,leverAngle:0,loadLift:0};
+  if(type==='pulley1') return {...base,w:90,h:125,ratio:1,ropeOffset:0};
+  if(type==='pulley2') return {...base,w:115,h:145,ratio:2,ropeOffset:0};
+  if(type==='gearSmall') return {...base,r:30,teeth:12,spin:0,ratio:1};
+  if(type==='gearLarge') return {...base,r:52,teeth:20,spin:0,ratio:1};
+  if(type==='wheelaxle') return {...base,r:45,axleR:16,spin:0};
+  if(type==='incline') return {...base,w:190,h:20,angle:-.28};
+  if(type==='wedge') return {...base,w:80,h:70,push:0};
+  if(type==='crate') return {...base,w:60,h:55,mass:8,vy:0,lifted:false};
+  if(type==='boulder') return {...base,r:32,mass:12,vx:0,vy:0,moved:false};
+  if(type==='simpleBall') return {...base,r:18,mass:1,vx:0,vy:0};
+  if(type==='simpleBell') return {...base,w:55,h:65,rung:false};
   return base;
 }
 
 function labName(type){
   return ({balloon:'Balloon',parachute:'Parachute',airjet:'Air Jet',wind:'Wind Tunnel',
     dragblock:'Drag Block',battery:'Battery',wire:'Wire',switch:'Switch',
-    bulb:'Bulb',motor:'Motor',magnet:'Electromagnet',metalball:'Metal Ball'})[type]||type;
+    bulb:'Bulb',motor:'Motor',magnet:'Electromagnet',metalball:'Metal Ball',
+    lever:'Lever',pulley1:'Single Pulley',pulley2:'Double Pulley',gearSmall:'Small Gear',
+    gearLarge:'Large Gear',wheelaxle:'Wheel & Axle',incline:'Inclined Plane',wedge:'Wedge',
+    crate:'Crate',boulder:'Boulder',simpleBall:'Ball',simpleBell:'Bell'})[type]||type;
 }
 
 function addLabPart(type){
@@ -2477,6 +2544,7 @@ function labHit(x,y){
     let pad=10;
     if(o.type==='wire') pad=28;
     if(o.type==='switch'||o.type==='battery') pad=16;
+    if(['lever','pulley1','pulley2','incline','wedge'].includes(o.type)) pad=18;
 
     if(x>b.x-pad&&x<b.x+b.w+pad&&y>b.y-pad&&y<b.y+b.h+pad) return o;
   }
@@ -2724,6 +2792,7 @@ function explainLab(){
 
 document.querySelectorAll('[data-air-part]').forEach(b=>b.addEventListener('click',()=>addLabPart(b.dataset.airPart)));
 document.querySelectorAll('[data-electric-part]').forEach(b=>b.addEventListener('click',()=>addLabPart(b.dataset.electricPart)));
+document.querySelectorAll('[data-simple-part]').forEach(b=>b.addEventListener('click',()=>addLabPart(b.dataset.simplePart)));
 document.getElementById('airRunBtn').addEventListener('click',()=>{labRunning=!labRunning;updateLabButtons();});
 document.getElementById('electricRunBtn').addEventListener('click',()=>{labRunning=!labRunning;updateLabButtons();});
 document.getElementById('airClearBtn').addEventListener('click',resetLab);
