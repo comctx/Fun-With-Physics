@@ -241,6 +241,12 @@ canvas{
 .modal h2{margin:0 0 8px}
 .modal p,.modal li{line-height:1.45}
 .modal .actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:14px}
+#puzzleOverlay .modal .actions{
+  position:sticky;
+  bottom:-20px;
+  background:#fff;
+  padding:10px 0 2px;
+}
 .modal .actions button{flex:1;background:#26313c}
 .levelGrid{
   display:grid;
@@ -1717,6 +1723,10 @@ requestAnimationFrame(loop);
 function setMode(mode){
   if(running) stopRun();
 
+  if(mode!=='puzzle'){
+    document.getElementById('puzzleOverlay').classList.remove('open');
+  }
+
   gameMode=mode;
   document.getElementById('sandboxModeBtn').classList.toggle('active',mode==='sandbox');
   document.getElementById('puzzleModeBtn').classList.toggle('active',mode==='puzzle');
@@ -1940,11 +1950,7 @@ document.getElementById('rubeModeBtn').addEventListener('click',()=>setMode('rub
 document.getElementById('closePuzzleBtn').addEventListener('click',()=>{
   document.getElementById('puzzleOverlay').classList.remove('open');
   if(currentPuzzleIndex<0){
-    gameMode='sandbox';
-    document.getElementById('puzzleModeBtn').classList.remove('active');
-    document.getElementById('sandboxModeBtn').classList.add('active');
-    document.getElementById('modeLabel').textContent='Sandbox Mode';
-    document.getElementById('goalText').textContent='Goal: Ring the bell any way you want.';
+    setMode('sandbox');
   }
 });
 
