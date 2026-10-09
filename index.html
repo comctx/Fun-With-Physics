@@ -2708,7 +2708,10 @@ function addLabPart(type){
   labSelected=p;
   labLastTapId=null;
   document.getElementById('selectionPanel').classList.remove('show');
-  document.getElementById('status').textContent=labName(type)+' added. Drag it into place.';
+  document.getElementById('status').textContent=
+    type==='lever'
+      ?'Lever added. Place a ball, crate, or boulder on the beam; it will now rest on the lever instead of falling through.'
+      :labName(type)+' added. Drag it into place.';
 }
 
 function labBounds(o){
@@ -2800,6 +2803,45 @@ function updateLabButtons(){
   if(air){air.querySelector('.icon').textContent=labRunning?'⏸️':'▶️';air.lastChild.textContent=labRunning?' Stop Air':' Start Air';}
   if(elec){elec.querySelector('.icon').textContent=labRunning?'⏸️':'▶️';elec.lastChild.textContent=labRunning?' Stop Circuit':' Run Circuit';}
   if(simple){simple.querySelector('.icon').textContent=labRunning?'⏸️':'▶️';simple.lastChild.textContent=labRunning?' Stop Lab':' Run Lab';}
+}
+
+function resolveSimpleLeverContact(obj,lever){
+  const s=lever.scale||1;
+  const a=lever.angle||0;
+  const ca=Math.cos(a),sa=Math.sin(a);
+  const dx=obj.x-lever.x,dy=obj.y-lever.y;
+
+  // Convert the load position into the lever's local coordinates.
+  const lx=dx*ca+dy*sa;
+  const ly=-dx*sa+dy*ca;
+
+  const halfBeam=(lever.w*s)/2;
+  const beamTop=-(lever.h*s)/2;
+  const radius=obj.r ? obj.r*(obj.scale||1) : ((obj.h||55)*(obj.scale||1))/2;
+  const bottom=ly+radius;
+
+  // A little side allowance keeps round objects from falling through the edge.
+  if(Math.abs(lx)>halfBeam+radius*.55) return false;
+
+  // Catch objects that are touching or have just crossed the top surface.
+  const localVy=-(obj.vx||0)*sa+(obj.vy||0)*ca;
+  const penetration=bottom-beamTop;
+  if(penetration>=-8 && penetration<Math.max(28,radius*.9) && localVy>=-25){
+    const targetLy=beamTop-radius;
+    const worldX=lever.x+lx*ca-targetLy*sa;
+    const worldY=lever.y+lx*sa+targetLy*ca;
+    obj.x=worldX;
+    obj.y=worldY;
+
+    // Remove motion into the lever while preserving motion along its surface.
+    const localVx=(obj.vx||0)*ca+(obj.vy||0)*sa;
+    const restingVy=Math.min(0,localVy);
+    obj.vx=localVx*ca-restingVy*sa;
+    obj.vy=localVx*sa+restingVy*ca;
+    obj.onLever=true;
+    return true;
+  }
+  return false;
 }
 
 function updateSimpleMachines(dt){
@@ -2918,10 +2960,16 @@ function updateSimpleMachines(dt){
 
   // Gravity and motion for movable loads.
   [...balls,...boulders,...crates].forEach(o=>{
+    o.onLever=false;
     o.vy=(o.vy||0)+gravity*.34*dt;
     o.x+=(o.vx||0)*dt;
     o.y+=(o.vy||0)*dt;
     o.vx*=.992;
+
+    // The lever is a real collision surface: balls, boulders, and crates now
+    // land on it instead of visually passing through the beam/fulcrum area.
+    levers.forEach(l=>resolveSimpleLeverContact(o,l));
+
     if(o.y>(height-(o.r||28)-8)){
       o.y=height-(o.r||28)-8;
       o.vy=0;
