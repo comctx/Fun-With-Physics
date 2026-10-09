@@ -1759,7 +1759,9 @@ function updateFluid(dt){
 
   fluidParticles.forEach(p=>{
     p.age+=dt;
-    p.vy+=430*dt;
+    const recentlyGuided=p.inPipeId||p.elbowId;
+    p.vy+=(recentlyGuided?45:430)*dt;
+    p.inPipeId=null;
 
     // Pumps add energy to nearby water.
     fluidObjects.filter(o=>o.type==='pump').forEach(o=>{
@@ -1770,7 +1772,7 @@ function updateFluid(dt){
       }
     });
 
-    // Straight pipes capture nearby water, center it, and carry it along the pipe.
+    // Straight pipes tightly contain water on the pipe centerline.
     fluidObjects.filter(o=>o.type==='pipe').forEach(o=>{
       const a=o.angle||0;
       const s=o.scale||1;
@@ -1779,33 +1781,29 @@ function updateFluid(dt){
       const lx=dx*ca-dy*sa;
       const ly=dx*sa+dy*ca;
       const half=(o.w*s)/2;
-      const capture=32*s;
+      const capture=28*s;
 
-      if(Math.abs(lx)<half+10*s && Math.abs(ly)<capture){
-        // Pull the drop toward the center line so small placement gaps still connect.
-        const centerPull=Math.min(1,dt*18);
-        const targetX=o.x+lx*Math.cos(a);
-        const targetY=o.y+lx*Math.sin(a);
-        p.x+=(targetX-p.x)*centerPull;
-        p.y+=(targetY-p.y)*centerPull;
-
+      if(Math.abs(lx)<half+12*s && Math.abs(ly)<capture){
         const localVx=p.vx*ca-p.vy*sa;
-        const speed=Math.max(150,Math.hypot(p.vx,p.vy));
+        const speed=Math.max(165,Math.hypot(p.vx,p.vy));
         let dir=Math.sign(localVx);
 
-        // If the incoming motion is mostly perpendicular, choose the nearer exit direction.
-        if(Math.abs(localVx)<35){
-          dir=lx<=0?1:-1;
+        // Water entering from above/below chooses the direction away from the closest end.
+        if(Math.abs(localVx)<45){
+          dir=lx<0?1:-1;
         }
         if(!dir) dir=1;
 
-        const guided=speed*.94;
-        p.vx=Math.cos(a)*guided*dir;
-        p.vy=Math.sin(a)*guided*dir;
+        // Hard-snap to the centerline so water stays visibly inside the pipe.
+        p.x=o.x+lx*Math.cos(a);
+        p.y=o.y+lx*Math.sin(a);
+        p.vx=Math.cos(a)*speed*dir;
+        p.vy=Math.sin(a)*speed*dir;
+        p.inPipeId=o.id;
       }
     });
 
-    // Pipe elbows capture water and route it around a true 90-degree bend.
+    // Pipe elbows keep water inside the bend and switch cleanly between the two legs.
     fluidObjects.filter(o=>o.type==='elbow').forEach(o=>{
       const a=o.angle||0;
       const s=o.scale||1;
@@ -1815,59 +1813,63 @@ function updateFluid(dt){
       let ly=dx*sa+dy*ca;
 
       const arm=46*s;
-      const capture=31*s;
-      const onHorizontal=lx>-arm-8*s&&lx<12*s&&Math.abs(ly)<capture;
-      const onVertical=Math.abs(lx)<capture&&ly>-12*s&&ly<arm+8*s;
+      const capture=27*s;
+      const onHorizontal=lx>-arm-10*s&&lx<10*s&&Math.abs(ly)<capture;
+      const onVertical=Math.abs(lx)<capture&&ly>-10*s&&ly<arm+10*s;
 
       if(onHorizontal||onVertical){
-        let lvx=p.vx*ca-p.vy*sa;
-        let lvy=p.vx*sa+p.vy*ca;
-        const speed=Math.max(150,Math.hypot(lvx,lvy));
+        const speed=Math.max(165,Math.hypot(p.vx,p.vy));
+        const routeKey=String(o.id);
 
-        if(onHorizontal && !onVertical){
-          // Snap to horizontal arm.
-          const wx=o.x+lx*Math.cos(a);
-          const wy=o.y+lx*Math.sin(a);
-          p.x+=(wx-p.x)*Math.min(1,dt*20);
-          p.y+=(wy-p.y)*Math.min(1,dt*20);
+        // Pick a route when entering this elbow:
+        // horizontal outer end -> corner -> vertical outer end
+        // vertical outer end -> corner -> horizontal outer end
+        if(p.elbowId!==routeKey){
+          p.elbowId=routeKey;
+          const distH=Math.hypot(lx+arm,ly);
+          const distV=Math.hypot(lx,ly-arm);
+          p.elbowRoute=distH<=distV?'h2v':'v2h';
+        }
 
-          // Moving toward the corner from the left -> turn downward.
-          if(lvx>0 && lx>-15*s){
-            lvx=0;
-            lvy=speed;
+        let localVx=0,localVy=0;
+
+        if(p.elbowRoute==='h2v'){
+          if(lx<-4*s){
+            // Travel right along the horizontal leg toward the corner.
+            ly=0;
+            localVx=speed;
+            localVy=0;
           }else{
-            lvx=(Math.sign(lvx)||1)*speed;
-            lvy=0;
-          }
-        }else if(onVertical && !onHorizontal){
-          // Snap to vertical arm.
-          const wx=o.x-ly*Math.sin(a);
-          const wy=o.y+ly*Math.cos(a);
-          p.x+=(wx-p.x)*Math.min(1,dt*20);
-          p.y+=(wy-p.y)*Math.min(1,dt*20);
-
-          // Moving toward the corner from below -> turn left.
-          if(lvy<0 && ly<15*s){
-            lvx=-speed;
-            lvy=0;
-          }else{
-            lvx=0;
-            lvy=(Math.sign(lvy)||1)*speed;
+            // Turn downward through the vertical leg.
+            lx=0;
+            localVx=0;
+            localVy=speed;
           }
         }else{
-          // In the bend itself: choose the turn from the dominant incoming direction.
-          if(Math.abs(lvy)>=Math.abs(lvx)){
-            if(lvy<0){ lvx=-speed; lvy=0; }
-            else { lvx=0; lvy=speed; }
+          if(ly>4*s){
+            // Travel upward along the vertical leg toward the corner.
+            lx=0;
+            localVx=0;
+            localVy=-speed;
           }else{
-            if(lvx>0){ lvx=0; lvy=speed; }
-            else { lvx=-speed; lvy=0; }
+            // Turn left through the horizontal leg.
+            ly=0;
+            localVx=-speed;
+            localVy=0;
           }
         }
 
-        // Convert local velocity back to world coordinates.
-        p.vx=lvx*Math.cos(a)-lvy*Math.sin(a);
-        p.vy=lvx*Math.sin(a)+lvy*Math.cos(a);
+        // Snap exactly onto the elbow centerline.
+        p.x=o.x+lx*Math.cos(a)-ly*Math.sin(a);
+        p.y=o.y+lx*Math.sin(a)+ly*Math.cos(a);
+
+        // Convert local guided velocity back to world coordinates.
+        p.vx=localVx*Math.cos(a)-localVy*Math.sin(a);
+        p.vy=localVx*Math.sin(a)+localVy*Math.cos(a);
+      }else if(p.elbowId===String(o.id)){
+        // Once fully outside the bend, allow a future elbow entry to choose a fresh route.
+        p.elbowId=null;
+        p.elbowRoute=null;
       }
     });
 
