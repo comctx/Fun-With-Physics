@@ -901,6 +901,7 @@ let labDragging=false;
 let labDragOffsetX=0;
 let labDragOffsetY=0;
 let labRunning=false;
+let labRunSnapshot=null;
 let labId=1;
 let simpleChallenge=null;
 let simpleChallengeComplete=false;
@@ -2380,6 +2381,7 @@ function setMode(mode){
     resetLab();
     simpleChallenge=null;
     simpleChallengeComplete=false;
+    labRunSnapshot=null;
     document.getElementById('modeLabel').textContent='Simple Machines';
     document.getElementById('score').textContent='6 Classical Machines';
     document.getElementById('pieceCount').textContent='Force • Work • Motion';
@@ -2665,6 +2667,7 @@ function resetLab(){
   labLastTapId=null;
   labDragging=false;
   labRunning=false;
+  labRunSnapshot=null;
   document.getElementById('selectionPanel').classList.remove('show');
   updateLabButtons();
 }
@@ -2804,6 +2807,40 @@ function labPointerEnd(){
 
   labSelected._showControlsOnTap=false;
   labDragging=false;
+}
+
+function startSimpleLab(){
+  if(labRunning) return;
+  labRunSnapshot=JSON.parse(JSON.stringify(labObjects));
+  labObjects.forEach(o=>{
+    o.vx=0;o.vy=0;
+    if(o.type==='lever'){o.angularVelocity=0;o.pivotX=null;o.pivotY=null;}
+    if(o.type==='gearSmall'||o.type==='gearLarge'||o.type==='wheelaxle')o.spin=0;
+    if(o.type==='crate')o.lifted=false;
+    if(o.type==='boulder')o.moved=false;
+    if(o.type==='simpleBell')o.rung=false;
+  });
+  labSelected=null;
+  labLastTapId=null;
+  document.getElementById('selectionPanel').classList.remove('show');
+  labRunning=true;
+  updateLabButtons();
+  document.getElementById('status').textContent='Simple Machines lab running. Press Stop Lab to return to your setup.';
+}
+
+function stopSimpleLab(){
+  if(!labRunning&&!labRunSnapshot) return;
+  labRunning=false;
+  if(labRunSnapshot){
+    labObjects=JSON.parse(JSON.stringify(labRunSnapshot));
+  }
+  labRunSnapshot=null;
+  labSelected=null;
+  labLastTapId=null;
+  labDragging=false;
+  document.getElementById('selectionPanel').classList.remove('show');
+  updateLabButtons();
+  document.getElementById('status').textContent='Back to building. Your Simple Machines setup was restored and parts can be moved again.';
 }
 
 function updateLabButtons(){
@@ -3430,7 +3467,9 @@ document.querySelectorAll('[data-electric-part]').forEach(b=>b.addEventListener(
 document.querySelectorAll('[data-simple-part]').forEach(b=>b.addEventListener('click',()=>addLabPart(b.dataset.simplePart)));
 document.getElementById('airRunBtn').addEventListener('click',()=>{labRunning=!labRunning;updateLabButtons();});
 document.getElementById('electricRunBtn').addEventListener('click',()=>{labRunning=!labRunning;updateLabButtons();});
-document.getElementById('simpleRunBtn').addEventListener('click',()=>{labRunning=!labRunning;updateLabButtons();});
+document.getElementById('simpleRunBtn').addEventListener('click',()=>{
+  if(labRunning) stopSimpleLab(); else startSimpleLab();
+});
 document.getElementById('airClearBtn').addEventListener('click',resetLab);
 document.getElementById('electricClearBtn').addEventListener('click',resetLab);
 document.getElementById('simpleClearBtn').addEventListener('click',()=>{resetLab();simpleChallenge=null;simpleChallengeComplete=false;});
