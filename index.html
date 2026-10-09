@@ -2947,12 +2947,37 @@ function updateLab(dt){
 
       if(o.type==='balloon'||o.type==='parachute'||o.type==='dragblock'){
         labObjects.filter(j=>j.type==='airjet').forEach(j=>{
-          const d=Math.hypot(o.x-j.x,o.y-j.y);
-          if(d<180&&o.x>j.x-20){o.vx+=210*dt;o.vy-=45*dt;}
+          const scale=j.scale||1;
+          const a=j.angle||0;
+          const dx=o.x-j.x,dy=o.y-j.y;
+          const forward=dx*Math.cos(a)+dy*Math.sin(a);
+          const side=-dx*Math.sin(a)+dy*Math.cos(a);
+          const range=240*scale;
+          const halfWidth=72*scale;
+
+          // Air jets now push in the direction they are actually pointing.
+          // Larger jets create a wider, longer, and stronger stream.
+          if(forward>12*scale&&forward<range&&Math.abs(side)<halfWidth){
+            const falloff=Math.max(.18,1-forward/range);
+            const objectFactor=o.type==='balloon'?1.35:(o.type==='parachute'?.9:.55);
+            const force=620*scale*falloff*objectFactor;
+            o.vx+=Math.cos(a)*force*dt;
+            o.vy+=Math.sin(a)*force*dt;
+          }
         });
+
         labObjects.filter(w=>w.type==='wind').forEach(w=>{
-          const b=labBounds(w);
-          if(o.x>b.x&&o.x<b.x+b.w&&o.y>b.y&&o.y<b.y+b.h)o.vx+=140*dt;
+          const scale=w.scale||1;
+          const a=w.angle||0;
+          const dx=o.x-w.x,dy=o.y-w.y;
+          const lx=dx*Math.cos(a)+dy*Math.sin(a);
+          const ly=-dx*Math.sin(a)+dy*Math.cos(a);
+          const halfW=110*scale,halfH=60*scale;
+          if(Math.abs(lx)<halfW&&Math.abs(ly)<halfH){
+            const force=185*scale;
+            o.vx+=Math.cos(a)*force*dt;
+            o.vy+=Math.sin(a)*force*dt;
+          }
         });
         o.x+=o.vx*dt;o.y+=o.vy*dt;o.vx*=.985;
         if(o.y<25){o.y=25;o.vy=0}
@@ -3194,7 +3219,7 @@ function explainLab(){
   if(gameMode==='air'){
     if(labObjects.some(o=>o.type==='balloon')) lines.push('The balloon rises because the surrounding air provides buoyancy; in this model, lift exceeds its effective weight.');
     if(labObjects.some(o=>o.type==='parachute')) lines.push('The parachute increases air resistance, so it falls more slowly than a compact object.');
-    if(labObjects.some(o=>o.type==='airjet'||o.type==='wind')) lines.push('Moving air transfers momentum to objects and pushes them in the airflow direction.');
+    if(labObjects.some(o=>o.type==='airjet'||o.type==='wind')) lines.push('Moving air transfers momentum to objects and pushes them in the airflow direction. Rotating an air jet changes the push direction, and increasing its size makes the airflow stronger and wider.');
     if(labObjects.some(o=>o.type==='dragblock')) lines.push('The drag block shows how shape and air resistance affect falling speed.');
   }else{
     const closed=labObjects.filter(o=>o.type==='switch').every(s=>s.closed);
