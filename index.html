@@ -860,7 +860,7 @@ function makeObject(type,x,y){
   if(type==='airJetUnit') return {...base,width:78,height:46,powered:false};
   if(type==='pumpUnit') return {...base,width:78,height:50,powered:false,pumpTick:0};
   if(type==='waterWheelUnit') return {...base,radius:44,spin:0};
-  if(type==='heaterUnit') return {...base,width:92,height:76,powered:false,temp:20,boiling:false};
+  if(type==='heaterUnit') return {...base,width:132,height:118,powered:false,temp:20,boiling:false};
   if(type==='pistonUnit') return {...base,width:70,height:96,lift:0};
   return base;
 }
@@ -1041,7 +1041,8 @@ function objectRadius(o){
   if(o.type==='spring') return 42*(o.scale||1);
   if(o.type==='domino') return 38*(o.scale||1);
   if(o.type==='ramp') return Math.max(45,(o.width*(o.scale||1))/2);
-  if(['batteryUnit','switchUnit','electromagnet','airJetUnit','pumpUnit','heaterUnit','pistonUnit'].includes(o.type)) return 52*(o.scale||1);
+  if(o.type==='heaterUnit') return 72*(o.scale||1);
+  if(['batteryUnit','switchUnit','electromagnet','airJetUnit','pumpUnit','pistonUnit'].includes(o.type)) return 52*(o.scale||1);
   return 40;
 }
 
@@ -1734,7 +1735,56 @@ function drawIntegratedPart(o){
   if(o.type==='airJetUnit'){ctx.fillStyle=o.powered?'#567d8f':'#555e64';ctx.fillRect(-39,-23,78,46);ctx.fillStyle='#c8f4ff';ctx.font='bold 10px Arial';ctx.textAlign='center';ctx.fillText('AIR JET ➜',0,4);}
   if(o.type==='pumpUnit'){ctx.fillStyle=o.powered?'#477c91':'#59666d';ctx.fillRect(-39,-25,78,50);ctx.fillStyle='#fff';ctx.font='bold 10px Arial';ctx.textAlign='center';ctx.fillText('PUMP',0,4);}
   if(o.type==='waterWheelUnit'){ctx.strokeStyle='#c69250';ctx.lineWidth=7;ctx.beginPath();ctx.arc(0,0,42,0,Math.PI*2);ctx.stroke();ctx.save();ctx.rotate(o.spin||0);for(let i=0;i<8;i++){ctx.rotate(Math.PI/4);ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(42,0);ctx.stroke();}ctx.restore();}
-  if(o.type==='heaterUnit'){ctx.fillStyle=o.powered?'#8b5550':'#5f666c';ctx.fillRect(-46,-38,92,76);ctx.fillStyle='#fff';ctx.font='bold 9px Arial';ctx.textAlign='center';ctx.fillText(Math.round(o.temp||20)+'°C',0,-8);ctx.fillText(o.boiling?'STEAM':'HEATER',0,12);}
+  if(o.type==='heaterUnit'){
+    const temp=Math.max(20,Math.min(100,o.temp||20));
+    const pct=(temp-20)/80;
+
+    // Rounded metal heater body.
+    ctx.fillStyle=o.powered?'#667a86':'#5b666d';
+    ctx.strokeStyle='#d8eef8';
+    ctx.lineWidth=4;
+    ctx.beginPath();
+    ctx.roundRect(-66,-59,132,118,18);
+    ctx.fill();
+    ctx.stroke();
+
+    // Water viewing chamber.
+    ctx.fillStyle='#142f3f';
+    ctx.beginPath();
+    ctx.roundRect(-52,-42,76,78,8);
+    ctx.fill();
+
+    const hotR=Math.round(48+145*pct);
+    const hotG=Math.round(156-52*pct);
+    const hotB=Math.round(228-90*pct);
+    ctx.fillStyle='rgba('+hotR+','+hotG+','+hotB+',.82)';
+    ctx.fillRect(-50,2,72,32);
+
+    // Heating element.
+    ctx.strokeStyle=o.powered?'#ffb347':'#4d5b64';
+    ctx.lineWidth=5;
+    ctx.beginPath();
+    ctx.moveTo(-44,24);
+    ctx.bezierCurveTo(-32,10,-20,38,-8,24);
+    ctx.bezierCurveTo(4,10,16,38,24,24);
+    ctx.stroke();
+
+    // Temperature gauge.
+    const gx=46,gy=-39,gh=74;
+    ctx.fillStyle='#172128';
+    ctx.fillRect(gx-8,gy,16,gh);
+    ctx.fillStyle=temp>=99?'#ff4f4f':'#ff9d4d';
+    ctx.fillRect(gx-6,gy+gh*(1-pct)+2,12,Math.max(0,gh*pct-4));
+    ctx.strokeStyle='#eef8ff';
+    ctx.lineWidth=2;
+    ctx.strokeRect(gx-8,gy,16,gh);
+
+    ctx.fillStyle='#fff';
+    ctx.textAlign='center';
+    ctx.font='bold 10px Arial';
+    ctx.fillText(Math.round(temp)+'°C',gx,-46);
+    ctx.fillText(o.boiling?'BOILING / STEAM':(o.powered?'HEATER ON':'HEATER OFF'),0,52);
+  }
   if(o.type==='pistonUnit'){ctx.strokeStyle='#c9d3da';ctx.lineWidth=4;ctx.strokeRect(-35,-48,70,96);ctx.fillStyle='#7d8b95';ctx.fillRect(-27,15-(o.lift||0),54,20);ctx.fillStyle='#fff';ctx.font='9px Arial';ctx.textAlign='center';ctx.fillText('PISTON',0,-58);}
   ctx.restore();
 }
