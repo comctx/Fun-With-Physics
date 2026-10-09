@@ -1692,6 +1692,7 @@ function fluidPointerStart(e){
     fluidDragOffsetY=p.y-hit.y;
     hit._pointerStartX=p.x;
     hit._pointerStartY=p.y;
+    if(hit.type==='wood'||hit.type==='metal') hit.vy=0;
   }else{
     fluidDragging=false;
   }
@@ -1700,8 +1701,14 @@ function fluidPointerStart(e){
 function fluidPointerMove(e){
   if(!fluidDragging||!fluidSelected) return;
   const p=posFromEvent(e);
-  fluidSelected.x=Math.max(20,Math.min(width-20,p.x-fluidDragOffsetX));
-  fluidSelected.y=Math.max(20,Math.min(height-20,p.y-fluidDragOffsetY));
+  const b=fluidBounds(fluidSelected);
+  const halfW=Math.max(20,b.w/2);
+  const halfH=Math.max(20,b.h/2);
+
+  fluidSelected.x=Math.max(halfW+6,Math.min(width-halfW-6,p.x-fluidDragOffsetX));
+  fluidSelected.y=Math.max(halfH+6,Math.min(height-halfH-14,p.y-fluidDragOffsetY));
+
+  if(fluidSelected.type==='wood'||fluidSelected.type==='metal') fluidSelected.vy=0;
 }
 
 function fluidPointerEnd(){
@@ -1945,8 +1952,18 @@ function updateFluid(dt){
 
   fluidParticles=fluidParticles.filter(p=>!p.dead);
 
-  // Float/sink objects react to nearby filled tanks or pooled water.
+  // Float/sink objects stay where the user places them until water is running.
   fluidObjects.filter(o=>o.type==='wood'||o.type==='metal').forEach(o=>{
+    if(fluidDragging && fluidSelected===o){
+      o.vy=0;
+      return;
+    }
+
+    if(!fluidRunning){
+      o.vy=0;
+      return;
+    }
+
     o.vy=(o.vy||0)+360*dt;
     o.y+=o.vy*dt;
 
@@ -2140,6 +2157,11 @@ document.querySelectorAll('.fluidButton[data-fluid-part]').forEach(btn=>{
 document.getElementById('fluidActionBtn').addEventListener('click',()=>{
   ensureAudio();
   fluidRunning=!fluidRunning;
+
+  if(fluidRunning){
+    fluidObjects.filter(o=>o.type==='wood'||o.type==='metal').forEach(o=>o.vy=0);
+  }
+
   updateFluidActionLabel();
   document.getElementById('status').textContent=fluidRunning
     ?'Water is running. Watch how it moves through your design.'
