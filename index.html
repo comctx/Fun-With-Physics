@@ -161,7 +161,7 @@ canvas{
 #fluidTray{
   flex:0 0 auto;
   display:none;
-  grid-template-columns:repeat(15,minmax(82px,1fr));
+  grid-template-columns:repeat(18,minmax(82px,1fr));
   gap:7px;
   padding:8px;
   background:#173142;
@@ -179,6 +179,23 @@ canvas{
 }
 .fluidButton .icon{display:block;font-size:20px;margin-bottom:2px}
 .fluidButton.active{outline:2px solid #55d9ff}
+#measureCard{display:none}
+#measureCard.show{display:block}
+.presetGrid{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:10px;
+  margin-top:12px;
+}
+.presetCard{
+  border:1px solid #d6dde4;
+  border-radius:14px;
+  padding:12px;
+  background:#f8fafc;
+}
+.presetCard h3{margin:0 0 5px;font-size:16px}
+.presetCard p{font-size:13px;margin:4px 0 8px}
+.presetCard button{width:100%}
 .overlay{
   position:absolute;
   inset:0;
@@ -243,9 +260,10 @@ canvas{
   .topButtons button{flex:1;padding:7px 5px;font-size:12px}
   .modebar .goal{min-width:230px}
   #tray{grid-template-columns:repeat(9,78px)}
-  #fluidTray{grid-template-columns:repeat(15,78px)}
+  #fluidTray{grid-template-columns:repeat(18,78px)}
   #selectionPanel{grid-template-columns:repeat(4,1fr)}
   .levelGrid{grid-template-columns:1fr}
+  .presetGrid{grid-template-columns:1fr}
 }
 </style>
 </head>
@@ -293,6 +311,10 @@ canvas{
       <strong id="budgetText">Parts left: 0</strong>
       <span>Use the allowed pieces</span>
     </div>
+    <div class="hudCard" id="measureCard">
+      <strong id="measurePrimary">Time: 0.0 s</strong>
+      <span id="measureSecondary">Water: 0 particles</span>
+    </div>
   </div>
 
   <div id="selectionPanel">
@@ -325,6 +347,33 @@ canvas{
       <div id="levelGrid" class="levelGrid"></div>
       <div class="actions">
         <button id="closePuzzleBtn">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="presetOverlay" class="overlay">
+    <div class="modal">
+      <h2>Fluid Physics Presets</h2>
+      <p>Load a ready-made experiment, then move the parts and change it.</p>
+      <div class="presetGrid">
+        <div class="presetCard">
+          <h3>Pipe to Tank</h3>
+          <p>Water source, elbow, pipe, and tank already connected.</p>
+          <button type="button" data-preset="pipeTank">Load</button>
+        </div>
+        <div class="presetCard">
+          <h3>Overflow Wheel</h3>
+          <p>Fill a tank and let overflow turn a water wheel.</p>
+          <button type="button" data-preset="overflowWheel">Load</button>
+        </div>
+        <div class="presetCard">
+          <h3>Float or Sink</h3>
+          <p>A tank with wood and metal ready for a buoyancy experiment.</p>
+          <button type="button" data-preset="floatSink">Load</button>
+        </div>
+      </div>
+      <div class="actions">
+        <button id="closePresetBtn">Close</button>
       </div>
     </div>
   </div>
@@ -369,6 +418,9 @@ canvas{
   <button class="fluidButton" data-fluid-part="drain"><span class="icon">🕳️</span>Drain</button>
   <button class="fluidButton" data-fluid-part="valve"><span class="icon">🔧</span>Valve</button>
   <button class="fluidButton" id="fluidActionBtn"><span class="icon">▶️</span>Start Water</button>
+  <button class="fluidButton" id="slowMoBtn"><span class="icon">🐢</span>Slow Motion</button>
+  <button class="fluidButton" id="measureBtn"><span class="icon">📏</span>Measure</button>
+  <button class="fluidButton" id="presetBtn"><span class="icon">🧪</span>Presets</button>
   <button class="fluidButton" id="fluidClearBtn"><span class="icon">🗑️</span>Clear</button>
 </div>
 </div>
@@ -406,6 +458,9 @@ let fluidDragOffsetX=0;
 let fluidDragOffsetY=0;
 let fluidId=1;
 let fluidWheelSpin=0;
+let slowMotion=false;
+let measureMode=false;
+let fluidElapsed=0;
 
 const gravity=760;
 const SAVE_KEY='rube_goldberg_creator_machine_v3';
@@ -489,7 +544,7 @@ const tutorialSlides=[
   },
   {
     title:'5. Try Other Modes',
-    text:'Sandbox gives you everything. Puzzle mode limits your parts. Challenge mode gives you special goals. Fluid Physics is another builder where you place water parts and make your own experiments.'
+    text:'Sandbox gives you everything. Puzzle mode limits your parts. Challenge mode gives you special goals. Fluid Physics is another builder where you place water parts and make your own experiments. It also has snapping, presets, measurements, and slow motion.'
   }
 ];
 
@@ -1354,6 +1409,7 @@ function loop(time){
   let dt=(time-lastTime)/1000;
   lastTime=time;
   dt=Math.min(dt,.025);
+  if(slowMotion) dt*=0.28;
   update(dt);
   draw();
   requestAnimationFrame(loop);
@@ -1371,6 +1427,7 @@ function setMode(mode){
 
   document.getElementById('tray').style.display=mode==='fluid'?'none':'grid';
   document.getElementById('fluidTray').classList.toggle('show',mode==='fluid');
+  if(mode!=='fluid') document.getElementById('measureCard').classList.remove('show');
   if(mode!=='fluid') document.getElementById('selectionPanel').classList.remove('show');
   document.getElementById('runBtn').style.display=mode==='fluid'?'none':'inline-block';
   document.getElementById('undoBtn').style.display=mode==='fluid'?'none':'inline-block';
@@ -1581,7 +1638,9 @@ function resetFluidBuilder(){
   setFluidSelected(null);
   fluidDragging=false;
   fluidWheelSpin=0;
+  fluidElapsed=0;
   updateFluidActionLabel();
+  updateMeasureHUD();
   document.querySelectorAll('.fluidButton[data-fluid-part]').forEach(b=>b.classList.remove('active'));
 }
 
@@ -1691,6 +1750,99 @@ function setFluidSelected(o,showPanel=true){
   }
 }
 
+function rotatePoint(x,y,a){
+  return {
+    x:x*Math.cos(a)-y*Math.sin(a),
+    y:x*Math.sin(a)+y*Math.cos(a)
+  };
+}
+
+function fluidConnectors(o){
+  const s=o.scale||1;
+  const a=o.angle||0;
+  const pts=[];
+
+  function add(lx,ly){
+    const r=rotatePoint(lx*s,ly*s,a);
+    pts.push({x:o.x+r.x,y:o.y+r.y});
+  }
+
+  if(o.type==='pipe'){
+    add(-o.w/2,0); add(o.w/2,0);
+  }else if(o.type==='elbow'){
+    add(-44,0); add(0,44);
+  }else if(o.type==='source'){
+    add(0,28);
+  }else if(o.type==='pump'){
+    add(-35,0); add(35,0);
+  }else if(o.type==='valve'){
+    add(-o.r,0); add(o.r,0);
+  }else if(o.type==='drain'){
+    add(-o.r-18,0);
+  }else if(o.type==='tank'){
+    add(0,-o.h/2);
+    add(-o.w/2,0);
+    add(o.w/2,0);
+    add(0,o.h/2);
+  }else if(o.type==='canal'){
+    add(-o.w/2,0); add(o.w/2,0);
+  }
+
+  return pts;
+}
+
+function snapFluidPart(o){
+  const own=fluidConnectors(o);
+  if(!own.length) return false;
+
+  let best=null;
+
+  fluidObjects.forEach(other=>{
+    if(other===o) return;
+    const theirs=fluidConnectors(other);
+
+    own.forEach(a=>{
+      theirs.forEach(b=>{
+        const d=Math.hypot(a.x-b.x,a.y-b.y);
+        if(d<30 && (!best||d<best.d)){
+          best={d,dx:b.x-a.x,dy:b.y-a.y};
+        }
+      });
+    });
+  });
+
+  if(best){
+    o.x+=best.dx;
+    o.y+=best.dy;
+    document.getElementById('status').textContent=fluidPartName(o.type)+' snapped into connection.';
+    return true;
+  }
+
+  return false;
+}
+
+function updateMeasureHUD(){
+  const card=document.getElementById('measureCard');
+  card.classList.toggle('show',gameMode==='fluid'&&measureMode);
+  if(!measureMode) return;
+
+  document.getElementById('measurePrimary').textContent='Time: '+fluidElapsed.toFixed(1)+' s';
+
+  let detail='Water: '+fluidParticles.length+' particles';
+  if(fluidSelected){
+    if(fluidSelected.type==='tank'){
+      const percent=Math.round(((fluidSelected.fill||0)/(fluidSelected.h-14))*100);
+      detail='Tank level: '+Math.max(0,Math.min(100,percent))+'%';
+    }else if(fluidSelected.type==='wheel'){
+      detail='Wheel speed: '+Math.abs(fluidSelected.spin||0).toFixed(2);
+    }else{
+      detail=fluidPartName(fluidSelected.type)+'  x:'+Math.round(fluidSelected.x)+' y:'+Math.round(fluidSelected.y);
+    }
+  }
+
+  document.getElementById('measureSecondary').textContent=detail;
+}
+
 function fluidPointerStart(e){
   const p=posFromEvent(e);
   const hit=fluidHitObject(p.x,p.y);
@@ -1751,6 +1903,10 @@ function fluidPointerEnd(){
       document.getElementById('status').textContent=
         fluidPartName(fluidSelected.type)+' released. Watch whether it floats or sinks.';
     }
+  }
+
+  if(fluidSelected){
+    snapFluidPart(fluidSelected);
   }
 
   fluidDragging=false;
@@ -1833,6 +1989,9 @@ function connectedDrainForTank(t){
 
 function updateFluid(dt){
   if(gameMode!=='fluid') return;
+
+  if(fluidRunning) fluidElapsed+=dt;
+  updateMeasureHUD();
 
   if(fluidRunning){
     fluidObjects.filter(o=>o.type==='source').forEach(s=>{
@@ -2479,6 +2638,67 @@ document.getElementById('fluidActionBtn').addEventListener('click',()=>{
   document.getElementById('status').textContent=fluidRunning
     ?'Water is running. Watch how it moves through your design.'
     :'Water stopped. Rearrange your parts and try again.';
+});
+
+document.getElementById('slowMoBtn').addEventListener('click',()=>{
+  slowMotion=!slowMotion;
+  document.getElementById('slowMoBtn').classList.toggle('active',slowMotion);
+  document.getElementById('slowMoBtn').lastChild.textContent=slowMotion?' Normal Speed':' Slow Motion';
+  document.getElementById('status').textContent=slowMotion?'Slow motion enabled.':'Normal speed restored.';
+});
+
+document.getElementById('measureBtn').addEventListener('click',()=>{
+  measureMode=!measureMode;
+  document.getElementById('measureBtn').classList.toggle('active',measureMode);
+  updateMeasureHUD();
+});
+
+document.getElementById('presetBtn').addEventListener('click',()=>{
+  document.getElementById('presetOverlay').classList.add('open');
+});
+
+document.getElementById('closePresetBtn').addEventListener('click',()=>{
+  document.getElementById('presetOverlay').classList.remove('open');
+});
+
+function loadFluidPreset(name){
+  resetFluidBuilder();
+
+  if(name==='pipeTank'){
+    const source=makeFluidPart('source',width*.24,85);
+    const elbow=makeFluidPart('elbow',width*.24,170);
+    elbow.angle=0;
+    const pipe=makeFluidPart('pipe',width*.36,214);
+    const tank=makeFluidPart('tank',width*.58,300);
+    fluidObjects=[source,elbow,pipe,tank];
+  }
+
+  if(name==='overflowWheel'){
+    const source=makeFluidPart('source',width*.38,70);
+    const tank=makeFluidPart('tank',width*.40,260);
+    const wheel=makeFluidPart('wheel',width*.68,330);
+    const drain=makeFluidPart('drain',width*.56,330);
+    fluidObjects=[source,tank,wheel,drain];
+  }
+
+  if(name==='floatSink'){
+    const source=makeFluidPart('source',width*.50,65);
+    const tank=makeFluidPart('tank',width*.50,285);
+    tank.fill=tank.h*.72;
+    const wood=makeFluidPart('wood',width*.45,180);
+    const metal=makeFluidPart('metal',width*.56,180);
+    wood.held=true;
+    metal.held=true;
+    fluidObjects=[source,tank,wood,metal];
+  }
+
+  setFluidSelected(null);
+  document.getElementById('presetOverlay').classList.remove('open');
+  document.getElementById('status').textContent='Preset loaded. Move the parts or start the water.';
+}
+
+document.querySelectorAll('[data-preset]').forEach(btn=>{
+  btn.addEventListener('click',()=>loadFluidPreset(btn.dataset.preset));
 });
 
 document.getElementById('fluidClearBtn').addEventListener('click',()=>{
