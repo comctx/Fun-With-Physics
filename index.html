@@ -1414,6 +1414,20 @@ function pointerUp(){
   dragging=false;
 }
 
+canvas.addEventListener('dblclick',e=>{
+  if(gameMode!=='air'&&gameMode!=='electric'&&gameMode!=='simple') return;
+  if(gameMode==='simple'&&labRunning) return;
+  const p=posFromEvent(e);
+  const hit=labHit(p.x,p.y);
+  if(!hit) return;
+  labDragging=false;
+  labLastTapId=hit.id;
+  hit._showControlsOnTap=false;
+  showLabEditControls(hit);
+  document.getElementById('status').textContent=
+    labName(hit.type)+' edit controls opened.';
+});
+
 canvas.addEventListener('mousedown',pointerDown);
 canvas.addEventListener('mousemove',e=>{
   pointerMove(e);
@@ -2744,7 +2758,15 @@ function labHit(x,y){
   return null;
 }
 
+function showLabEditControls(o){
+  if(!o) return;
+  labSelected=o;
+  document.getElementById('selectionLabel').textContent='Selected: '+labName(o.type).toUpperCase();
+  document.getElementById('selectionPanel').classList.add('show');
+}
+
 function labPointerStart(e){
+  if(gameMode==='simple'&&labRunning) return;
   const p=posFromEvent(e),hit=labHit(p.x,p.y);
 
   if(!hit){
@@ -2795,8 +2817,7 @@ function labPointerEnd(){
   labLastTapId=labSelected.id;
 
   if(showControls){
-    document.getElementById('selectionLabel').textContent='Selected: '+labName(labSelected.type).toUpperCase();
-    document.getElementById('selectionPanel').classList.add('show');
+    showLabEditControls(labSelected);
   }else{
     document.getElementById('selectionPanel').classList.remove('show');
     if(moved<8&&labSelected.type!=='switch'){
