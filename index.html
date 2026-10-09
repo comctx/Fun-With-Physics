@@ -1693,6 +1693,13 @@ function setFluidSelected(o){
 function fluidPointerStart(e){
   const p=posFromEvent(e);
   const hit=fluidHitObject(p.x,p.y);
+
+  if(!hit){
+    setFluidSelected(null);
+    fluidDragging=false;
+    return;
+  }
+
   setFluidSelected(hit);
 
   if(hit){
@@ -2172,15 +2179,61 @@ function drawFluidPart(o){
     ctx.restore();
   }
 
-  if(o.type==='wood'||o.type==='metal'){
-    ctx.font='34px Arial';
+  if(o.type==='wood'){
+    // Draw a real wood block instead of relying on an emoji glyph.
+    ctx.fillStyle='#9b6a3d';
+    ctx.strokeStyle='#d2a06b';
+    ctx.lineWidth=3;
+    ctx.beginPath();
+    ctx.roundRect(-24,-14,48,28,7);
+    ctx.fill();
+    ctx.stroke();
+
+    // Wood grain.
+    ctx.strokeStyle='#6f4728';
+    ctx.lineWidth=2;
+    ctx.beginPath();
+    ctx.moveTo(-16,-5);ctx.bezierCurveTo(-6,-10,5,0,16,-5);
+    ctx.moveTo(-17,5);ctx.bezierCurveTo(-7,0,6,10,17,4);
+    ctx.stroke();
+
+    ctx.fillStyle='#d7b082';
+    ctx.beginPath();
+    ctx.ellipse(18,0,5,10,0,0,Math.PI*2);
+    ctx.fill();
+
+    ctx.fillStyle='#ffffff';
+    ctx.font='bold 9px Arial';
     ctx.textAlign='center';
     ctx.textBaseline='middle';
-    ctx.fillText(o.type==='wood'?'🪵':'🔩',0,0);
+    ctx.fillText('WOOD',0,0);
 
     if(o.held){
       ctx.font='bold 9px Arial';
-      ctx.fillStyle='#ffffff';
+      ctx.fillText('DRAG TO DROP',0,30);
+    }
+  }
+
+  if(o.type==='metal'){
+    // Draw a visible metal weight/bolt shape.
+    ctx.fillStyle='#aeb7c0';
+    ctx.strokeStyle='#e1e6ea';
+    ctx.lineWidth=3;
+    ctx.beginPath();
+    ctx.roundRect(-20,-14,40,28,6);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.fillStyle='#687580';
+    ctx.fillRect(-9,-14,18,28);
+    ctx.fillStyle='#ffffff';
+    ctx.font='bold 9px Arial';
+    ctx.textAlign='center';
+    ctx.textBaseline='middle';
+    ctx.fillText('METAL',0,0);
+
+    if(o.held){
+      ctx.font='bold 9px Arial';
       ctx.fillText('DRAG TO DROP',0,30);
     }
   }
