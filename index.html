@@ -340,14 +340,125 @@ canvas{
 }
 .pulse{animation:pulse .55s ease-in-out 3}
 @keyframes pulse{50%{transform:scale(1.13)}}
+
+/* Professional top-control layout */
+header{
+  align-items:center;
+  padding:6px 10px;
+  min-height:58px;
+}
+.brand h1{font-size:18px;line-height:1.1}
+#status{font-size:11px;max-width:430px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.topButtons{gap:5px;flex-wrap:nowrap;overflow-x:auto}
+.topButtons button{
+  min-height:34px;
+  padding:6px 9px;
+  font-size:11px;
+  white-space:nowrap;
+}
+.modebar{
+  padding:6px 9px;
+  gap:6px;
+  min-height:52px;
+}
+.modebar>button{
+  min-height:38px;
+  padding:6px 10px;
+  font-size:11px;
+  white-space:nowrap;
+}
+.modebar .goal{
+  min-width:210px;
+  max-width:260px;
+  font-size:11px;
+}
+#hud{
+  position:static;
+  margin-left:auto;
+  display:flex;
+  gap:6px;
+  flex-wrap:nowrap;
+  pointer-events:none;
+}
+.hudCard{
+  min-width:105px;
+  padding:6px 8px;
+  border-radius:10px;
+}
+.hudCard strong{font-size:11px}
+.hudCard span{font-size:10px}
+#starRow{font-size:13px;letter-spacing:1px}
+
+#tray,#fluidTray,.labTray,#rubeTray{
+  order:0;
+  border-top:none;
+  border-bottom:1px solid #365162;
+}
+#tray{
+  grid-template-columns:repeat(10,86px);
+  gap:6px;
+  padding:7px 9px;
+  background:#172b39;
+}
+#fluidTray{
+  grid-template-columns:repeat(30,86px);
+  gap:6px;
+  padding:7px 9px;
+}
+.labTray{
+  grid-template-columns:repeat(10,86px);
+  gap:6px;
+  padding:7px 9px;
+}
+.partButton,.fluidButton,.labButton{
+  min-width:80px;
+  min-height:44px;
+  padding:4px 4px;
+  font-size:10px;
+  border-radius:9px;
+}
+.partButton .icon,.fluidButton .icon,.labButton .icon{
+  font-size:17px;
+  margin-bottom:1px;
+}
+#mechanicsExplainBtn{
+  background:#2b4658;
+  border-color:#527184;
+}
+.rubeToolHeader{padding:6px 9px;gap:6px}
+.rubeCatBtn{min-height:30px;padding:5px 10px;font-size:10px}
+.rubePartsRow{padding:7px 9px;gap:6px}
+.rubePartsRow .partButton{
+  flex-basis:86px;
+  min-width:86px;
+  min-height:46px;
+}
+
+#workspace{
+  flex:1 1 auto;
+  min-height:260px;
+  border-top:1px solid #254657;
+}
+#selectionPanel{
+  top:10px;
+  bottom:auto;
+  width:min(700px,calc(100% - 18px));
+}
+
 @media(max-width:850px){
-  header{flex-wrap:wrap}
-  .brand h1{font-size:18px}
-  .topButtons{width:100%;justify-content:flex-start}
-  .topButtons button{flex:1;padding:7px 5px;font-size:12px}
-  .modebar .goal{min-width:230px}
-  #tray{grid-template-columns:repeat(9,78px)}
-  #fluidTray{grid-template-columns:repeat(30,78px)}
+  header{flex-wrap:nowrap}
+  .brand{min-width:180px}
+  .brand h1{font-size:15px}
+  #status{font-size:10px;max-width:200px}
+  .topButtons{width:auto;justify-content:flex-start}
+  .topButtons button{flex:0 0 auto;padding:5px 7px;font-size:10px}
+  .modebar .goal{display:none}
+  #hud{margin-left:6px}
+  .hudCard{min-width:92px}
+  #tray{grid-template-columns:repeat(10,76px)}
+  #fluidTray{grid-template-columns:repeat(30,76px)}
+  .labTray{grid-template-columns:repeat(10,76px)}
+  .partButton,.fluidButton,.labButton{min-width:72px}
   #selectionPanel{grid-template-columns:repeat(4,1fr)}
   .levelGrid{grid-template-columns:1fr}
   .presetGrid{grid-template-columns:1fr}
@@ -360,7 +471,7 @@ canvas{
 <header>
   <div class="brand">
     <h1>⚙️ Rube Goldberg Creator</h1>
-    <div id="status">Build something ridiculous. Get the ball to ring the bell.</div>
+    <div id="status">Choose a lab, select parts, then build in the play field below.</div>
   </div>
   <div class="topButtons">
     <button id="undoBtn">↶ Undo</button>
@@ -383,11 +494,6 @@ canvas{
   <button id="electricModeBtn">⚡ Electricity</button>
   <button id="rubeModeBtn">🎭 Rube Goldberg</button>
   <div id="goalText" class="goal">Goal: Ring the bell any way you want.</div>
-</div>
-
-<div id="workspace">
-  <canvas id="game"></canvas>
-
   <div id="hud">
     <div class="hudCard">
       <strong id="score">Absurdity: 0</strong>
@@ -404,100 +510,6 @@ canvas{
     <div class="hudCard" id="measureCard">
       <strong id="measurePrimary">Time: 0.0 s</strong>
       <span id="measureSecondary">Water: 0 particles</span>
-    </div>
-  </div>
-
-  <div id="selectionPanel">
-    <div id="selectionLabel">Selected</div>
-    <button id="rotateLeftBtn">↺ Rotate</button>
-    <button id="rotateRightBtn">↻ Rotate</button>
-    <button id="smallerBtn">− Size</button>
-    <button id="largerBtn">＋ Size</button>
-    <button id="flipBtn">⇆ Flip</button>
-    <button id="duplicateBtn">⧉ Copy</button>
-    <button id="deleteBtn" class="danger">Delete</button>
-  </div>
-
-  <div id="tutorialOverlay" class="overlay">
-    <div class="modal">
-      <h2 id="tutorialTitle">Welcome!</h2>
-      <p id="tutorialText"></p>
-      <div class="actions">
-        <button id="tutorialBackBtn">Back</button>
-        <button id="tutorialNextBtn">Next</button>
-        <button id="tutorialCloseBtn">Skip</button>
-      </div>
-    </div>
-  </div>
-
-  <div id="puzzleOverlay" class="overlay">
-    <div class="modal">
-      <h2>Choose a Puzzle</h2>
-      <p>Each puzzle gives you a limited set of parts. Make the ball ring the bell.</p>
-      <div id="levelGrid" class="levelGrid"></div>
-      <div class="actions">
-        <button id="closePuzzleBtn">Close</button>
-      </div>
-    </div>
-  </div>
-
-  <div id="presetOverlay" class="overlay">
-    <div class="modal">
-      <h2>Fluid Physics Presets</h2>
-      <p>Load a ready-made experiment, then move the parts and change it.</p>
-      <div class="presetGrid">
-        <div class="presetCard">
-          <h3>Pipe to Tank</h3>
-          <p>Water source, elbow, pipe, and tank already connected.</p>
-          <button type="button" data-preset="pipeTank">Load</button>
-        </div>
-        <div class="presetCard">
-          <h3>Overflow Wheel</h3>
-          <p>Fill a tank and let overflow turn a water wheel.</p>
-          <button type="button" data-preset="overflowWheel">Load</button>
-        </div>
-        <div class="presetCard">
-          <h3>Float or Sink</h3>
-          <p>A tank with wood and metal ready for a buoyancy experiment.</p>
-          <button type="button" data-preset="floatSink">Load</button>
-        </div>
-      </div>
-      <div class="actions">
-        <button id="closePresetBtn">Close</button>
-      </div>
-    </div>
-  </div>
-
-  <div id="fluidSaveOverlay" class="overlay">
-    <div class="modal">
-      <h2>Saved Fluid Experiments</h2>
-      <p>Save up to three different layouts on this device.</p>
-      <div class="presetGrid">
-        <div class="presetCard"><h3>Experiment 1</h3><button data-save-slot="1">Save</button><button data-load-slot="1">Load</button></div>
-        <div class="presetCard"><h3>Experiment 2</h3><button data-save-slot="2">Save</button><button data-load-slot="2">Load</button></div>
-        <div class="presetCard"><h3>Experiment 3</h3><button data-save-slot="3">Save</button><button data-load-slot="3">Load</button></div>
-      </div>
-      <div class="actions"><button id="closeFluidSaveBtn">Close</button></div>
-    </div>
-  </div>
-
-  <div id="explainOverlay" class="overlay">
-    <div class="modal">
-      <h2>What Happened?</h2>
-      <div id="explainText"></div>
-      <div class="actions"><button id="closeExplainBtn">Close</button></div>
-    </div>
-  </div>
-
-  <div id="successOverlay" class="overlay">
-    <div class="modal" id="successCard">
-      <div id="successTitle">🔔 DING!</div>
-      <div id="successStars">★★★</div>
-      <p id="successMessage"></p>
-      <div class="actions">
-        <button id="keepBuildingBtn">Keep Building</button>
-        <button id="nextPuzzleBtn">Next Puzzle</button>
-      </div>
     </div>
   </div>
 </div>
@@ -611,6 +623,106 @@ canvas{
   <button class="labButton" id="electricExplainBtn"><span class="icon">💡</span>What Happened?</button>
   <button class="labButton" id="electricClearBtn"><span class="icon">🗑️</span>Clear</button>
 </div>
+
+
+<div id="workspace">
+  <canvas id="game"></canvas>
+
+  <div id="selectionPanel">
+    <div id="selectionLabel">Selected</div>
+    <button id="rotateLeftBtn">↺ Rotate</button>
+    <button id="rotateRightBtn">↻ Rotate</button>
+    <button id="smallerBtn">− Size</button>
+    <button id="largerBtn">＋ Size</button>
+    <button id="flipBtn">⇆ Flip</button>
+    <button id="duplicateBtn">⧉ Copy</button>
+    <button id="deleteBtn" class="danger">Delete</button>
+  </div>
+
+  <div id="tutorialOverlay" class="overlay">
+    <div class="modal">
+      <h2 id="tutorialTitle">Welcome!</h2>
+      <p id="tutorialText"></p>
+      <div class="actions">
+        <button id="tutorialBackBtn">Back</button>
+        <button id="tutorialNextBtn">Next</button>
+        <button id="tutorialCloseBtn">Skip</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="puzzleOverlay" class="overlay">
+    <div class="modal">
+      <h2>Choose a Puzzle</h2>
+      <p>Each puzzle gives you a limited set of parts. Make the ball ring the bell.</p>
+      <div id="levelGrid" class="levelGrid"></div>
+      <div class="actions">
+        <button id="closePuzzleBtn">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="presetOverlay" class="overlay">
+    <div class="modal">
+      <h2>Fluid Physics Presets</h2>
+      <p>Load a ready-made experiment, then move the parts and change it.</p>
+      <div class="presetGrid">
+        <div class="presetCard">
+          <h3>Pipe to Tank</h3>
+          <p>Water source, elbow, pipe, and tank already connected.</p>
+          <button type="button" data-preset="pipeTank">Load</button>
+        </div>
+        <div class="presetCard">
+          <h3>Overflow Wheel</h3>
+          <p>Fill a tank and let overflow turn a water wheel.</p>
+          <button type="button" data-preset="overflowWheel">Load</button>
+        </div>
+        <div class="presetCard">
+          <h3>Float or Sink</h3>
+          <p>A tank with wood and metal ready for a buoyancy experiment.</p>
+          <button type="button" data-preset="floatSink">Load</button>
+        </div>
+      </div>
+      <div class="actions">
+        <button id="closePresetBtn">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="fluidSaveOverlay" class="overlay">
+    <div class="modal">
+      <h2>Saved Fluid Experiments</h2>
+      <p>Save up to three different layouts on this device.</p>
+      <div class="presetGrid">
+        <div class="presetCard"><h3>Experiment 1</h3><button data-save-slot="1">Save</button><button data-load-slot="1">Load</button></div>
+        <div class="presetCard"><h3>Experiment 2</h3><button data-save-slot="2">Save</button><button data-load-slot="2">Load</button></div>
+        <div class="presetCard"><h3>Experiment 3</h3><button data-save-slot="3">Save</button><button data-load-slot="3">Load</button></div>
+      </div>
+      <div class="actions"><button id="closeFluidSaveBtn">Close</button></div>
+    </div>
+  </div>
+
+  <div id="explainOverlay" class="overlay">
+    <div class="modal">
+      <h2>What Happened?</h2>
+      <div id="explainText"></div>
+      <div class="actions"><button id="closeExplainBtn">Close</button></div>
+    </div>
+  </div>
+
+  <div id="successOverlay" class="overlay">
+    <div class="modal" id="successCard">
+      <div id="successTitle">🔔 DING!</div>
+      <div id="successStars">★★★</div>
+      <p id="successMessage"></p>
+      <div class="actions">
+        <button id="keepBuildingBtn">Keep Building</button>
+        <button id="nextPuzzleBtn">Next Puzzle</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 </div>
 
 <script>
