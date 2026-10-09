@@ -1800,13 +1800,23 @@ function connectedDrainForTank(t){
     const rightDist=Math.abs(d.x-(b.x+b.w));
     const topDist=Math.abs(d.y-b.y);
     const bottomDist=Math.abs(d.y-tankBottom);
-    const minDist=Math.min(leftDist,rightDist,topDist,bottomDist);
 
-    let edge='right';
-    if(minDist===leftDist) edge='left';
-    else if(minDist===rightDist) edge='right';
-    else if(minDist===bottomDist) edge='bottom';
-    else if(minDist===topDist) edge=(d.x<t.x?'left':'right');
+    // Prefer a side-wall connection whenever the drain is touching a side.
+    // Only treat it as a bottom drain when it is clearly centered under the tank bottom.
+    const sideDist=Math.min(leftDist,rightDist);
+    const nearSide=sideDist<=dr+34;
+    const nearBottom=bottomDist<=dr+26 &&
+      d.x>b.x+dr*.6 &&
+      d.x<b.x+b.w-dr*.6;
+
+    let edge;
+    if(nearSide){
+      edge=leftDist<=rightDist?'left':'right';
+    }else if(nearBottom){
+      edge='bottom';
+    }else{
+      edge=leftDist<=rightDist?'left':'right';
+    }
 
     let targetFill=0;
     if(edge==='left'||edge==='right'){
@@ -2092,15 +2102,16 @@ function updateFluid(dt){
     if(!info) return;
 
     const d=info.drain;
-    d.activeDrain=true;
+    const aboveDrain=(t.fill||0)>info.targetFill+0.5;
+    d.activeDrain=aboveDrain;
 
-    if((t.fill||0)>info.targetFill){
+    if(aboveDrain){
       const drainRate=220*dt*(d.scale||1);
       t.fill=Math.max(info.targetFill,(t.fill||0)-drainRate);
     }
 
-    // Show outflow whenever the tank contains water above the drain's level.
-    if((t.fill||0)>0.5){
+    // Show outflow only when water is actually draining through the opening.
+    if(aboveDrain){
       const b=fluidBounds(t);
       const dr=d.r*(d.scale||1);
       let ox=d.x,oy=d.y,vx=0,vy=80;
