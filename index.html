@@ -2411,9 +2411,10 @@ function updateFluid(dt){
     o.y+=o.vy*dt;
 
     let inTank=null;
-    fluidObjects.filter(t=>t.type==='tank'&&(t.fill||0)>18).forEach(t=>{
+    fluidObjects.filter(t=>(t.type==='tank'||t.type==='heater')&&(t.fill||0)>18).forEach(t=>{
       const b=fluidBounds(t);
-      if(o.x>b.x&&o.x<b.x+b.w&&o.y>b.y&&o.y<b.y+b.h) inTank=t;
+      const pad=t.type==='heater'?10:0;
+      if(o.x>b.x+pad&&o.x<b.x+b.w-pad&&o.y>b.y-18&&o.y<b.y+b.h) inTank=t;
     });
 
     if(inTank){
