@@ -161,7 +161,7 @@ canvas{
 #fluidTray{
   flex:0 0 auto;
   display:none;
-  grid-template-columns:repeat(18,minmax(82px,1fr));
+  grid-template-columns:repeat(19,minmax(82px,1fr));
   gap:7px;
   padding:8px;
   background:#173142;
@@ -260,7 +260,7 @@ canvas{
   .topButtons button{flex:1;padding:7px 5px;font-size:12px}
   .modebar .goal{min-width:230px}
   #tray{grid-template-columns:repeat(9,78px)}
-  #fluidTray{grid-template-columns:repeat(18,78px)}
+  #fluidTray{grid-template-columns:repeat(19,78px)}
   #selectionPanel{grid-template-columns:repeat(4,1fr)}
   .levelGrid{grid-template-columns:1fr}
   .presetGrid{grid-template-columns:1fr}
@@ -409,6 +409,7 @@ canvas{
   <button class="fluidButton" data-fluid-part="elbow"><span class="icon">↪️</span>Pipe Elbow</button>
   <button class="fluidButton" data-fluid-part="pump"><span class="icon">⚙️</span>Pump</button>
   <button class="fluidButton" data-fluid-part="tank"><span class="icon">🛢️</span>Tank</button>
+  <button class="fluidButton" data-fluid-part="heater"><span class="icon">♨️</span>Water Heater</button>
   <button class="fluidButton" data-fluid-part="dam"><span class="icon">🧱</span>Dam</button>
   <button class="fluidButton" data-fluid-part="gate"><span class="icon">🚪</span>Gate</button>
   <button class="fluidButton" data-fluid-part="canal"><span class="icon">🟦</span>Canal</button>
@@ -1659,6 +1660,7 @@ function makeFluidPart(type,x=width*.5,y=height*.45){
   if(type==='elbow') return {...base,w:90,h:90};
   if(type==='pump') return {...base,w:70,h:58,power:1};
   if(type==='tank') return {...base,w:180,h:130,fill:0};
+  if(type==='heater') return {...base,w:150,h:150,fill:0,temp:20,heating:true,boiling:false};
   if(type==='dam') return {...base,w:34,h:150};
   if(type==='gate') return {...base,w:30,h:90,open:false};
   if(type==='canal') return {...base,w:190,h:34};
@@ -1682,6 +1684,9 @@ function addFluidPart(type){
   if(type==='wood'||type==='metal'){
     document.getElementById('status').textContent=
       fluidPartName(type)+' added. Drag it where you want it, then release it to drop into the water.';
+  }else if(type==='heater'){
+    document.getElementById('status').textContent=
+      'Water Heater added. Fill it with water, start the simulation, and watch the temperature rise to 100°C. Tap it to turn heat on or off.';
   }else{
     document.getElementById('status').textContent=
       fluidPartName(type)+' added. Drag it into place. Overlap pipe ends slightly so the water transfers cleanly.';
@@ -1690,7 +1695,7 @@ function addFluidPart(type){
 
 function fluidPartName(type){
   return ({
-    source:'Water Source',pipe:'Pipe',elbow:'Pipe Elbow',pump:'Pump',tank:'Tank',dam:'Dam',
+    source:'Water Source',pipe:'Pipe',elbow:'Pipe Elbow',pump:'Pump',tank:'Tank',heater:'Water Heater',dam:'Dam',
     gate:'Gate',canal:'Canal',wheel:'Water Wheel',wood:'Wood',
     metal:'Metal',drain:'Drain',valve:'Valve'
   })[type]||type;
@@ -1782,7 +1787,7 @@ function fluidConnectors(o){
     add(-o.r,0); add(o.r,0);
   }else if(o.type==='drain'){
     add(-o.r-18,0);
-  }else if(o.type==='tank'){
+  }else if(o.type==='tank'||o.type==='heater'){
     add(0,-o.h/2);
     add(-o.w/2,0);
     add(o.w/2,0);
@@ -1836,6 +1841,8 @@ function updateMeasureHUD(){
     if(fluidSelected.type==='tank'){
       const percent=Math.round(((fluidSelected.fill||0)/(fluidSelected.h-14))*100);
       detail='Tank level: '+Math.max(0,Math.min(100,percent))+'%';
+    }else if(fluidSelected.type==='heater'){
+      detail='Water temperature: '+Math.round(fluidSelected.temp||20)+'°C';
     }else if(fluidSelected.type==='wheel'){
       detail='Wheel speed: '+Math.abs(fluidSelected.spin||0).toFixed(2);
     }else{
@@ -1898,10 +1905,16 @@ function fluidPointerEnd(){
       (fluidSelected.y+fluidDragOffsetY)-(fluidSelected._pointerStartY||fluidSelected.y)
     );
 
-    if(moved<8 && (fluidSelected.type==='gate'||fluidSelected.type==='valve'||fluidSelected.type==='drain')){
-      fluidSelected.open=!fluidSelected.open;
-      document.getElementById('status').textContent=
-        fluidPartName(fluidSelected.type)+' '+(fluidSelected.open?'opened.':'closed.');
+    if(moved<8 && (fluidSelected.type==='gate'||fluidSelected.type==='valve'||fluidSelected.type==='drain'||fluidSelected.type==='heater')){
+      if(fluidSelected.type==='heater'){
+        fluidSelected.heating=!fluidSelected.heating;
+        document.getElementById('status').textContent=
+          'Water Heater '+(fluidSelected.heating?'turned on.':'turned off.');
+      }else{
+        fluidSelected.open=!fluidSelected.open;
+        document.getElementById('status').textContent=
+          fluidPartName(fluidSelected.type)+' '+(fluidSelected.open?'opened.':'closed.');
+      }
     }
 
     if((fluidSelected.type==='wood'||fluidSelected.type==='metal') && moved>=8){
@@ -2022,6 +2035,17 @@ function updateFluid(dt){
 
   fluidParticles.forEach(p=>{
     p.age+=dt;
+
+    if(p.phase==='steam'){
+      p.vy-=18*dt;
+      p.vx+=(Math.random()-.5)*18*dt;
+      p.x+=p.vx*dt;
+      p.y+=p.vy*dt;
+      p.r=Math.min(10,p.r+5*dt);
+      if(p.age>4||p.y<-30) p.dead=true;
+      return;
+    }
+
     const recentlyGuided=p.inPipeId||p.elbowId;
     p.vy+=(recentlyGuided?45:430)*dt;
     p.inPipeId=null;
@@ -2164,6 +2188,31 @@ function updateFluid(dt){
       }
     });
 
+    // Water heaters collect incoming water and hold it while it heats.
+    fluidObjects.filter(o=>o.type==='heater').forEach(o=>{
+      const s=o.scale||1;
+      const a=o.angle||0;
+      const ca=Math.cos(-a),sa=Math.sin(-a);
+      const dx=p.x-o.x,dy=p.y-o.y;
+      const lx=(dx*ca-dy*sa)/s;
+      const ly=(dx*sa+dy*ca)/s;
+      const halfW=o.w/2;
+      const halfH=o.h/2;
+      const maxFill=o.h-18;
+      const inside=lx>-halfW+8&&lx<halfW-8&&ly>-halfH+6&&ly<halfH-6;
+
+      if(inside){
+        if((o.fill||0)<maxFill){
+          o.fill=Math.min(maxFill,(o.fill||0)+.17);
+          p.dead=true;
+        }else{
+          // If full, let excess water spill over the top.
+          p.y=o.y-halfH*s+8;
+          p.vy=Math.max(70,Math.abs(p.vy));
+        }
+      }
+    });
+
     // Tanks collect water. A connected drain becomes the effective maximum water level.
     fluidObjects.filter(o=>o.type==='tank').forEach(o=>{
       const s=o.scale||1;
@@ -2278,6 +2327,39 @@ function updateFluid(dt){
 
   fluidParticles=fluidParticles.filter(p=>!p.dead);
 
+  // Heat water toward boiling; at 100°C liquid gradually becomes rising steam.
+  fluidObjects.filter(o=>o.type==='heater').forEach(o=>{
+    const hasWater=(o.fill||0)>0.5;
+
+    if(o.heating && hasWater && fluidRunning){
+      o.temp=Math.min(100,(o.temp||20)+16*dt);
+    }else if(!o.heating && (o.temp||20)>20){
+      o.temp=Math.max(20,(o.temp||20)-3*dt);
+    }
+
+    o.boiling=(o.temp||20)>=99.5 && hasWater && o.heating && fluidRunning;
+
+    if(o.boiling){
+      const boilRate=8*dt;
+      o.fill=Math.max(0,(o.fill||0)-boilRate);
+
+      // Steam leaves the open top of the heater.
+      if(Math.random()<Math.min(1,dt*18)){
+        for(let i=0;i<2;i++){
+          fluidParticles.push({
+            x:o.x+(Math.random()-.5)*o.w*.45*(o.scale||1),
+            y:o.y-o.h*.48*(o.scale||1),
+            vx:(Math.random()-.5)*24,
+            vy:-70-Math.random()*55,
+            r:4+Math.random()*3,
+            age:0,
+            phase:'steam'
+          });
+        }
+      }
+    }
+  });
+
   // Drains are passive and continuously clamp tank water to the drain opening.
   fluidObjects.filter(o=>o.type==='drain').forEach(d=>d.activeDrain=false);
   const drains=fluidObjects.filter(o=>o.type==='drain'&&o.open!==false);
@@ -2384,8 +2466,10 @@ function updateFluid(dt){
 }
 
 function drawWaterParticles(){
-  ctx.fillStyle='rgba(68,175,255,.82)';
   fluidParticles.forEach(p=>{
+    ctx.fillStyle=p.phase==='steam'
+      ?'rgba(235,245,250,'+Math.max(.12,.62-p.age*.12)+')'
+      :'rgba(68,175,255,.82)';
     ctx.beginPath();
     ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
     ctx.fill();
@@ -2475,6 +2559,62 @@ function drawFluidPart(o){
       ctx.textAlign='center';
       ctx.fillText('FULL / OVERFLOW',0,-o.h/2-9);
     }
+  }
+
+  if(o.type==='heater'){
+    const temp=Math.max(20,Math.min(100,o.temp||20));
+    const fill=Math.max(0,o.fill||0);
+    const maxFill=o.h-18;
+
+    // Steel heater body.
+    ctx.fillStyle='#647783';
+    ctx.strokeStyle='#d8eef8';
+    ctx.lineWidth=4;
+    ctx.beginPath();
+    ctx.roundRect(-o.w/2,-o.h/2,o.w,o.h,16);
+    ctx.fill();
+    ctx.stroke();
+
+    // Water window.
+    ctx.fillStyle='#132d3d';
+    ctx.fillRect(-o.w/2+14,-o.h/2+18,o.w-58,o.h-36);
+    if(fill>0){
+      const waterH=(o.h-40)*Math.min(1,fill/maxFill);
+      const heatMix=(temp-20)/80;
+      const r=Math.round(46+145*heatMix);
+      const g=Math.round(157-55*heatMix);
+      const b=Math.round(230-90*heatMix);
+      ctx.fillStyle='rgba('+r+','+g+','+b+',.78)';
+      ctx.fillRect(-o.w/2+14,o.h/2-20-waterH,o.w-58,waterH);
+    }
+
+    // Heating element.
+    ctx.strokeStyle=o.heating?'#ffb347':'#4d5b64';
+    ctx.lineWidth=5;
+    ctx.beginPath();
+    ctx.moveTo(-35,38);
+    ctx.bezierCurveTo(-22,24,-10,52,3,38);
+    ctx.bezierCurveTo(16,24,28,52,40,38);
+    ctx.stroke();
+
+    // Temperature gauge.
+    const gx=o.w/2-26;
+    const gy=-o.h/2+20;
+    const gh=o.h-40;
+    ctx.fillStyle='#1a2228';
+    ctx.fillRect(gx-8,gy,16,gh);
+    const pct=(temp-20)/80;
+    ctx.fillStyle=temp>=99?'#ff4f4f':'#ff9d4d';
+    ctx.fillRect(gx-6,gy+gh*(1-pct)+2,12,Math.max(0,gh*pct-4));
+    ctx.strokeStyle='#eef8ff';
+    ctx.lineWidth=2;
+    ctx.strokeRect(gx-8,gy,16,gh);
+
+    ctx.fillStyle='#fff';
+    ctx.font='bold 10px Arial';
+    ctx.textAlign='center';
+    ctx.fillText(Math.round(temp)+'°C',gx,-o.h/2+12);
+    ctx.fillText(o.boiling?'BOILING / STEAM':(o.heating?'HEATER ON':'HEATER OFF'),0,o.h/2+18);
   }
 
   if(o.type==='dam'){
@@ -2629,7 +2769,7 @@ function drawFluid(){
     ctx.font='bold 22px Arial';
     ctx.fillText('Build a fluid experiment',width/2,height*.42);
     ctx.font='15px Arial';
-    ctx.fillText('Tap Water Source, Pipe, Pipe Elbow, Pump, Tank, Dam, Gate, Canal, Water Wheel, or another part below.',width/2,height*.42+30);
+    ctx.fillText('Tap Water Source, Pipe, Pipe Elbow, Pump, Tank, Water Heater, Dam, Gate, Canal, Water Wheel, or another part below.',width/2,height*.42+30);
     ctx.textAlign='left';
   }
 }
