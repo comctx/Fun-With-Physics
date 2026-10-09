@@ -536,6 +536,7 @@ let future=[];
 let running=false;
 let won=false;
 let selected=null;
+let rubeLastTapId=null;
 let dragging=false;
 let dragOffsetX=0,dragOffsetY=0;
 let lastTime=performance.now();
@@ -792,10 +793,10 @@ function defaultMachine(){
   updateUndoRedoButtons();
 }
 
-function setSelected(o){
+function setSelected(o,showPanel=true){
   selected=o||null;
   const panel=document.getElementById('selectionPanel');
-  if(selected){
+  if(selected&&showPanel){
     panel.classList.add('show');
     document.getElementById('selectionLabel').textContent='Selected: '+selected.type.toUpperCase();
   }else{
@@ -845,7 +846,12 @@ function addPart(type){
   pushHistory();
   const o=makeObject(type,width/2,height/2);
   objects.push(o);
-  setSelected(o);
+  if(gameMode==='rube'){
+    setSelected(o,false);
+    rubeLastTapId=null;
+  }else{
+    setSelected(o);
+  }
   updateScore();
 }
 
@@ -958,6 +964,34 @@ function pointerDown(e){
   }
   if(running) return;
   const p=posFromEvent(e);
+
+  if(gameMode==='rube'){
+    const priorSelected=selected;
+    let hit=null;
+
+    for(let i=objects.length-1;i>=0;i--){
+      if(hitTest(objects[i],p.x,p.y)){hit=objects[i];break;}
+    }
+
+    if(!hit){
+      setSelected(null);
+      rubeLastTapId=null;
+      dragging=false;
+      return;
+    }
+
+    const wasAlreadySelected=priorSelected&&priorSelected.id===hit.id;
+    pushHistory();
+    setSelected(hit,false);
+    hit._showControlsOnTap=wasAlreadySelected&&rubeLastTapId===hit.id;
+    dragging=true;
+    dragOffsetX=p.x-hit.x;
+    dragOffsetY=p.y-hit.y;
+    hit._pointerStartX=p.x;
+    hit._pointerStartY=p.y;
+    return;
+  }
+
   setSelected(null);
 
   for(let i=objects.length-1;i>=0;i--){
@@ -993,13 +1027,29 @@ function pointerMove(e){
 function pointerUp(){
   if(gameMode==='fluid') fluidPointerEnd();
   if(gameMode==='air'||gameMode==='electric') labPointerEnd();
-  if(gameMode==='rube'&&selected&&dragging&&selected.type==='switchUnit'){
-    const moved=Math.hypot((selected.x+dragOffsetX)-(selected._pointerStartX||selected.x),(selected.y+dragOffsetY)-(selected._pointerStartY||selected.y));
-    if(moved<8){
+
+  if(gameMode==='rube'&&selected&&dragging){
+    const moved=Math.hypot(
+      (selected.x+dragOffsetX)-(selected._pointerStartX||selected.x),
+      (selected.y+dragOffsetY)-(selected._pointerStartY||selected.y)
+    );
+
+    if(selected.type==='switchUnit'&&moved<8){
       selected.closed=!selected.closed;
       document.getElementById('status').textContent='Rube circuit switch '+(selected.closed?'closed.':'opened.');
     }
+
+    const showControls=moved<8&&selected._showControlsOnTap===true;
+    rubeLastTapId=selected.id;
+    setSelected(selected,showControls);
+    selected._showControlsOnTap=false;
+
+    if(!showControls&&moved<8&&selected.type!=='switchUnit'){
+      document.getElementById('status').textContent=
+        selected.type+' selected. Tap it again for edit controls, or drag to move it.';
+    }
   }
+
   dragging=false;
 }
 
@@ -1752,6 +1802,7 @@ function setMode(mode){
     document.getElementById('modeLabel').textContent='Integration Lab';
     document.getElementById('goalText').textContent='Rube Goldberg: Combine mechanics, water, air, heat, and electricity.';
     document.getElementById('status').textContent='Build a cross-system chain reaction and ring the bell.';
+    rubeLastTapId=null;
     defaultMachine();
   }
 
