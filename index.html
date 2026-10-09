@@ -3057,7 +3057,7 @@ function updateSimpleMachines(dt){
       // Bigger loads act heavier in the educational model.
       // Scale mass with visible area so a larger ball/boulder produces
       // noticeably more lever torque without becoming uncontrollably strong.
-      const effectiveMass=baseMass*Math.pow(size,2);
+      const effectiveMass=baseMass*Math.pow(size,2.6);
       torque+=effectiveMass*(arm/Math.max(30,half));
     });
 
@@ -3065,9 +3065,10 @@ function updateSimpleMachines(dt){
     // When the load leaves the lever, a restoring torque brings the beam
     // smoothly back toward level while the fulcrum remains fixed.
     const restoringTorque=-(l.angle||0)*4.2;
-    const damping=torque===0?.92:.965;
-    l.angularVelocity=(l.angularVelocity||0)+(torque*1.15+restoringTorque)*dt;
+    const damping=torque===0?.92:.972;
+    l.angularVelocity=(l.angularVelocity||0)+(torque*2.0+restoringTorque)*dt;
     l.angularVelocity*=damping;
+    l.angularVelocity=Math.max(-2.4,Math.min(2.4,l.angularVelocity));
 
     if(Math.abs(torque)<.001&&Math.abs(l.angle||0)<.01&&Math.abs(l.angularVelocity)<.03){
       l.angle=0;
