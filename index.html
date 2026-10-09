@@ -2995,9 +2995,19 @@ function updateSimpleMachines(dt){
     });
 
     // Heavy loads create a visible but controlled pivoting motion.
-    l.angularVelocity=(l.angularVelocity||0)+torque*1.15*dt;
-    l.angularVelocity*=.965;
-    l.angle=Math.max(-.48,Math.min(.48,(l.angle||0)+l.angularVelocity*dt));
+    // When the load leaves the lever, a restoring torque brings the beam
+    // smoothly back toward level while the fulcrum remains fixed.
+    const restoringTorque=-(l.angle||0)*4.2;
+    const damping=torque===0?.92:.965;
+    l.angularVelocity=(l.angularVelocity||0)+(torque*1.15+restoringTorque)*dt;
+    l.angularVelocity*=damping;
+
+    if(Math.abs(torque)<.001&&Math.abs(l.angle||0)<.01&&Math.abs(l.angularVelocity)<.03){
+      l.angle=0;
+      l.angularVelocity=0;
+    }else{
+      l.angle=Math.max(-.48,Math.min(.48,(l.angle||0)+l.angularVelocity*dt));
+    }
 
     // Keep the fulcrum fixed in world space while rotating the beam around it.
     l.x=l.pivotX-localFulcrum*Math.cos(l.angle);
