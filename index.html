@@ -1604,7 +1604,7 @@ function makeFluidPart(type,x=width*.5,y=height*.45){
   if(type==='wheel') return {...base,r:52,spin:0};
   if(type==='wood') return {...base,r:20,density:.65,vy:0,label:'WOOD',held:true};
   if(type==='metal') return {...base,r:20,density:1.8,vy:0,label:'METAL',held:true};
-  if(type==='drain') return {...base,r:28};
+  if(type==='drain') return {...base,r:28,open:true};
   if(type==='valve') return {...base,r:25,open:true};
   return base;
 }
@@ -1739,7 +1739,7 @@ function fluidPointerEnd(){
       (fluidSelected.y+fluidDragOffsetY)-(fluidSelected._pointerStartY||fluidSelected.y)
     );
 
-    if(moved<8 && (fluidSelected.type==='gate'||fluidSelected.type==='valve')){
+    if(moved<8 && (fluidSelected.type==='gate'||fluidSelected.type==='valve'||fluidSelected.type==='drain')){
       fluidSelected.open=!fluidSelected.open;
       document.getElementById('status').textContent=
         fluidPartName(fluidSelected.type)+' '+(fluidSelected.open?'opened.':'closed.');
@@ -1788,7 +1788,7 @@ function connectedDrainForTank(t){
 
   let best=null;
 
-  fluidObjects.filter(o=>o.type==='drain').forEach(d=>{
+  fluidObjects.filter(o=>o.type==='drain'&&o.open!==false).forEach(d=>{
     const dr=d.r*(d.scale||1);
     const nearestX=Math.max(b.x,Math.min(d.x,b.x+b.w));
     const nearestY=Math.max(b.y,Math.min(d.y,b.y+b.h));
@@ -2063,7 +2063,7 @@ function updateFluid(dt){
     });
 
     // Drain removes nearby water particles.
-    fluidObjects.filter(o=>o.type==='drain').forEach(o=>{
+    fluidObjects.filter(o=>o.type==='drain'&&o.open!==false).forEach(o=>{
       const drainRadius=o.r*(o.scale||1);
       if(Math.hypot(p.x-o.x,p.y-o.y)<drainRadius+10){
         p.dead=true;
@@ -2094,8 +2094,8 @@ function updateFluid(dt){
   fluidParticles=fluidParticles.filter(p=>!p.dead);
 
   // Drains are passive and continuously clamp tank water to the drain opening.
-  const drains=fluidObjects.filter(o=>o.type==='drain');
-  drains.forEach(d=>d.activeDrain=false);
+  fluidObjects.filter(o=>o.type==='drain').forEach(d=>d.activeDrain=false);
+  const drains=fluidObjects.filter(o=>o.type==='drain'&&o.open!==false);
 
   fluidObjects.filter(o=>o.type==='tank').forEach(t=>{
     const info=connectedDrainForTank(t);
@@ -2378,7 +2378,9 @@ function drawFluidPart(o){
   }
 
   if(o.type==='drain'){
-    ctx.strokeStyle='#87939d';
+    const isOpen=o.open!==false;
+
+    ctx.strokeStyle=isOpen?'#87939d':'#8b4f4f';
     ctx.lineWidth=10;
     ctx.lineCap='round';
     ctx.beginPath();
@@ -2386,11 +2388,11 @@ function drawFluidPart(o){
     ctx.lineTo(-o.r+2,0);
     ctx.stroke();
 
-    ctx.fillStyle='#0a1015';
+    ctx.fillStyle=isOpen?'#0a1015':'#3b1717';
     ctx.beginPath();ctx.arc(0,0,o.r,0,Math.PI*2);ctx.fill();
-    ctx.strokeStyle='#aab4bd';ctx.lineWidth=3;ctx.stroke();
+    ctx.strokeStyle=isOpen?'#aab4bd':'#d46a6a';ctx.lineWidth=3;ctx.stroke();
 
-    ctx.strokeStyle='#4e5963';
+    ctx.strokeStyle=isOpen?'#4e5963':'#d46a6a';
     ctx.lineWidth=2;
     for(let i=-12;i<=12;i+=8){
       ctx.beginPath();
@@ -2399,10 +2401,10 @@ function drawFluidPart(o){
       ctx.stroke();
     }
 
-    ctx.fillStyle=o.activeDrain?'#7ee48d':'#dbe5ec';
+    ctx.fillStyle=o.activeDrain?'#7ee48d':(isOpen?'#dbe5ec':'#ff8d8d');
     ctx.font='bold 9px Arial';
     ctx.textAlign='center';
-    ctx.fillText(o.activeDrain?'DRAINING':'DRAIN',0,40);
+    ctx.fillText(o.activeDrain?'DRAINING':(isOpen?'DRAIN OPEN':'DRAIN CLOSED'),0,40);
   }
 
   if(o.type==='valve'){
