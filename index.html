@@ -3327,8 +3327,52 @@ function drawSimplePart(o){
     ctx.fillStyle='#ff5454';ctx.beginPath();ctx.arc(0,0,o.r,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.stroke();
   }
   if(o.type==='simpleBell'){
-    ctx.font='58px Arial';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('🔔',0,0);
-    if(o.rung){ctx.strokeStyle='#ffd65a';ctx.lineWidth=3;ctx.beginPath();ctx.arc(0,0,42,0,Math.PI*2);ctx.stroke();}
+    // Draw the bell with canvas shapes instead of relying on emoji rendering.
+    // Some browsers render the bell emoji too dark on the lab background.
+    ctx.save();
+    ctx.fillStyle='#f4b942';
+    ctx.strokeStyle='#ffe6a3';
+    ctx.lineWidth=3;
+
+    ctx.beginPath();
+    ctx.moveTo(-26,18);
+    ctx.quadraticCurveTo(-20,6,-18,-8);
+    ctx.quadraticCurveTo(-15,-28,0,-32);
+    ctx.quadraticCurveTo(15,-28,18,-8);
+    ctx.quadraticCurveTo(20,6,26,18);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.fillStyle='#f7c75a';
+    ctx.fillRect(-31,16,62,8);
+
+    ctx.fillStyle='#c98318';
+    ctx.beginPath();
+    ctx.arc(0,29,7,0,Math.PI*2);
+    ctx.fill();
+
+    ctx.fillStyle='#fff4c4';
+    ctx.beginPath();
+    ctx.arc(0,-35,4,0,Math.PI*2);
+    ctx.fill();
+
+    ctx.fillStyle='#fff';
+    ctx.font='bold 10px Arial';
+    ctx.textAlign='center';
+    ctx.textBaseline='alphabetic';
+    ctx.fillText(o.rung?'DING!':'BELL',0,48);
+
+    if(o.rung){
+      ctx.strokeStyle='#ffd65a';
+      ctx.lineWidth=3;
+      ctx.beginPath();ctx.arc(0,0,44,0,Math.PI*2);ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(-44,-8);ctx.lineTo(-55,-14);
+      ctx.moveTo(44,-8);ctx.lineTo(55,-14);
+      ctx.stroke();
+    }
+    ctx.restore();
   }
 }
 
