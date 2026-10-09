@@ -3183,9 +3183,16 @@ function drawSimplePart(o){
     ctx.fillStyle='#d6a24e';
     ctx.fillRect(-o.w/2,-9,o.w,18);
     const fx=(o.fulcrum-.5)*o.w;
+
+    // Keep the fulcrum upright and fixed visually while only the beam tilts.
+    ctx.save();
+    ctx.translate(fx,0);
+    ctx.rotate(-(o.angle||0));
     ctx.fillStyle='#ef6f6c';
-    ctx.beginPath();ctx.moveTo(fx-18,28);ctx.lineTo(fx+18,28);ctx.lineTo(fx,4);ctx.closePath();ctx.fill();
-    ctx.fillStyle='#fff';ctx.font='bold 10px Arial';ctx.textAlign='center';ctx.fillText('FULCRUM',fx,43);
+    ctx.beginPath();ctx.moveTo(-18,28);ctx.lineTo(18,28);ctx.lineTo(0,4);ctx.closePath();ctx.fill();
+    ctx.fillStyle='#fff';ctx.font='bold 10px Arial';ctx.textAlign='center';ctx.fillText('FULCRUM',0,43);
+    ctx.restore();
+
     ctx.strokeStyle=forceColor;ctx.lineWidth=3;
     ctx.beginPath();ctx.moveTo(-o.w/2+20,-35);ctx.lineTo(-o.w/2+20,-12);ctx.stroke();
     ctx.beginPath();ctx.moveTo(-o.w/2+20,-12);ctx.lineTo(-o.w/2+14,-22);ctx.moveTo(-o.w/2+20,-12);ctx.lineTo(-o.w/2+26,-22);ctx.stroke();
