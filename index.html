@@ -73,6 +73,61 @@ header{
   font-size:12px;
   text-align:right;
 }
+.challengeBanner{
+  display:none;
+  flex:0 0 auto;
+  align-items:center;
+  gap:12px;
+  padding:8px 12px;
+  background:#332812;
+  border-top:1px solid #6f5a20;
+  border-bottom:1px solid #7d6825;
+  color:#fff3bf;
+}
+.challengeBanner.show{display:flex}
+.challengeBadge{
+  flex:0 0 auto;
+  padding:5px 9px;
+  border-radius:8px;
+  background:#5a4515;
+  border:1px solid #a9882e;
+  font-size:10px;
+  font-weight:800;
+  letter-spacing:.08em;
+}
+.challengeCopy{
+  min-width:0;
+  flex:1 1 auto;
+}
+.challengeCopy strong{
+  display:block;
+  font-size:12px;
+  color:#ffe07a;
+}
+.challengeCopy span{
+  display:block;
+  margin-top:1px;
+  font-size:11px;
+  color:#f3e4ad;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+#newChallengeBtn{
+  flex:0 0 auto;
+  min-height:34px;
+  padding:6px 10px;
+  font-size:10px;
+  background:#5b4820;
+  border-color:#927635;
+}
+#newChallengeBtn:hover{background:#6a5527}
+@media(max-width:760px){
+  .challengeBanner{gap:7px;padding:7px 8px}
+  .challengeBadge{display:none}
+  .challengeCopy span{max-width:240px}
+}
+
 #workspace{flex:1;min-height:0;position:relative;overflow:hidden}
 canvas{
   display:block;
@@ -588,6 +643,15 @@ header{
   </div>
 </div>
 
+<div id="challengeBanner" class="challengeBanner">
+  <div class="challengeBadge">🏆 CHALLENGE MODE</div>
+  <div class="challengeCopy">
+    <strong id="challengeBannerTitle">Special Goal</strong>
+    <span id="challengeBannerText">Complete the rule and ring the bell.</span>
+  </div>
+  <button id="newChallengeBtn" type="button">🔄 New Challenge</button>
+</div>
+
 <div id="tray">
   <button class="partButton" data-part="ball"><span class="icon">🔴</span>Ball</button>
   <button class="partButton" data-part="ramp"><span class="icon">📐</span>Ramp</button>
@@ -968,10 +1032,10 @@ const puzzles=[
 ];
 
 const challenges=[
-  {text:'Ring the bell using at least 12 parts.',test:()=>objects.length>=12},
-  {text:'Ring the bell using at least 3 dominoes.',test:()=>objects.filter(o=>o.type==='domino').length>=3},
-  {text:'Ring the bell using a fan and a spring.',test:()=>objects.some(o=>o.type==='fan')&&objects.some(o=>o.type==='spring')},
-  {text:'Ring the bell with an Absurdity Score of at least 120.',test:()=>calculateAbsurdity()>=120}
+  {title:'12-Part Machine',text:'Ring the bell using at least 12 parts.',test:()=>objects.length>=12},
+  {title:'Domino Delivery',text:'Ring the bell using at least 3 dominoes.',test:()=>objects.filter(o=>o.type==='domino').length>=3},
+  {title:'Fan + Spring Combo',text:'Ring the bell using both a fan and a spring.',test:()=>objects.some(o=>o.type==='fan')&&objects.some(o=>o.type==='spring')},
+  {title:'Absurdity 120',text:'Ring the bell with an Absurdity Score of at least 120.',test:()=>calculateAbsurdity()>=120}
 ];
 
 const tutorialSlides=[
@@ -2299,6 +2363,18 @@ function loop(time){
 }
 requestAnimationFrame(loop);
 
+function chooseChallenge(){
+  activeChallenge=challenges[Math.floor(Math.random()*challenges.length)];
+  document.getElementById('challengeBannerTitle').textContent=activeChallenge.title||'Special Goal';
+  document.getElementById('challengeBannerText').textContent=activeChallenge.text;
+  document.getElementById('goalText').textContent='Challenge: '+activeChallenge.text;
+  document.getElementById('modeLabel').textContent='Challenge Mode';
+  document.getElementById('score').textContent='Special Rule';
+  document.getElementById('pieceCount').textContent=activeChallenge.title||'Challenge';
+  document.getElementById('starRow').textContent='🏆';
+  document.getElementById('status').textContent='Challenge loaded: '+activeChallenge.text;
+}
+
 function setMode(mode){
   if(running) stopRun();
 
@@ -2315,6 +2391,7 @@ function setMode(mode){
   document.getElementById('electricModeBtn').classList.toggle('active',mode==='electric');
   document.getElementById('simpleModeBtn').classList.toggle('active',mode==='simple');
   document.getElementById('rubeModeBtn').classList.toggle('active',mode==='rube');
+  document.getElementById('challengeBanner').classList.toggle('show',mode==='challenge');
   document.getElementById('mechanicsExplainBtn').style.display=
     (mode==='sandbox'||mode==='puzzle'||mode==='challenge')?'inline-block':'none';
 
@@ -2353,11 +2430,9 @@ function setMode(mode){
 
   if(mode==='challenge'){
     currentPuzzleIndex=-1;
-    activeChallenge=challenges[Math.floor(Math.random()*challenges.length)];
-    document.getElementById('modeLabel').textContent='Challenge Mode';
-    document.getElementById('goalText').textContent='Challenge: '+activeChallenge.text;
     mainLastTapId=null;
     defaultMachine();
+    chooseChallenge();
   }
 
   if(mode==='fluid'){
@@ -2634,6 +2709,10 @@ document.getElementById('tutorialBtn').addEventListener('click',openTutorial);
 document.getElementById('sandboxModeBtn').addEventListener('click',()=>setMode('sandbox'));
 document.getElementById('puzzleModeBtn').addEventListener('click',()=>setMode('puzzle'));
 document.getElementById('challengeModeBtn').addEventListener('click',()=>setMode('challenge'));
+document.getElementById('newChallengeBtn').addEventListener('click',()=>{
+  if(gameMode!=='challenge') return;
+  chooseChallenge();
+});
 document.getElementById('fluidModeBtn').addEventListener('click',()=>setMode('fluid'));
 document.getElementById('airModeBtn').addEventListener('click',()=>setMode('air'));
 document.getElementById('electricModeBtn').addEventListener('click',()=>setMode('electric'));
