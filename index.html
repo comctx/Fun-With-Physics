@@ -161,7 +161,7 @@ canvas{
 #fluidTray{
   flex:0 0 auto;
   display:none;
-  grid-template-columns:repeat(14,minmax(82px,1fr));
+  grid-template-columns:repeat(15,minmax(82px,1fr));
   gap:7px;
   padding:8px;
   background:#173142;
@@ -243,7 +243,7 @@ canvas{
   .topButtons button{flex:1;padding:7px 5px;font-size:12px}
   .modebar .goal{min-width:230px}
   #tray{grid-template-columns:repeat(9,78px)}
-  #fluidTray{grid-template-columns:repeat(14,78px)}
+  #fluidTray{grid-template-columns:repeat(15,78px)}
   #selectionPanel{grid-template-columns:repeat(4,1fr)}
   .levelGrid{grid-template-columns:1fr}
 }
@@ -357,6 +357,7 @@ canvas{
 <div id="fluidTray">
   <button class="fluidButton" data-fluid-part="source"><span class="icon">💧</span>Water Source</button>
   <button class="fluidButton" data-fluid-part="pipe"><span class="icon">🚰</span>Pipe</button>
+  <button class="fluidButton" data-fluid-part="elbow"><span class="icon">↪️</span>Pipe Elbow</button>
   <button class="fluidButton" data-fluid-part="pump"><span class="icon">⚙️</span>Pump</button>
   <button class="fluidButton" data-fluid-part="tank"><span class="icon">🛢️</span>Tank</button>
   <button class="fluidButton" data-fluid-part="dam"><span class="icon">🧱</span>Dam</button>
@@ -810,7 +811,7 @@ canvas.addEventListener('mousemove',e=>{
   pointerMove(e);
   if(gameMode==='fluid'){
     const p=posFromEvent(e);
-    canvas.style.cursor=fluidHitTest(p.x,p.y)?'grab':'default';
+    canvas.style.cursor=fluidDragging?'grabbing':(fluidHitTest(p.x,p.y)?'grab':'default');
   }else{
     canvas.style.cursor='default';
   }
@@ -1591,6 +1592,7 @@ function makeFluidPart(type,x=width*.5,y=height*.45){
   const base={id:fluidId++,type,x,y,angle:0,scale:1};
   if(type==='source') return {...base,w:34,h:46,flow:1};
   if(type==='pipe') return {...base,w:150,h:22};
+  if(type==='elbow') return {...base,w:90,h:90};
   if(type==='pump') return {...base,w:70,h:58,power:1};
   if(type==='tank') return {...base,w:180,h:130,fill:0};
   if(type==='dam') return {...base,w:34,h:150};
@@ -1617,7 +1619,7 @@ function addFluidPart(type){
 
 function fluidPartName(type){
   return ({
-    source:'Water Source',pipe:'Pipe',pump:'Pump',tank:'Tank',dam:'Dam',
+    source:'Water Source',pipe:'Pipe',elbow:'Pipe Elbow',pump:'Pump',tank:'Tank',dam:'Dam',
     gate:'Gate',canal:'Canal',wheel:'Water Wheel',wood:'Wood',
     metal:'Metal',drain:'Drain',valve:'Valve'
   })[type]||type;
@@ -1638,8 +1640,32 @@ function fluidBounds(o){
 function fluidHitObject(x,y){
   for(let i=fluidObjects.length-1;i>=0;i--){
     const o=fluidObjects[i];
-    const b=fluidBounds(o);
-    if(x>=b.x&&x<=b.x+b.w&&y>=b.y&&y<=b.y+b.h) return o;
+    const s=o.scale||1;
+    const a=-(o.angle||0);
+    const dx=x-o.x;
+    const dy=y-o.y;
+    const ca=Math.cos(a);
+    const sa=Math.sin(a);
+    const lx=(dx*ca-dy*sa)/s;
+    const ly=(dx*sa+dy*ca)/s;
+
+    if(o.type==='wheel'||o.r){
+      const r=(o.r||30)+12;
+      if(Math.hypot(lx,ly)<=r) return o;
+      continue;
+    }
+
+    if(o.type==='elbow'){
+      const arm=44,thick=18,pad=14;
+      const onHorizontal=lx>-arm-pad&&lx<pad&&Math.abs(ly)<thick+pad;
+      const onVertical=Math.abs(lx)<thick+pad&&ly>-pad&&ly<arm+pad;
+      if(onHorizontal||onVertical) return o;
+      continue;
+    }
+
+    const w=(o.w||60)+24;
+    const h=(o.h||50)+24;
+    if(Math.abs(lx)<=w/2&&Math.abs(ly)<=h/2) return o;
   }
   return null;
 }
@@ -1751,6 +1777,41 @@ function updateFluid(dt){
         p.vx=Math.cos(o.angle)*Math.max(110,Math.abs(p.vx))*dir;
         p.vy=Math.sin(o.angle)*Math.max(110,Math.abs(p.vx))*dir;
         p.y-=ly*.45;
+      }
+    });
+
+    // Elbows turn water through a 90-degree bend.
+    fluidObjects.filter(o=>o.type==='elbow').forEach(o=>{
+      const s=o.scale||1;
+      const a=-(o.angle||0);
+      const dx=p.x-o.x,dy=p.y-o.y;
+      const ca=Math.cos(a),sa=Math.sin(a);
+      const lx=dx*ca-dy*sa;
+      const ly=dx*sa+dy*ca;
+      const arm=44*s;
+      const thick=20*s;
+
+      const inHorizontal=lx>-arm&&lx<8*s&&Math.abs(ly)<thick;
+      const inVertical=Math.abs(lx)<thick&&ly>-8*s&&ly<arm;
+
+      if(inHorizontal||inVertical){
+        // Convert local elbow direction back to world velocity.
+        let lvx=p.vx*ca-p.vy*sa;
+        let lvy=p.vx*sa+p.vy*ca;
+        const speed=Math.max(120,Math.hypot(lvx,lvy));
+
+        if(inHorizontal){
+          lvx=Math.max(0,Math.abs(lvx));
+          lvy=Math.abs(lvy)<20?speed*.75:lvy;
+          if(lx>-10*s) lvy=Math.max(90,lvy);
+        }
+        if(inVertical){
+          lvy=Math.max(90,Math.abs(lvy));
+          lvx=Math.abs(lvx)<20?speed*.45:lvx;
+        }
+
+        p.vx=lvx*ca+lvy*sa;
+        p.vy=-lvx*sa+lvy*ca;
       }
     });
 
@@ -1898,6 +1959,22 @@ function drawFluidPart(o){
     ctx.lineWidth=12;ctx.stroke();
   }
 
+  if(o.type==='elbow'){
+    ctx.strokeStyle='#9eabb5';
+    ctx.lineWidth=24;
+    ctx.lineCap='round';
+    ctx.lineJoin='round';
+    ctx.beginPath();
+    ctx.moveTo(-44,0);
+    ctx.lineTo(0,0);
+    ctx.lineTo(0,44);
+    ctx.stroke();
+
+    ctx.strokeStyle='#4e5e69';
+    ctx.lineWidth=13;
+    ctx.stroke();
+  }
+
   if(o.type==='pump'){
     ctx.fillStyle='#647f91';
     ctx.fillRect(-35,-29,70,58);
@@ -1993,7 +2070,7 @@ function drawFluid(){
     ctx.font='bold 22px Arial';
     ctx.fillText('Build a fluid experiment',width/2,height*.42);
     ctx.font='15px Arial';
-    ctx.fillText('Tap Water Source, Pipe, Pump, Tank, Dam, Gate, Canal, Water Wheel, or another part below.',width/2,height*.42+30);
+    ctx.fillText('Tap Water Source, Pipe, Pipe Elbow, Pump, Tank, Dam, Gate, Canal, Water Wheel, or another part below.',width/2,height*.42+30);
     ctx.textAlign='left';
   }
 }
