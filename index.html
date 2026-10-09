@@ -2612,9 +2612,178 @@ function labPointerEnd(){
 }
 
 function updateLabButtons(){
-  const air=document.getElementById('airRunBtn'),elec=document.getElementById('electricRunBtn');
+  const air=document.getElementById('airRunBtn'),
+        elec=document.getElementById('electricRunBtn'),
+        simple=document.getElementById('simpleRunBtn');
   if(air){air.querySelector('.icon').textContent=labRunning?'⏸️':'▶️';air.lastChild.textContent=labRunning?' Stop Air':' Start Air';}
   if(elec){elec.querySelector('.icon').textContent=labRunning?'⏸️':'▶️';elec.lastChild.textContent=labRunning?' Stop Circuit':' Run Circuit';}
+  if(simple){simple.querySelector('.icon').textContent=labRunning?'⏸️':'▶️';simple.lastChild.textContent=labRunning?' Stop Lab':' Run Lab';}
+}
+
+function updateSimpleMachines(dt){
+  const gears=labObjects.filter(o=>o.type==='gearSmall'||o.type==='gearLarge');
+  const levers=labObjects.filter(o=>o.type==='lever');
+  const pulleys=labObjects.filter(o=>o.type==='pulley1'||o.type==='pulley2');
+  const wheels=labObjects.filter(o=>o.type==='wheelaxle');
+  const inclines=labObjects.filter(o=>o.type==='incline');
+  const wedges=labObjects.filter(o=>o.type==='wedge');
+  const crates=labObjects.filter(o=>o.type==='crate');
+  const boulders=labObjects.filter(o=>o.type==='boulder');
+  const balls=labObjects.filter(o=>o.type==='simpleBall');
+  const bells=labObjects.filter(o=>o.type==='simpleBell');
+
+  // Gears transfer rotation. Touching gears reverse direction and change speed by radius ratio.
+  if(gears.length){
+    if(!gears.some(g=>Math.abs(g.spin)>0.01)) gears[0].spin=1.8;
+    gears.forEach(g=>{
+      g.angle+=(g.spin||0)*dt;
+      gears.forEach(other=>{
+        if(other===g) return;
+        const dist=Math.hypot(other.x-g.x,other.y-g.y);
+        const touch=(g.r+other.r)*(g.scale||1)*.96;
+        if(dist<touch+16){
+          other.spin=-(g.spin||0)*(g.r/other.r);
+          g.engaged=true; other.engaged=true;
+        }
+      });
+    });
+  }
+
+  // Wheel & axle: rotation converts applied force into motion of nearby heavy objects.
+  wheels.forEach(w=>{
+    w.spin=(w.spin||0)+1.35*dt;
+    w.angle+=w.spin*dt;
+    boulders.forEach(b=>{
+      if(Math.hypot(b.x-w.x,b.y-w.y)<145){
+        b.vx+=95*dt;
+        b.moved=true;
+      }
+    });
+    crates.forEach(b=>{
+      if(Math.hypot(b.x-w.x,b.y-w.y)<140) b.vx+=80*dt;
+    });
+  });
+
+  // Levers pivot about an adjustable fulcrum. Longer effort arm gives more mechanical advantage.
+  levers.forEach(l=>{
+    const fulcrumX=l.x+(l.fulcrum-.5)*l.w*(l.scale||1);
+    const leftArm=Math.max(20,fulcrumX-(l.x-l.w*(l.scale||1)/2));
+    const rightArm=Math.max(20,(l.x+l.w*(l.scale||1)/2)-fulcrumX);
+    l.mechanicalAdvantage=Math.max(leftArm,rightArm)/Math.min(leftArm,rightArm);
+    crates.forEach(crate=>{
+      const dx=crate.x-l.x;
+      if(Math.abs(dx)<l.w*.72 && Math.abs(crate.y-l.y)<105){
+        const crateSide=Math.sign(dx)||1;
+        const effortArm=crateSide>0?leftArm:rightArm;
+        const loadArm=crateSide>0?rightArm:leftArm;
+        const ma=effortArm/loadArm;
+        if(ma>.8){
+          crate.y-=Math.min(42,ma*18)*dt;
+          crate.lifted=true;
+          l.angle+=(crateSide>0?-1:1)*.22*dt;
+        }
+      }
+    });
+    balls.forEach(ball=>{
+      if(Math.hypot(ball.x-l.x,ball.y-l.y)<l.w*.58){
+        ball.vy-=175*l.mechanicalAdvantage*dt;
+        ball.vx+=Math.cos(l.angle)*80*dt;
+      }
+    });
+  });
+
+  // Pulleys lift crates vertically. Double pulley trades more rope distance for greater advantage.
+  pulleys.forEach(p=>{
+    p.ropeOffset=(p.ropeOffset||0)+28*dt/(p.ratio||1);
+    crates.forEach(crate=>{
+      if(Math.abs(crate.x-p.x)<85 && crate.y>p.y && crate.y-p.y<220){
+        crate.y-=42*(p.ratio||1)*dt;
+        crate.lifted=true;
+        p.lifting=true;
+      }
+    });
+  });
+
+  // Inclined planes reduce required force by spreading the height gain over a longer distance.
+  inclines.forEach(r=>{
+    const a=r.angle||-.28;
+    [...balls,...boulders].forEach(obj=>{
+      const dx=obj.x-r.x,dy=obj.y-r.y;
+      const ca=Math.cos(-a),sa=Math.sin(-a);
+      const lx=dx*ca-dy*sa,ly=dx*sa+dy*ca;
+      const rad=obj.r||18;
+      if(Math.abs(lx)<r.w/2+rad && Math.abs(ly)<28+rad){
+        const downhill=Math.sin(a)*gravity*.24;
+        obj.vx+=Math.cos(a)*downhill*dt;
+        obj.vy+=Math.sin(a)*downhill*dt;
+        obj.usedIncline=true;
+      }
+    });
+  });
+
+  // Wedges redirect forward force sideways, pushing nearby heavy objects apart.
+  wedges.forEach(w=>{
+    [...crates,...boulders].forEach(obj=>{
+      const dx=obj.x-w.x,dy=obj.y-w.y;
+      if(Math.hypot(dx,dy)<85){
+        const dir=dx>=0?1:-1;
+        obj.vx+=dir*150*dt;
+        w.push=Math.min(1,(w.push||0)+dt*2);
+        obj.splitByWedge=true;
+      }
+    });
+  });
+
+  // Gravity and motion for movable loads.
+  [...balls,...boulders,...crates].forEach(o=>{
+    o.vy=(o.vy||0)+gravity*.34*dt;
+    o.x+=(o.vx||0)*dt;
+    o.y+=(o.vy||0)*dt;
+    o.vx*=.992;
+    if(o.y>(height-(o.r||28)-8)){
+      o.y=height-(o.r||28)-8;
+      o.vy=0;
+    }
+    if(o.x<25){o.x=25;o.vx=Math.abs(o.vx)*.3}
+    if(o.x>width-25){o.x=width-25;o.vx=-Math.abs(o.vx)*.3}
+  });
+
+  // Gear + incline can drive a ball toward a bell.
+  gears.forEach(g=>{
+    balls.forEach(ball=>{
+      if(Math.hypot(ball.x-g.x,ball.y-g.y)<g.r+35){
+        ball.vx+=(g.spin||0)*38*dt;
+      }
+    });
+  });
+
+  balls.forEach(ball=>{
+    bells.forEach(bell=>{
+      if(Math.hypot(ball.x-bell.x,ball.y-bell.y)<52){
+        bell.rung=true;
+      }
+    });
+  });
+
+  // Challenge completion checks.
+  if(simpleChallenge==='lift'){
+    simpleChallengeComplete=crates.some(o=>o.lifted);
+  }else if(simpleChallenge==='bell'){
+    simpleChallengeComplete=bells.some(o=>o.rung)&&gears.length>0&&inclines.length>0;
+  }else if(simpleChallenge==='boulder'){
+    simpleChallengeComplete=boulders.some(o=>o.moved&&Math.abs(o.vx)>8)&&wheels.length>0;
+  }else if(simpleChallenge==='chain'){
+    const kinds=new Set(labObjects.filter(o=>['lever','pulley1','pulley2','gearSmall','gearLarge','wheelaxle','incline','wedge'].includes(o.type)).map(o=>{
+      if(o.type.startsWith('pulley')) return 'pulley';
+      if(o.type.startsWith('gear')) return 'gear';
+      return o.type;
+    }));
+    simpleChallengeComplete=kinds.size>=3;
+  }
+
+  if(simpleChallengeComplete){
+    document.getElementById('status').textContent='Challenge complete! Open What Happened? to see why it worked.';
+  }
 }
 
 function updateLab(dt){
@@ -2650,6 +2819,10 @@ function updateLab(dt){
     });
   }
 
+  if(gameMode==='simple'){
+    updateSimpleMachines(dt);
+  }
+
   if(gameMode==='electric'){
     const hasBattery=labObjects.some(o=>o.type==='battery');
     const switches=labObjects.filter(o=>o.type==='switch');
@@ -2669,9 +2842,82 @@ function updateLab(dt){
   }
 }
 
+function drawSimplePart(o){
+  const forceColor='#ffcf58';
+  const rotationColor='#6fdcff';
+
+  if(o.type==='lever'){
+    ctx.fillStyle='#d6a24e';
+    ctx.fillRect(-o.w/2,-9,o.w,18);
+    const fx=(o.fulcrum-.5)*o.w;
+    ctx.fillStyle='#ef6f6c';
+    ctx.beginPath();ctx.moveTo(fx-18,28);ctx.lineTo(fx+18,28);ctx.lineTo(fx,4);ctx.closePath();ctx.fill();
+    ctx.fillStyle='#fff';ctx.font='bold 10px Arial';ctx.textAlign='center';ctx.fillText('FULCRUM',fx,43);
+    ctx.strokeStyle=forceColor;ctx.lineWidth=3;
+    ctx.beginPath();ctx.moveTo(-o.w/2+20,-35);ctx.lineTo(-o.w/2+20,-12);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(-o.w/2+20,-12);ctx.lineTo(-o.w/2+14,-22);ctx.moveTo(-o.w/2+20,-12);ctx.lineTo(-o.w/2+26,-22);ctx.stroke();
+    ctx.fillStyle=forceColor;ctx.fillText('FORCE',-o.w/2+20,-42);
+  }
+  if(o.type==='pulley1'||o.type==='pulley2'){
+    const double=o.type==='pulley2';
+    ctx.strokeStyle='#d8eef8';ctx.lineWidth=5;
+    ctx.beginPath();ctx.moveTo(0,-55);ctx.lineTo(0,55);ctx.stroke();
+    const wheels=double?[-24,24]:[0];
+    wheels.forEach(x=>{ctx.fillStyle='#586a75';ctx.beginPath();ctx.arc(x,-18,22,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#bcd0da';ctx.stroke();});
+    ctx.strokeStyle='#d7b36b';ctx.lineWidth=4;
+    ctx.beginPath();ctx.moveTo(double?-46:-30,-18);ctx.quadraticCurveTo(0,-58,double?46:30,-18);ctx.lineTo(double?46:30,52);ctx.stroke();
+    ctx.fillStyle='#fff';ctx.font='bold 10px Arial';ctx.textAlign='center';ctx.fillText(double?'DOUBLE PULLEY • MA 2×':'SINGLE PULLEY • MA 1×',0,72);
+  }
+  if(o.type==='gearSmall'||o.type==='gearLarge'){
+    const teeth=o.teeth||12,r=o.r;
+    ctx.save();ctx.rotate(o.angle||0);
+    ctx.fillStyle=o.type==='gearLarge'?'#9c7ac8':'#6fa8dc';
+    for(let i=0;i<teeth;i++){ctx.rotate(Math.PI*2/teeth);ctx.fillRect(r-4,-5,12,10);}
+    ctx.beginPath();ctx.arc(0,0,r,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#1c2530';ctx.beginPath();ctx.arc(0,0,r*.28,0,Math.PI*2);ctx.fill();
+    ctx.restore();
+    ctx.strokeStyle=rotationColor;ctx.lineWidth=3;
+    ctx.beginPath();ctx.arc(0,0,r+13,.3,5.1);ctx.stroke();
+    ctx.fillStyle=rotationColor;ctx.font='bold 11px Arial';ctx.textAlign='center';ctx.fillText((o.spin||0)>=0?'↻':'↺',0,-r-17);
+  }
+  if(o.type==='wheelaxle'){
+    ctx.strokeStyle='#d3aa58';ctx.lineWidth=8;ctx.beginPath();ctx.arc(0,0,o.r,0,Math.PI*2);ctx.stroke();
+    ctx.fillStyle='#768792';ctx.beginPath();ctx.arc(0,0,o.axleR,0,Math.PI*2);ctx.fill();
+    ctx.strokeStyle=rotationColor;ctx.lineWidth=3;ctx.beginPath();ctx.arc(0,0,o.r+13,.3,5.1);ctx.stroke();
+    ctx.fillStyle='#fff';ctx.font='bold 10px Arial';ctx.textAlign='center';ctx.fillText('WHEEL & AXLE',0,o.r+28);
+  }
+  if(o.type==='incline'){
+    ctx.fillStyle='#c9954d';ctx.fillRect(-o.w/2,-o.h/2,o.w,o.h);
+    ctx.strokeStyle=forceColor;ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(-55,-35);ctx.lineTo(45,-35);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(45,-35);ctx.lineTo(34,-42);ctx.moveTo(45,-35);ctx.lineTo(34,-28);ctx.stroke();
+    ctx.fillStyle='#fff';ctx.font='bold 10px Arial';ctx.textAlign='center';ctx.fillText('INCLINED PLANE',0,31);
+  }
+  if(o.type==='wedge'){
+    ctx.fillStyle='#d98555';ctx.beginPath();ctx.moveTo(-40,35);ctx.lineTo(40,0);ctx.lineTo(-40,-35);ctx.closePath();ctx.fill();
+    ctx.strokeStyle=forceColor;ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(-65,0);ctx.lineTo(-43,0);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(-43,0);ctx.lineTo(-53,-7);ctx.moveTo(-43,0);ctx.lineTo(-53,7);ctx.stroke();
+  }
+  if(o.type==='crate'){
+    ctx.fillStyle='#9b693e';ctx.fillRect(-30,-27,60,55);ctx.strokeStyle='#d8b17d';ctx.lineWidth=4;ctx.strokeRect(-30,-27,60,55);
+    ctx.beginPath();ctx.moveTo(-25,-22);ctx.lineTo(25,22);ctx.moveTo(25,-22);ctx.lineTo(-25,22);ctx.stroke();
+    ctx.fillStyle='#fff';ctx.font='bold 10px Arial';ctx.textAlign='center';ctx.fillText('HEAVY',0,4);
+  }
+  if(o.type==='boulder'){
+    ctx.fillStyle='#7f8790';ctx.beginPath();ctx.arc(0,0,o.r,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#aeb6bd';ctx.lineWidth=3;ctx.stroke();
+  }
+  if(o.type==='simpleBall'){
+    ctx.fillStyle='#ff5454';ctx.beginPath();ctx.arc(0,0,o.r,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.stroke();
+  }
+  if(o.type==='simpleBell'){
+    ctx.font='58px Arial';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('🔔',0,0);
+    if(o.rung){ctx.strokeStyle='#ffd65a';ctx.lineWidth=3;ctx.beginPath();ctx.arc(0,0,42,0,Math.PI*2);ctx.stroke();}
+  }
+}
+
 function drawLab(){
   const grd=ctx.createLinearGradient(0,0,0,height);
   if(gameMode==='air'){grd.addColorStop(0,'#17364b');grd.addColorStop(1,'#102331');}
+  else if(gameMode==='simple'){grd.addColorStop(0,'#24313a');grd.addColorStop(1,'#141d23');}
   else{grd.addColorStop(0,'#272b36');grd.addColorStop(1,'#131820');}
   ctx.fillStyle=grd;ctx.fillRect(0,0,width,height);
   ctx.fillStyle='rgba(255,255,255,.05)';
@@ -2701,6 +2947,7 @@ function drawLab(){
     if(o.type==='motor'){ctx.strokeStyle='#aab7c1';ctx.lineWidth=5;ctx.beginPath();ctx.arc(0,0,30,0,Math.PI*2);ctx.stroke();ctx.save();ctx.rotate(o.spin||0);ctx.strokeStyle=o.powered?'#6ee7ff':'#667';for(let i=0;i<4;i++){ctx.rotate(Math.PI/2);ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(25,0);ctx.stroke();}ctx.restore();}
     if(o.type==='magnet'){ctx.fillStyle=o.powered?'#c74d5b':'#6c747b';ctx.fillRect(-45,-26,90,52);ctx.fillStyle='#fff';ctx.font='bold 11px Arial';ctx.textAlign='center';ctx.fillText('ELECTROMAGNET',0,4);}
     if(o.type==='metalball'){ctx.fillStyle='#c2cbd2';ctx.beginPath();ctx.arc(0,0,18,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#fff';ctx.stroke();}
+    if(['lever','pulley1','pulley2','gearSmall','gearLarge','wheelaxle','incline','wedge','crate','boulder','simpleBall','simpleBell'].includes(o.type)) drawSimplePart(o);
     if(o===labSelected){
       const lw=o.r?o.r*2:(o.w||60);
       const lh=o.r?o.r*2:(o.h||50);
@@ -2770,6 +3017,28 @@ function explainRube(){
   document.getElementById('explainOverlay').classList.add('open');
 }
 
+function explainSimpleMachines(){
+  const lines=[];
+  const lever=labObjects.find(o=>o.type==='lever');
+  if(lever){
+    const f=Math.round((lever.fulcrum||.5)*100);
+    lines.push('Lever: the fulcrum is at about '+f+'% of the beam. Moving the fulcrum changes the effort arm and load arm, which changes mechanical advantage.');
+  }
+  if(labObjects.some(o=>o.type==='pulley1')) lines.push('Single pulley: mainly changes the direction of the pulling force. In this lab its mechanical advantage is about 1×.');
+  if(labObjects.some(o=>o.type==='pulley2')) lines.push('Double pulley: shares the load across more supporting rope, increasing mechanical advantage while requiring more rope distance.');
+  if(labObjects.some(o=>o.type==='gearSmall'||o.type==='gearLarge')) lines.push('Gears: touching gears rotate in opposite directions. A small gear driving a large gear slows rotation and increases torque; a large gear driving a small gear increases speed.');
+  if(labObjects.some(o=>o.type==='wheelaxle')) lines.push('Wheel & axle: applying force at the larger wheel creates torque around the smaller axle, converting force into useful rotation and motion.');
+  if(labObjects.some(o=>o.type==='incline')) lines.push('Inclined plane: moving through a longer distance reduces the force needed to gain the same height. The work is spread over more distance.');
+  if(labObjects.some(o=>o.type==='wedge')) lines.push('Wedge: forward force is redirected sideways along the wedge faces, pushing objects apart.');
+  if(labObjects.some(o=>o.type==='crate'&&o.lifted)) lines.push('The heavy crate was lifted because the machine traded distance or direction for greater useful force.');
+  if(labObjects.some(o=>o.type==='boulder'&&o.moved)) lines.push('The boulder moved because rotational motion from the wheel & axle was converted into translational motion.');
+  if(labObjects.some(o=>o.type==='simpleBell'&&o.rung)) lines.push('The bell rang after energy and motion were transferred through the simple machines to the ball.');
+  if(simpleChallengeComplete) lines.push('Challenge complete: your setup successfully used simple-machine principles to accomplish the goal.');
+  if(!lines.length) lines.push('Build and run a Simple Machines experiment. This explanation will describe how force, distance, speed, direction, rotation, and energy transfer changed.');
+  document.getElementById('explainText').innerHTML='<p>'+lines.join('</p><p>')+'</p>';
+  document.getElementById('explainOverlay').classList.add('open');
+}
+
 function explainLab(){
   const lines=[];
   if(gameMode==='air'){
@@ -2790,15 +3059,79 @@ function explainLab(){
   document.getElementById('explainOverlay').classList.add('open');
 }
 
+function loadSimpleChallenge(name){
+  setMode('simple');
+  simpleChallenge=name;
+  simpleChallengeComplete=false;
+  labObjects=[];
+
+  if(name==='lift'){
+    labObjects.push(makeLabPart('lever',width*.38,height*.58));
+    labObjects.push(makeLabPart('pulley2',width*.68,height*.30));
+    labObjects.push(makeLabPart('crate',width*.68,height*.68));
+    document.getElementById('status').textContent='Challenge: Lift the Crate using the lever or pulley.';
+  }else if(name==='bell'){
+    const g1=makeLabPart('gearSmall',width*.34,height*.50);
+    const g2=makeLabPart('gearLarge',width*.42,height*.50);
+    const ramp=makeLabPart('incline',width*.62,height*.58);
+    ramp.angle=-.25;
+    labObjects.push(g1,g2,ramp,makeLabPart('simpleBall',width*.53,height*.36),makeLabPart('simpleBell',width*.80,height*.64));
+    document.getElementById('status').textContent='Challenge: Use gears and the inclined plane to ring the bell.';
+  }else if(name==='boulder'){
+    labObjects.push(makeLabPart('wheelaxle',width*.38,height*.58));
+    labObjects.push(makeLabPart('boulder',width*.50,height*.60));
+    document.getElementById('status').textContent='Challenge: Move the Boulder with the wheel & axle.';
+  }else if(name==='chain'){
+    labObjects.push(makeLabPart('lever',width*.26,height*.58));
+    labObjects.push(makeLabPart('gearSmall',width*.46,height*.48));
+    labObjects.push(makeLabPart('gearLarge',width*.53,height*.48));
+    labObjects.push(makeLabPart('incline',width*.70,height*.60));
+    labObjects.push(makeLabPart('simpleBall',width*.18,height*.35));
+    labObjects.push(makeLabPart('simpleBell',width*.84,height*.64));
+    document.getElementById('status').textContent='Challenge: Build a chain reaction using at least three different simple machines.';
+  }
+
+  labSelected=null;
+  labLastTapId=null;
+  document.getElementById('selectionPanel').classList.remove('show');
+  document.getElementById('simpleChallengeOverlay').classList.remove('open');
+}
+
+document.querySelectorAll('[data-simple-challenge]').forEach(btn=>btn.addEventListener('click',()=>loadSimpleChallenge(btn.dataset.simpleChallenge)));
+
+document.getElementById('simpleChallengeBtn').addEventListener('click',()=>document.getElementById('simpleChallengeOverlay').classList.add('open'));
+document.getElementById('closeSimpleChallengeBtn').addEventListener('click',()=>document.getElementById('simpleChallengeOverlay').classList.remove('open'));
+document.getElementById('simpleChallengeOverlay').addEventListener('click',e=>{if(e.target===e.currentTarget)e.currentTarget.classList.remove('open');});
+
+document.getElementById('fulcrumLeftBtn').addEventListener('click',()=>{
+  if(!labSelected||labSelected.type!=='lever'){
+    document.getElementById('status').textContent='Select a lever first, then move its fulcrum.';
+    return;
+  }
+  labSelected.fulcrum=Math.max(.18,(labSelected.fulcrum||.5)-.08);
+  document.getElementById('status').textContent='Fulcrum moved left. Mechanical advantage changed.';
+});
+document.getElementById('fulcrumRightBtn').addEventListener('click',()=>{
+  if(!labSelected||labSelected.type!=='lever'){
+    document.getElementById('status').textContent='Select a lever first, then move its fulcrum.';
+    return;
+  }
+  labSelected.fulcrum=Math.min(.82,(labSelected.fulcrum||.5)+.08);
+  document.getElementById('status').textContent='Fulcrum moved right. Mechanical advantage changed.';
+});
+
 document.querySelectorAll('[data-air-part]').forEach(b=>b.addEventListener('click',()=>addLabPart(b.dataset.airPart)));
 document.querySelectorAll('[data-electric-part]').forEach(b=>b.addEventListener('click',()=>addLabPart(b.dataset.electricPart)));
 document.querySelectorAll('[data-simple-part]').forEach(b=>b.addEventListener('click',()=>addLabPart(b.dataset.simplePart)));
 document.getElementById('airRunBtn').addEventListener('click',()=>{labRunning=!labRunning;updateLabButtons();});
 document.getElementById('electricRunBtn').addEventListener('click',()=>{labRunning=!labRunning;updateLabButtons();});
+document.getElementById('simpleRunBtn').addEventListener('click',()=>{labRunning=!labRunning;updateLabButtons();});
 document.getElementById('airClearBtn').addEventListener('click',resetLab);
 document.getElementById('electricClearBtn').addEventListener('click',resetLab);
+document.getElementById('simpleClearBtn').addEventListener('click',()=>{resetLab();simpleChallenge=null;simpleChallengeComplete=false;});
 document.getElementById('airExplainBtn').addEventListener('click',explainLab);
 document.getElementById('electricExplainBtn').addEventListener('click',explainLab);
+document.getElementById('simpleExplainBtn').addEventListener('click',explainSimpleMachines);
 document.getElementById('mechanicsExplainBtn').addEventListener('click',explainMechanics);
 document.getElementById('rubeExplainBtn').addEventListener('click',explainRube);
 
