@@ -1442,6 +1442,11 @@ function modifySelected(fn){
   if(gameMode==='air'||gameMode==='electric'||gameMode==='simple'){
     if(!labSelected) return;
     fn(labSelected);
+    if(labSelected.type==='lever'){
+      labSelected.pivotX=null;
+      labSelected.pivotY=null;
+      labSelected.angularVelocity=0;
+    }
     document.getElementById('status').textContent=
       labName(labSelected.type)+' adjusted.';
     return;
@@ -2678,7 +2683,7 @@ function makeLabPart(type,x=width*.5,y=height*.45){
   if(type==='motor') return {...base,r:32,powered:false,spin:0};
   if(type==='magnet') return {...base,w:90,h:52,powered:false};
   if(type==='metalball') return {...base,r:18};
-  if(type==='lever') return {...base,w:190,h:18,fulcrum:.5,leverAngle:0,loadLift:0};
+  if(type==='lever') return {...base,w:190,h:18,fulcrum:.5,angularVelocity:0,pivotX:null,pivotY:null,loadLift:0};
   if(type==='pulley1') return {...base,w:90,h:125,ratio:1,ropeOffset:0};
   if(type==='pulley2') return {...base,w:115,h:145,ratio:2,ropeOffset:0};
   if(type==='gearSmall') return {...base,r:30,teeth:12,spin:0,ratio:1};
@@ -2763,6 +2768,11 @@ function labPointerMove(e){
   labSelected.x=Math.max(30,Math.min(width-30,p.x-labDragOffsetX));
   labSelected.y=Math.max(30,Math.min(height-30,p.y-labDragOffsetY));
   labSelected.vx=0;labSelected.vy=0;
+  if(labSelected.type==='lever'){
+    labSelected.pivotX=null;
+    labSelected.pivotY=null;
+    labSelected.angularVelocity=0;
+  }
 }
 
 function labPointerEnd(){
@@ -2839,6 +2849,8 @@ function resolveSimpleLeverContact(obj,lever){
     obj.vx=localVx*ca-restingVy*sa;
     obj.vy=localVx*sa+restingVy*ca;
     obj.onLever=true;
+    obj.onLeverId=lever.id;
+    obj.leverLocalX=lx;
     return true;
   }
   return false;
@@ -2888,32 +2900,20 @@ function updateSimpleMachines(dt){
     });
   });
 
-  // Levers pivot about an adjustable fulcrum. Longer effort arm gives more mechanical advantage.
+  // Levers pivot around a fixed fulcrum. The fulcrum stays put while the beam rotates.
   levers.forEach(l=>{
-    const fulcrumX=l.x+(l.fulcrum-.5)*l.w*(l.scale||1);
-    const leftArm=Math.max(20,fulcrumX-(l.x-l.w*(l.scale||1)/2));
-    const rightArm=Math.max(20,(l.x+l.w*(l.scale||1)/2)-fulcrumX);
+    const s=l.scale||1;
+    const localFulcrum=(l.fulcrum-.5)*l.w*s;
+    const a=l.angle||0;
+
+    if(l.pivotX==null||l.pivotY==null){
+      l.pivotX=l.x+localFulcrum*Math.cos(a);
+      l.pivotY=l.y+localFulcrum*Math.sin(a);
+    }
+
+    const leftArm=Math.max(20,(l.fulcrum)*l.w*s);
+    const rightArm=Math.max(20,(1-l.fulcrum)*l.w*s);
     l.mechanicalAdvantage=Math.max(leftArm,rightArm)/Math.min(leftArm,rightArm);
-    crates.forEach(crate=>{
-      const dx=crate.x-l.x;
-      if(Math.abs(dx)<l.w*.72 && Math.abs(crate.y-l.y)<105){
-        const crateSide=Math.sign(dx)||1;
-        const effortArm=crateSide>0?leftArm:rightArm;
-        const loadArm=crateSide>0?rightArm:leftArm;
-        const ma=effortArm/loadArm;
-        if(ma>.8){
-          crate.y-=Math.min(42,ma*18)*dt;
-          crate.lifted=true;
-          l.angle+=(crateSide>0?-1:1)*.22*dt;
-        }
-      }
-    });
-    balls.forEach(ball=>{
-      if(Math.hypot(ball.x-l.x,ball.y-l.y)<l.w*.58){
-        ball.vy-=175*l.mechanicalAdvantage*dt;
-        ball.vx+=Math.cos(l.angle)*80*dt;
-      }
-    });
   });
 
   // Pulleys lift crates vertically. Double pulley trades more rope distance for greater advantage.
@@ -2961,6 +2961,8 @@ function updateSimpleMachines(dt){
   // Gravity and motion for movable loads.
   [...balls,...boulders,...crates].forEach(o=>{
     o.onLever=false;
+    o.onLeverId=null;
+    o.leverLocalX=0;
     o.vy=(o.vy||0)+gravity*.34*dt;
     o.x+=(o.vx||0)*dt;
     o.y+=(o.vy||0)*dt;
@@ -2976,6 +2978,35 @@ function updateSimpleMachines(dt){
     }
     if(o.x<25){o.x=25;o.vx=Math.abs(o.vx)*.3}
     if(o.x>width-25){o.x=width-25;o.vx=-Math.abs(o.vx)*.3}
+  });
+
+  // Apply load torque to each lever after contacts are known.
+  levers.forEach(l=>{
+    const s=l.scale||1;
+    const localFulcrum=(l.fulcrum-.5)*l.w*s;
+    const half=l.w*s/2;
+    let torque=0;
+
+    [...balls,...boulders,...crates].forEach(obj=>{
+      if(obj.onLeverId!==l.id) return;
+      const arm=(obj.leverLocalX||0)-localFulcrum;
+      const mass=obj.mass||1;
+      torque+=mass*(arm/Math.max(30,half));
+    });
+
+    // Heavy loads create a visible but controlled pivoting motion.
+    l.angularVelocity=(l.angularVelocity||0)+torque*1.15*dt;
+    l.angularVelocity*=.965;
+    l.angle=Math.max(-.48,Math.min(.48,(l.angle||0)+l.angularVelocity*dt));
+
+    // Keep the fulcrum fixed in world space while rotating the beam around it.
+    l.x=l.pivotX-localFulcrum*Math.cos(l.angle);
+    l.y=l.pivotY-localFulcrum*Math.sin(l.angle);
+
+    // Re-seat supported loads on the newly rotated beam.
+    [...balls,...boulders,...crates].forEach(obj=>{
+      if(obj.onLeverId===l.id) resolveSimpleLeverContact(obj,l);
+    });
   });
 
   // Gear + incline can drive a ball toward a bell.
@@ -3284,7 +3315,7 @@ function explainSimpleMachines(){
   const lever=labObjects.find(o=>o.type==='lever');
   if(lever){
     const f=Math.round((lever.fulcrum||.5)*100);
-    lines.push('Lever: the fulcrum is at about '+f+'% of the beam. Moving the fulcrum changes the effort arm and load arm, which changes mechanical advantage.');
+    lines.push('Lever: the fulcrum is at about '+f+'% of the beam. The fulcrum stays fixed while the beam pivots around it. A heavier load farther from the fulcrum creates more torque, so that side drops and the opposite side rises.');
   }
   if(labObjects.some(o=>o.type==='pulley1')) lines.push('Single pulley: mainly changes the direction of the pulling force. In this lab its mechanical advantage is about 1×.');
   if(labObjects.some(o=>o.type==='pulley2')) lines.push('Double pulley: shares the load across more supporting rope, increasing mechanical advantage while requiring more rope distance.');
@@ -3371,6 +3402,7 @@ document.getElementById('fulcrumLeftBtn').addEventListener('click',()=>{
     return;
   }
   labSelected.fulcrum=Math.max(.18,(labSelected.fulcrum||.5)-.08);
+  labSelected.pivotX=null;labSelected.pivotY=null;labSelected.angularVelocity=0;
   document.getElementById('status').textContent='Fulcrum moved left. Mechanical advantage changed.';
 });
 document.getElementById('fulcrumRightBtn').addEventListener('click',()=>{
@@ -3379,6 +3411,7 @@ document.getElementById('fulcrumRightBtn').addEventListener('click',()=>{
     return;
   }
   labSelected.fulcrum=Math.min(.82,(labSelected.fulcrum||.5)+.08);
+  labSelected.pivotX=null;labSelected.pivotY=null;labSelected.angularVelocity=0;
   document.getElementById('status').textContent='Fulcrum moved right. Mechanical advantage changed.';
 });
 
