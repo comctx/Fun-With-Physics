@@ -1782,6 +1782,45 @@ function pointNearPart(p,o,pad=10){
   return p.x>b.x-pad&&p.x<b.x+b.w+pad&&p.y>b.y-pad&&p.y<b.y+b.h+pad;
 }
 
+function connectedDrainForTank(t){
+  const b=fluidBounds(t);
+  const tankBottom=b.y+b.h;
+
+  let best=null;
+
+  fluidObjects.filter(o=>o.type==='drain').forEach(d=>{
+    const dr=d.r*(d.scale||1);
+    const nearestX=Math.max(b.x,Math.min(d.x,b.x+b.w));
+    const nearestY=Math.max(b.y,Math.min(d.y,b.y+b.h));
+    const distance=Math.hypot(d.x-nearestX,d.y-nearestY);
+
+    if(distance>dr+34) return;
+
+    const leftDist=Math.abs(d.x-b.x);
+    const rightDist=Math.abs(d.x-(b.x+b.w));
+    const topDist=Math.abs(d.y-b.y);
+    const bottomDist=Math.abs(d.y-tankBottom);
+    const minDist=Math.min(leftDist,rightDist,topDist,bottomDist);
+
+    let edge='right';
+    if(minDist===leftDist) edge='left';
+    else if(minDist===rightDist) edge='right';
+    else if(minDist===bottomDist) edge='bottom';
+    else if(minDist===topDist) edge=(d.x<t.x?'left':'right');
+
+    let targetFill=0;
+    if(edge==='left'||edge==='right'){
+      const drainLevel=Math.max(b.y,Math.min(tankBottom,d.y));
+      targetFill=Math.max(0,tankBottom-drainLevel);
+    }
+
+    const candidate={drain:d,edge,targetFill,distance};
+    if(!best||candidate.distance<best.distance) best=candidate;
+  });
+
+  return best;
+}
+
 function updateFluid(dt){
   if(gameMode!=='fluid') return;
 
@@ -1942,7 +1981,7 @@ function updateFluid(dt){
       }
     });
 
-    // Tanks collect water and overflow naturally once full.
+    // Tanks collect water. A connected drain becomes the effective maximum water level.
     fluidObjects.filter(o=>o.type==='tank').forEach(o=>{
       const s=o.scale||1;
       const a=o.angle||0;
@@ -1953,12 +1992,17 @@ function updateFluid(dt){
 
       const halfW=o.w/2;
       const halfH=o.h/2;
-      const maxFill=o.h-14;
+      const physicalMaxFill=o.h-14;
+      const drainInfo=connectedDrainForTank(o);
+      const effectiveMaxFill=drainInfo
+        ?Math.min(physicalMaxFill,drainInfo.targetFill)
+        :physicalMaxFill;
+
       const inside=lx>-halfW+6&&lx<halfW-6&&ly>-halfH+5&&ly<halfH-4;
 
       if(inside){
-        if((o.fill||0)<maxFill){
-          o.fill=Math.min(maxFill,(o.fill||0)+.16);
+        if((o.fill||0)<effectiveMaxFill){
+          o.fill=Math.min(effectiveMaxFill,(o.fill||0)+.16);
 
           const surfaceLocalY=halfH-o.fill;
           if(ly>surfaceLocalY){
@@ -1969,8 +2013,18 @@ function updateFluid(dt){
             p.vy*=.12;
             p.vx*=.72;
           }
+        }else if(drainInfo){
+          // Tank has reached the drain level: send incoming water toward the drain instead of overfilling.
+          const d=drainInfo.drain;
+          const pull=Math.min(1,dt*24);
+          p.x+=(d.x-p.x)*pull;
+          p.y+=(d.y-p.y)*pull;
+
+          if(Math.hypot(p.x-d.x,p.y-d.y)<(d.r*(d.scale||1))+12){
+            p.dead=true;
+          }
         }else{
-          // Tank is full: route excess water over the lower top corner.
+          // No drain is connected: a truly full tank can overflow from the lower top corner.
           const topY=-halfH;
           const leftTop={
             x:o.x+(-halfW*s)*Math.cos(a)-(topY*s)*Math.sin(a),
@@ -2029,69 +2083,38 @@ function updateFluid(dt){
 
   fluidParticles=fluidParticles.filter(p=>!p.dead);
 
-  // Drains are passive: if attached to a tank they work whether or not a source is running.
+  // Drains are passive and continuously clamp tank water to the drain opening.
   const drains=fluidObjects.filter(o=>o.type==='drain');
-  const tanks=fluidObjects.filter(o=>o.type==='tank');
-
   drains.forEach(d=>d.activeDrain=false);
 
-  drains.forEach(d=>{
-    const dr=d.r*(d.scale||1);
+  fluidObjects.filter(o=>o.type==='tank').forEach(t=>{
+    const info=connectedDrainForTank(t);
+    if(!info) return;
 
-    tanks.forEach(t=>{
-      if((t.fill||0)<=0) return;
+    const d=info.drain;
+    d.activeDrain=true;
 
+    if((t.fill||0)>info.targetFill){
+      const drainRate=220*dt*(d.scale||1);
+      t.fill=Math.max(info.targetFill,(t.fill||0)-drainRate);
+    }
+
+    // Show outflow whenever the tank contains water above the drain's level.
+    if((t.fill||0)>0.5){
       const b=fluidBounds(t);
-      const tankBottom=b.y+b.h;
+      const dr=d.r*(d.scale||1);
+      let ox=d.x,oy=d.y,vx=0,vy=80;
 
-      // A drain is considered connected if its circle overlaps the tank
-      // or its center is just outside one of the tank walls.
-      const nearestX=Math.max(b.x,Math.min(d.x,b.x+b.w));
-      const nearestY=Math.max(b.y,Math.min(d.y,b.y+b.h));
-      const distance=Math.hypot(d.x-nearestX,d.y-nearestY);
-      if(distance>dr+34) return;
-
-      // Find the nearest wall. That is the wall the drain is connected to.
-      const leftDist=Math.abs(d.x-b.x);
-      const rightDist=Math.abs(d.x-(b.x+b.w));
-      const topDist=Math.abs(d.y-b.y);
-      const bottomDist=Math.abs(d.y-tankBottom);
-      const minDist=Math.min(leftDist,rightDist,topDist,bottomDist);
-
-      let edge='right';
-      if(minDist===leftDist) edge='left';
-      else if(minDist===rightDist) edge='right';
-      else if(minDist===bottomDist) edge='bottom';
-      else if(minDist===topDist) edge=(d.x<t.x?'left':'right');
-
-      // Bottom drains can empty the whole tank.
-      // Side drains lower water until the surface reaches the drain opening.
-      let desiredFill=0;
-      if(edge==='left'||edge==='right'){
-        const drainLevel=Math.max(b.y,Math.min(tankBottom,d.y));
-        desiredFill=Math.max(0,tankBottom-drainLevel);
+      if(info.edge==='left'){
+        ox=b.x-dr-6; oy=d.y; vx=-175;
+      }else if(info.edge==='right'){
+        ox=b.x+b.w+dr+6; oy=d.y; vx=175;
+      }else{
+        ox=d.x; oy=b.y+b.h+dr+6; vy=195;
       }
 
-      if((t.fill||0)>desiredFill+0.5){
-        d.activeDrain=true;
-
-        // Strong enough to visibly beat a normal incoming water source.
-        const drainRate=190*dt*(d.scale||1);
-        t.fill=Math.max(desiredFill,(t.fill||0)-drainRate);
-
-        let ox=d.x,oy=d.y,vx=0,vy=75;
-        if(edge==='left'){
-          ox=b.x-dr-6; oy=d.y; vx=-170;
-        }else if(edge==='right'){
-          ox=b.x+b.w+dr+6; oy=d.y; vx=170;
-        }else{
-          ox=d.x; oy=tankBottom+dr+6; vx=0; vy=190;
-        }
-
-        // Visible outflow stream.
-        spawnWater(ox,oy,vx,vy,3);
-      }
-    });
+      spawnWater(ox,oy,vx,vy,2);
+    }
   });
 
   // Float/sink objects stay where the user places them until water is running.
