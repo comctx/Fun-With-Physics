@@ -1679,10 +1679,11 @@ function fluidHitObject(x,y){
   return null;
 }
 
-function setFluidSelected(o){
+function setFluidSelected(o,showPanel=true){
   fluidSelected=o||null;
   const panel=document.getElementById('selectionPanel');
-  if(fluidSelected){
+
+  if(fluidSelected && showPanel){
     panel.classList.add('show');
     document.getElementById('selectionLabel').textContent='Selected: '+fluidPartName(fluidSelected.type).toUpperCase();
   }else{
@@ -1700,7 +1701,8 @@ function fluidPointerStart(e){
     return;
   }
 
-  setFluidSelected(hit);
+  // Select the part, but keep the edit buttons hidden while the user is dragging.
+  setFluidSelected(hit,false);
 
   if(hit){
     fluidDragging=true;
@@ -1750,7 +1752,13 @@ function fluidPointerEnd(){
         fluidPartName(fluidSelected.type)+' released. Watch whether it floats or sinks.';
     }
   }
+
   fluidDragging=false;
+
+  // Show edit controls only after the drag/tap is finished so they never block movement.
+  if(fluidSelected){
+    setFluidSelected(fluidSelected,true);
+  }
 }
 
 function spawnWater(x,y,vx=0,vy=0,count=1){
