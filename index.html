@@ -716,6 +716,7 @@ header{
   <button class="labButton" data-simple-part="gearSmall"><span class="icon">⚙️</span>Small Gear</button>
   <button class="labButton" data-simple-part="gearLarge"><span class="icon">⚙️</span>Large Gear</button>
   <button class="labButton" data-simple-part="wheelaxle"><span class="icon">🛞</span>Wheel & Axle</button>
+  <button class="labButton" id="wheelSpeedBtn"><span class="icon">⚡</span>Wheel Speed: Normal</button>
   <button class="labButton" data-simple-part="incline"><span class="icon">📐</span>Inclined Plane</button>
   <button class="labButton" data-simple-part="wedge"><span class="icon">🔺</span>Wedge</button>
   <button class="labButton" data-simple-part="crate"><span class="icon">📦</span>Crate</button>
@@ -2705,7 +2706,7 @@ function makeLabPart(type,x=width*.5,y=height*.45){
   if(type==='pulley2') return {...base,w:115,h:145,ratio:2,ropeOffset:0};
   if(type==='gearSmall') return {...base,r:30,teeth:12,spin:0,ratio:1};
   if(type==='gearLarge') return {...base,r:52,teeth:20,spin:0,ratio:1};
-  if(type==='wheelaxle') return {...base,r:45,axleR:16,spin:0};
+  if(type==='wheelaxle') return {...base,r:45,axleR:16,spin:0,speedMode:'normal'};
   if(type==='incline') return {...base,w:190,h:20,angle:-.28};
   if(type==='wedge') return {...base,w:80,h:70,push:0};
   if(type==='crate') return {...base,w:60,h:55,mass:8,vy:0,lifted:false};
@@ -2763,6 +2764,11 @@ function showLabEditControls(o){
   labSelected=o;
   document.getElementById('selectionLabel').textContent='Selected: '+labName(o.type).toUpperCase();
   document.getElementById('selectionPanel').classList.add('show');
+  if(o.type==='wheelaxle'){
+    const label=(o.speedMode||'normal');
+    document.getElementById('wheelSpeedBtn').lastChild.textContent=
+      'Wheel Speed: '+label[0].toUpperCase()+label.slice(1);
+  }
 }
 
 function labPointerStart(e){
@@ -2947,7 +2953,7 @@ function updateSimpleMachines(dt){
   }
 
   // Wheel & axle: rotation converts torque into useful linear motion.
-  // Nearby loads are pushed only when they are actually close enough to the rim.
+  // Nearby balls, crates, and boulders are pushed only when they actually contact the rim.
   wheels.forEach(w=>{
     const s=w.scale||1;
     const wheelR=w.r*s;
@@ -2955,9 +2961,11 @@ function updateSimpleMachines(dt){
     const mechanicalAdvantage=Math.max(1,wheelR/Math.max(8,axleR));
     w.mechanicalAdvantage=mechanicalAdvantage;
 
-    // Give the wheel a steady applied effort so its motion is easy to see.
-    w.spin=(w.spin||0)+1.6*dt;
-    w.spin=Math.min(w.spin,3.0);
+    const speedMode=w.speedMode||'normal';
+    const targetSpin=speedMode==='slow'?1.4:(speedMode==='fast'?4.2:2.7);
+    const accel=speedMode==='slow'?1.0:(speedMode==='fast'?3.0:1.8);
+
+    w.spin=Math.min(targetSpin,(w.spin||0)+accel*dt);
     w.angle+=w.spin*dt;
 
     const pushLoad=(obj,basePush)=>{
@@ -2965,17 +2973,16 @@ function updateSimpleMachines(dt){
       const dx=obj.x-w.x;
       const dy=obj.y-w.y;
       const d=Math.max(1,Math.hypot(dx,dy));
-      const contactDistance=wheelR+objR+18;
+      const contactDistance=wheelR+objR+10;
 
       if(d<=contactDistance){
-        // Push away from the wheel along the contact direction.
         const nx=dx/d;
         const ny=dy/d;
-        const drive=Math.min(260,basePush*mechanicalAdvantage);
+        const speedFactor=speedMode==='slow'?.65:(speedMode==='fast'?1.65:1);
+        const drive=Math.min(420,basePush*mechanicalAdvantage*speedFactor);
 
         obj.vx=(obj.vx||0)+nx*drive*dt;
-        // Keep most of the demonstration horizontal while allowing a little lift.
-        obj.vy=(obj.vy||0)+ny*drive*.18*dt;
+        obj.vy=(obj.vy||0)+ny*drive*.12*dt;
         obj.moved=true;
         obj.drivenByWheel=true;
         w.driving=true;
@@ -2983,8 +2990,9 @@ function updateSimpleMachines(dt){
     };
 
     w.driving=false;
-    boulders.forEach(b=>pushLoad(b,70));
-    crates.forEach(b=>pushLoad(b,58));
+    balls.forEach(b=>pushLoad(b,105));
+    boulders.forEach(b=>pushLoad(b,78));
+    crates.forEach(b=>pushLoad(b,66));
   });
 
   // Levers pivot around a fixed fulcrum. The fulcrum stays put while the beam rotates.
@@ -3294,6 +3302,7 @@ function drawSimplePart(o){
     if(o.mechanicalAdvantage){
       ctx.fillText('MA '+o.mechanicalAdvantage.toFixed(1)+'×',0,o.r+42);
     }
+    ctx.fillText('SPEED: '+(o.speedMode||'normal').toUpperCase(),0,o.r+56);
   }
   if(o.type==='incline'){
     ctx.fillStyle='#c9954d';ctx.fillRect(-o.w/2,-o.h/2,o.w,o.h);
@@ -3443,7 +3452,7 @@ function explainSimpleMachines(){
   if(labObjects.some(o=>o.type==='pulley1')) lines.push('Single pulley: mainly changes the direction of the pulling force. In this lab its mechanical advantage is about 1×.');
   if(labObjects.some(o=>o.type==='pulley2')) lines.push('Double pulley: shares the load across more supporting rope, increasing mechanical advantage while requiring more rope distance.');
   if(labObjects.some(o=>o.type==='gearSmall'||o.type==='gearLarge')) lines.push('Gears: touching gears rotate in opposite directions. A small gear driving a large gear slows rotation and increases torque; a large gear driving a small gear increases speed.');
-  if(labObjects.some(o=>o.type==='wheelaxle')) lines.push('Wheel & axle: applying force at the larger wheel creates torque around the smaller axle. A nearby crate or boulder touching the rim is pushed into linear motion, and a larger wheel compared with the axle gives greater mechanical advantage.');
+  if(labObjects.some(o=>o.type==='wheelaxle')) lines.push('Wheel & axle: applying force at the larger wheel creates torque around the smaller axle. A nearby ball, crate, or boulder touching the rim is pushed into linear motion. Slow, Normal, and Fast settings change rotational speed, while a larger wheel compared with the axle gives greater mechanical advantage.');
   if(labObjects.some(o=>o.type==='incline')) lines.push('Inclined plane: moving through a longer distance reduces the force needed to gain the same height. The work is spread over more distance.');
   if(labObjects.some(o=>o.type==='wedge')) lines.push('Wedge: forward force is redirected sideways along the wedge faces, pushing objects apart.');
   if(labObjects.some(o=>o.type==='crate'&&o.lifted)) lines.push('The heavy crate was lifted because the machine traded distance or direction for greater useful force.');
@@ -3514,6 +3523,19 @@ function loadSimpleChallenge(name){
 }
 
 document.querySelectorAll('[data-simple-challenge]').forEach(btn=>btn.addEventListener('click',()=>loadSimpleChallenge(btn.dataset.simpleChallenge)));
+
+document.getElementById('wheelSpeedBtn').addEventListener('click',()=>{
+  if(!labSelected||labSelected.type!=='wheelaxle'){
+    document.getElementById('status').textContent='Select a Wheel & Axle first, then choose its speed.';
+    return;
+  }
+  const order=['slow','normal','fast'];
+  const current=labSelected.speedMode||'normal';
+  labSelected.speedMode=order[(order.indexOf(current)+1)%order.length];
+  const label=labSelected.speedMode[0].toUpperCase()+labSelected.speedMode.slice(1);
+  document.getElementById('wheelSpeedBtn').lastChild.textContent='Wheel Speed: '+label;
+  document.getElementById('status').textContent='Wheel speed set to '+label+'.';
+});
 
 document.getElementById('simpleChallengeBtn').addEventListener('click',()=>document.getElementById('simpleChallengeOverlay').classList.add('open'));
 document.getElementById('closeSimpleChallengeBtn').addEventListener('click',()=>document.getElementById('simpleChallengeOverlay').classList.remove('open'));
