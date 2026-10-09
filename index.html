@@ -424,6 +424,14 @@ header{
   font-size:11px;
   white-space:nowrap;
 }
+.modebar .modeActionBtn{
+  background:#2b4658;
+  border-color:#527184;
+}
+.modebar .modeActionBtn:hover{
+  background:#33566d;
+}
+
 .modebar .goal{
   min-width:210px;
   max-width:260px;
@@ -551,6 +559,7 @@ header{
 
 <div class="modebar">
   <button id="sandboxModeBtn" class="active">⚙️ Mechanics</button>
+  <button id="mechanicsExplainBtn" class="modeActionBtn">💡 What Happened?</button>
   <button id="puzzleModeBtn">🧩 Puzzles</button>
   <button id="challengeModeBtn">🏆 Challenge</button>
   <button id="fluidModeBtn">🌊 Fluid Physics</button>
@@ -590,7 +599,6 @@ header{
   <button class="partButton" data-part="blast"><span class="icon">💥</span>Blast</button>
   <button class="partButton" data-part="bell"><span class="icon">🔔</span>Bell</button>
   <button class="partButton" id="mechanicsTestBtn"><span class="icon">▶️</span>Test Machine</button>
-  <button class="partButton" id="mechanicsExplainBtn"><span class="icon">💡</span>What Happened?</button>
 </div>
 
 <div id="rubeTray">
@@ -2286,6 +2294,8 @@ function setMode(mode){
   document.getElementById('electricModeBtn').classList.toggle('active',mode==='electric');
   document.getElementById('simpleModeBtn').classList.toggle('active',mode==='simple');
   document.getElementById('rubeModeBtn').classList.toggle('active',mode==='rube');
+  document.getElementById('mechanicsExplainBtn').style.display=
+    (mode==='sandbox'||mode==='puzzle'||mode==='challenge')?'inline-block':'none';
 
   const specialMode=mode==='fluid'||mode==='air'||mode==='electric'||mode==='simple';
   document.getElementById('tray').style.display=(specialMode||mode==='rube')?'none':'grid';
