@@ -453,6 +453,7 @@ let fluidParticles=[];
 let fluidObjects=[];
 let fluidRunning=false;
 let fluidSelected=null;
+let fluidLastTapId=null;
 let fluidDragging=false;
 let fluidDragOffsetX=0;
 let fluidDragOffsetY=0;
@@ -1636,6 +1637,7 @@ function resetFluidBuilder(){
   fluidObjects=[];
   fluidRunning=false;
   setFluidSelected(null);
+  fluidLastTapId=null;
   fluidDragging=false;
   fluidWheelSpin=0;
   fluidElapsed=0;
@@ -1672,7 +1674,8 @@ function addFluidPart(type){
   const stagger=(fluidObjects.length%5)*18;
   const p=makeFluidPart(type,width*.5+stagger-36,height*.40+stagger/2);
   fluidObjects.push(p);
-  setFluidSelected(p);
+  setFluidSelected(p,false);
+  fluidLastTapId=null;
   document.querySelectorAll('.fluidButton[data-fluid-part]').forEach(b=>{
     b.classList.toggle('active',b.dataset.fluidPart===type);
   });
@@ -1849,25 +1852,27 @@ function fluidPointerStart(e){
 
   if(!hit){
     setFluidSelected(null);
+    fluidLastTapId=null;
     fluidDragging=false;
     return;
   }
 
-  // Select the part, but keep the edit buttons hidden while the user is dragging.
-  setFluidSelected(hit,false);
+  const wasAlreadySelected=fluidSelected && fluidSelected.id===hit.id;
 
-  if(hit){
-    fluidDragging=true;
-    fluidDragOffsetX=p.x-hit.x;
-    fluidDragOffsetY=p.y-hit.y;
-    hit._pointerStartX=p.x;
-    hit._pointerStartY=p.y;
-    if(hit.type==='wood'||hit.type==='metal'){
-      hit.vy=0;
-      hit.held=true;
-    }
-  }else{
-    fluidDragging=false;
+  // First touch only selects the part. A second tap on the same selected part
+  // will reveal the edit controls after the pointer is released.
+  setFluidSelected(hit,false);
+  hit._showControlsOnTap=wasAlreadySelected && fluidLastTapId===hit.id;
+
+  fluidDragging=true;
+  fluidDragOffsetX=p.x-hit.x;
+  fluidDragOffsetY=p.y-hit.y;
+  hit._pointerStartX=p.x;
+  hit._pointerStartY=p.y;
+
+  if(hit.type==='wood'||hit.type==='metal'){
+    hit.vy=0;
+    hit.held=true;
   }
 }
 
@@ -1885,8 +1890,10 @@ function fluidPointerMove(e){
 }
 
 function fluidPointerEnd(){
+  let moved=999;
+
   if(fluidSelected && fluidDragging){
-    const moved=Math.hypot(
+    moved=Math.hypot(
       (fluidSelected.x+fluidDragOffsetX)-(fluidSelected._pointerStartX||fluidSelected.x),
       (fluidSelected.y+fluidDragOffsetY)-(fluidSelected._pointerStartY||fluidSelected.y)
     );
@@ -1905,15 +1912,22 @@ function fluidPointerEnd(){
     }
   }
 
-  if(fluidSelected){
+  if(fluidSelected && moved>=8){
     snapFluidPart(fluidSelected);
   }
 
   fluidDragging=false;
 
-  // Show edit controls only after the drag/tap is finished so they never block movement.
   if(fluidSelected){
-    setFluidSelected(fluidSelected,true);
+    const showControls=moved<8 && fluidSelected._showControlsOnTap===true;
+    fluidLastTapId=fluidSelected.id;
+    setFluidSelected(fluidSelected,showControls);
+    fluidSelected._showControlsOnTap=false;
+
+    if(!showControls && moved<8){
+      document.getElementById('status').textContent=
+        fluidPartName(fluidSelected.type)+' selected. Tap it again for edit controls, or drag to move it.';
+    }
   }
 }
 
