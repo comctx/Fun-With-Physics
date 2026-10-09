@@ -1004,9 +1004,18 @@ function renderStars(stars=calculateStars()){
 
 function updateScore(){
   const score=calculateAbsurdity();
-  document.getElementById('score').textContent='Absurdity: '+score;
-  document.getElementById('pieceCount').textContent='Pieces: '+objects.length;
-  renderStars();
+
+  if(gameMode==='sandbox'){
+    document.getElementById('score').textContent='Mechanics Lab';
+    document.getElementById('pieceCount').textContent='Parts: '+objects.length;
+    document.getElementById('starRow').textContent='Earth Gravity';
+    document.getElementById('modeLabel').textContent='Motion & Forces';
+  }else{
+    document.getElementById('score').textContent='Absurdity: '+score;
+    document.getElementById('pieceCount').textContent='Pieces: '+objects.length;
+    renderStars();
+  }
+
   updateBudget();
 }
 
@@ -1940,7 +1949,7 @@ function setMode(mode){
     updateScore();
     currentPuzzleIndex=-1;
     activeChallenge=null;
-    document.getElementById('modeLabel').textContent='Mechanics Lab';
+    document.getElementById('modeLabel').textContent='Motion & Forces';
     document.getElementById('goalText').textContent='Mechanics: Motion & Forces.';
     document.getElementById('status').textContent='Build with ramps, springs, dominoes, fans, magnets, and pendulums.';
     defaultMachine();
@@ -1994,12 +2003,15 @@ function setMode(mode){
   if(mode==='rube'){
     currentPuzzleIndex=-1;
     activeChallenge=null;
-    document.getElementById('modeLabel').textContent='Integration Lab';
     document.getElementById('goalText').textContent='Rube Goldberg: Combine mechanics, water, air, heat, and electricity.';
     document.getElementById('status').textContent='Build a cross-system chain reaction and ring the bell.';
     rubeLastTapId=null;
     setRubeCategory('mechanics');
     defaultMachine();
+    document.getElementById('score').textContent='Absurdity: '+calculateAbsurdity();
+    document.getElementById('pieceCount').textContent='Pieces: '+objects.length;
+    renderStars();
+    document.getElementById('modeLabel').textContent='Integration Lab';
   }
 
   updateBudget();
