@@ -96,16 +96,34 @@ canvas{
   pointer-events:none;
 }
 .hudCard{
-  background:rgba(20,25,31,.9);
-  border:1px solid #475361;
-  border-radius:12px;
-  padding:8px 10px;
-  backdrop-filter:blur(5px);
+  background:rgba(18,24,30,.72);
+  border:1px solid #3f4b57;
+  border-left:3px solid #617486;
+  border-radius:9px;
+  padding:7px 9px;
+  backdrop-filter:blur(4px);
   min-width:125px;
+  box-shadow:none;
+  cursor:default;
+  pointer-events:none;
 }
-.hudCard strong{display:block;font-size:14px}
-.hudCard span{font-size:11px;color:#c8d1dd}
-#starRow{letter-spacing:2px;color:var(--gold);font-size:18px}
+.hudCard strong{
+  display:block;
+  font-size:13px;
+  font-weight:700;
+  color:#e8eef4;
+}
+.hudCard span{
+  display:block;
+  margin-top:2px;
+  font-size:10px;
+  color:#9eacb9;
+}
+#starRow{
+  letter-spacing:2px;
+  color:#b8c3cd;
+  font-size:14px;
+}
 #selectionPanel{
   position:absolute;
   z-index:8;
