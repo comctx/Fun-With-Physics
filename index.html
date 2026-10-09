@@ -2048,15 +2048,18 @@ function updateFluid(dt){
       const bottom=b.y+b.h-radius-4;
 
       if(o.density<1){
-        // Buoyancy: once the wood is submerged, push it upward strongly.
-        const desiredY=surface+radius*.35;
+        // Softer buoyancy so wood rises naturally without launching above the tank.
+        const desiredY=surface+radius*.42;
         const submersion=Math.max(0,(o.y+radius)-surface);
 
         if(submersion>0){
-          const buoyancy=(1-o.density)*1500 + submersion*16;
+          const buoyancy=(1-o.density)*760 + submersion*7.5;
           o.vy-=buoyancy*dt;
-          o.vy*=.985;
+          o.vy*=.93;
         }
+
+        // Limit upward speed so the wood cannot shoot out of the water.
+        o.vy=Math.max(o.vy,-120);
 
         // Keep the wood inside the tank while it rises.
         if(o.y>bottom){
@@ -2064,8 +2067,13 @@ function updateFluid(dt){
           if(o.vy>0) o.vy=0;
         }
 
-        // Settle naturally at the surface instead of bobbing forever.
-        if(Math.abs(o.y-desiredY)<6 && Math.abs(o.vy)<45){
+        // Add extra damping near the surface and settle smoothly.
+        const distToSurface=o.y-desiredY;
+        if(Math.abs(distToSurface)<22){
+          o.vy*=.80;
+        }
+
+        if(Math.abs(distToSurface)<4 && Math.abs(o.vy)<18){
           o.y=desiredY;
           o.vy=0;
         }
