@@ -161,7 +161,7 @@ canvas{
 #fluidTray{
   flex:0 0 auto;
   display:none;
-  grid-template-columns:repeat(8,minmax(82px,1fr));
+  grid-template-columns:repeat(14,minmax(82px,1fr));
   gap:7px;
   padding:8px;
   background:#173142;
@@ -243,7 +243,7 @@ canvas{
   .topButtons button{flex:1;padding:7px 5px;font-size:12px}
   .modebar .goal{min-width:230px}
   #tray{grid-template-columns:repeat(9,78px)}
-  #fluidTray{grid-template-columns:repeat(8,78px)}
+  #fluidTray{grid-template-columns:repeat(14,78px)}
   #selectionPanel{grid-template-columns:repeat(4,1fr)}
   .levelGrid{grid-template-columns:1fr}
 }
@@ -355,14 +355,20 @@ canvas{
 </div>
 
 <div id="fluidTray">
-  <button class="fluidButton active" data-fluid="fill"><span class="icon">🪣</span>Fill Container</button>
-  <button class="fluidButton" data-fluid="pipes"><span class="icon">🚰</span>Pipes & Pumps</button>
-  <button class="fluidButton" data-fluid="dam"><span class="icon">🌊</span>Dam & Canal</button>
-  <button class="fluidButton" data-fluid="wheel"><span class="icon">⚙️</span>Water Wheel</button>
-  <button class="fluidButton" data-fluid="float"><span class="icon">🛟</span>Float / Sink</button>
-  <button class="fluidButton" id="fluidActionBtn"><span class="icon">💧</span>Start Water</button>
-  <button class="fluidButton" id="fluidObjectBtn"><span class="icon">🪵</span>Add Object</button>
-  <button class="fluidButton" id="fluidResetBtn"><span class="icon">↻</span>Reset</button>
+  <button class="fluidButton" data-fluid-part="source"><span class="icon">💧</span>Water Source</button>
+  <button class="fluidButton" data-fluid-part="pipe"><span class="icon">🚰</span>Pipe</button>
+  <button class="fluidButton" data-fluid-part="pump"><span class="icon">⚙️</span>Pump</button>
+  <button class="fluidButton" data-fluid-part="tank"><span class="icon">🛢️</span>Tank</button>
+  <button class="fluidButton" data-fluid-part="dam"><span class="icon">🧱</span>Dam</button>
+  <button class="fluidButton" data-fluid-part="gate"><span class="icon">🚪</span>Gate</button>
+  <button class="fluidButton" data-fluid-part="canal"><span class="icon">🟦</span>Canal</button>
+  <button class="fluidButton" data-fluid-part="wheel"><span class="icon">🛞</span>Water Wheel</button>
+  <button class="fluidButton" data-fluid-part="wood"><span class="icon">🪵</span>Wood</button>
+  <button class="fluidButton" data-fluid-part="metal"><span class="icon">🔩</span>Metal</button>
+  <button class="fluidButton" data-fluid-part="drain"><span class="icon">🕳️</span>Drain</button>
+  <button class="fluidButton" data-fluid-part="valve"><span class="icon">🔧</span>Valve</button>
+  <button class="fluidButton" id="fluidActionBtn"><span class="icon">▶️</span>Start Water</button>
+  <button class="fluidButton" id="fluidClearBtn"><span class="icon">🗑️</span>Clear</button>
 </div>
 </div>
 
@@ -390,30 +396,15 @@ let soundEnabled=true;
 let audioCtx=null;
 let tutorialIndex=0;
 
-let fluidActivity='fill';
 let fluidParticles=[];
 let fluidObjects=[];
 let fluidRunning=false;
-let fluidGateOpen=false;
-let fluidWheelAngle=0;
-let fluidWheelSpeed=0;
-let fluidFill=0;
-let fluidSuccess=false;
-let floatObjectIndex=0;
-let fluidDragTarget=null;
-let fluidPointerDown=false;
-let fluidFaucetX=null;
-let fluidContainerX=null;
-let fluidWheelX=null;
-let fluidPumpX=null;
-let fluidTankX=null;
-
-const fluidMaterials=[
-  {name:'Wood',emoji:'🪵',density:.65},
-  {name:'Plastic',emoji:'🧴',density:.85},
-  {name:'Metal',emoji:'🔩',density:1.8},
-  {name:'Rock',emoji:'🪨',density:2.4}
-];
+let fluidSelected=null;
+let fluidDragging=false;
+let fluidDragOffsetX=0;
+let fluidDragOffsetY=0;
+let fluidId=1;
+let fluidWheelSpin=0;
 
 const gravity=760;
 const SAVE_KEY='rube_goldberg_creator_machine_v3';
@@ -497,7 +488,7 @@ const tutorialSlides=[
   },
   {
     title:'5. Try Other Modes',
-    text:'Sandbox gives you everything. Puzzle mode limits your parts. Challenge mode gives you special goals.'
+    text:'Sandbox gives you everything. Puzzle mode limits your parts. Challenge mode gives you special goals. Fluid Physics is another builder where you place water parts and make your own experiments.'
   }
 ];
 
@@ -1378,12 +1369,13 @@ function setMode(mode){
   if(mode==='fluid'){
     currentPuzzleIndex=-1;
     activeChallenge=null;
-    document.getElementById('modeLabel').textContent='Fluid Physics';
+    document.getElementById('modeLabel').textContent='Fluid Builder';
     document.getElementById('score').textContent='Water Lab';
-    document.getElementById('pieceCount').textContent='Interactive experiments';
+    document.getElementById('pieceCount').textContent='Build your own experiment';
     document.getElementById('starRow').textContent='💧💧💧';
-    document.getElementById('status').textContent='Explore how water flows, fills, floats, sinks, and makes things move.';
-    setFluidActivity('fill');
+    document.getElementById('goalText').textContent='Fluid Physics: Add parts, arrange them, then start the water.';
+    document.getElementById('status').textContent='Tap parts below to add them. Drag them into place on the workspace.';
+    resetFluidBuilder();
   }
 
   updateBudget();
@@ -1546,71 +1538,107 @@ document.getElementById('nextPuzzleBtn').addEventListener('click',()=>{
 });
 
 
-function resetFluidScene(){
+
+function resetFluidBuilder(){
   fluidParticles=[];
   fluidObjects=[];
   fluidRunning=false;
-  fluidGateOpen=false;
-  fluidWheelAngle=0;
-  fluidWheelSpeed=0;
-  fluidFill=0;
-  fluidSuccess=false;
-  fluidDragTarget=null;
-  fluidPointerDown=false;
-  fluidFaucetX=width*.50;
-  fluidContainerX=width*.35;
-  fluidWheelX=width*.58;
-  fluidPumpX=Math.max(70,width*.10);
-  fluidTankX=Math.min(width-190,width*.72);
+  fluidSelected=null;
+  fluidDragging=false;
+  fluidWheelSpin=0;
   updateFluidActionLabel();
-}
-
-function setFluidActivity(activity){
-  fluidActivity=activity;
-  resetFluidScene();
-
-  document.querySelectorAll('.fluidButton[data-fluid]').forEach(btn=>{
-    btn.classList.toggle('active',btn.dataset.fluid===activity);
-  });
-
-  const objectBtn=document.getElementById('fluidObjectBtn');
-  objectBtn.style.display=activity==='float'?'block':'none';
-
-  if(activity==='fill'){
-    document.getElementById('goalText').textContent='Fluid Physics: Fill the container to the target line.';
-    document.getElementById('status').textContent='Drag the faucet or container to line them up, then start the water.';
-  }
-  if(activity==='pipes'){
-    document.getElementById('goalText').textContent='Fluid Physics: Pump water through the pipe into the tank.';
-    document.getElementById('status').textContent='Drag the pump or tank. The pipe redraws between them. Then start the pump.';
-  }
-  if(activity==='dam'){
-    document.getElementById('goalText').textContent='Fluid Physics: Open and close the dam gate to control the canal.';
-    document.getElementById('status').textContent='Tap the dam gate itself to open or close it, or use the button below.';
-  }
-  if(activity==='wheel'){
-    document.getElementById('goalText').textContent='Fluid Physics: Use flowing water to spin the water wheel.';
-    document.getElementById('status').textContent='Drag the water wheel under the stream, then start the water.';
-  }
-  if(activity==='float'){
-    document.getElementById('goalText').textContent='Fluid Physics: Compare objects that float and sink.';
-    document.getElementById('status').textContent='Tap above the water to drop objects, or use Add Object. Compare what floats and sinks.';
-  }
-
-  updateFluidActionLabel();
+  document.querySelectorAll('.fluidButton[data-fluid-part]').forEach(b=>b.classList.remove('active'));
 }
 
 function updateFluidActionLabel(){
   const btn=document.getElementById('fluidActionBtn');
-
-  if(fluidActivity==='dam'){
-    btn.querySelector('.icon').textContent=fluidGateOpen?'🚧':'🌊';
-    btn.lastChild.textContent=fluidGateOpen?' Close Gate':' Open Gate';
-    return;
-  }
-
-  btn.querySelector('.icon').textContent=fluidRunning?'⏸️':'💧';
+  btn.querySelector('.icon').textContent=fluidRunning?'⏸️':'▶️';
   btn.lastChild.textContent=fluidRunning?' Stop Water':' Start Water';
+}
+
+function makeFluidPart(type,x=width*.5,y=height*.45){
+  const base={id:fluidId++,type,x,y,angle:0,scale:1};
+  if(type==='source') return {...base,w:34,h:46,flow:1};
+  if(type==='pipe') return {...base,w:150,h:22};
+  if(type==='pump') return {...base,w:70,h:58,power:1};
+  if(type==='tank') return {...base,w:180,h:130,fill:0};
+  if(type==='dam') return {...base,w:34,h:150};
+  if(type==='gate') return {...base,w:30,h:90,open:false};
+  if(type==='canal') return {...base,w:190,h:34};
+  if(type==='wheel') return {...base,r:52,spin:0};
+  if(type==='wood') return {...base,r:20,density:.65,vy:0,label:'WOOD'};
+  if(type==='metal') return {...base,r:20,density:1.8,vy:0,label:'METAL'};
+  if(type==='drain') return {...base,r:28};
+  if(type==='valve') return {...base,r:25,open:true};
+  return base;
+}
+
+function addFluidPart(type){
+  const stagger=(fluidObjects.length%5)*18;
+  const p=makeFluidPart(type,width*.5+stagger-36,height*.40+stagger/2);
+  fluidObjects.push(p);
+  fluidSelected=p;
+  document.querySelectorAll('.fluidButton[data-fluid-part]').forEach(b=>{
+    b.classList.toggle('active',b.dataset.fluidPart===type);
+  });
+  document.getElementById('status').textContent=fluidPartName(type)+' added. Drag it into place.';
+}
+
+function fluidPartName(type){
+  return ({
+    source:'Water Source',pipe:'Pipe',pump:'Pump',tank:'Tank',dam:'Dam',
+    gate:'Gate',canal:'Canal',wheel:'Water Wheel',wood:'Wood',
+    metal:'Metal',drain:'Drain',valve:'Valve'
+  })[type]||type;
+}
+
+function fluidBounds(o){
+  if(o.type==='wheel') return {x:o.x-o.r,y:o.y-o.r,w:o.r*2,h:o.r*2};
+  if(o.r) return {x:o.x-o.r,y:o.y-o.r,w:o.r*2,h:o.r*2};
+  return {x:o.x-(o.w||60)/2,y:o.y-(o.h||50)/2,w:o.w||60,h:o.h||50};
+}
+
+function fluidHitObject(x,y){
+  for(let i=fluidObjects.length-1;i>=0;i--){
+    const o=fluidObjects[i];
+    const b=fluidBounds(o);
+    if(x>=b.x&&x<=b.x+b.w&&y>=b.y&&y<=b.y+b.h) return o;
+  }
+  return null;
+}
+
+function fluidPointerStart(e){
+  const p=posFromEvent(e);
+  const hit=fluidHitObject(p.x,p.y);
+  fluidSelected=hit;
+
+  if(hit){
+    fluidDragging=true;
+    fluidDragOffsetX=p.x-hit.x;
+    fluidDragOffsetY=p.y-hit.y;
+
+    if(hit.type==='gate' && !fluidRunning){
+      hit.open=!hit.open;
+      document.getElementById('status').textContent='Gate '+(hit.open?'opened.':'closed.');
+    }
+    if(hit.type==='valve' && !fluidRunning){
+      hit.open=!hit.open;
+      document.getElementById('status').textContent='Valve '+(hit.open?'opened.':'closed.');
+    }
+  }else{
+    fluidDragging=false;
+  }
+}
+
+function fluidPointerMove(e){
+  if(!fluidDragging||!fluidSelected) return;
+  const p=posFromEvent(e);
+  fluidSelected.x=Math.max(20,Math.min(width-20,p.x-fluidDragOffsetX));
+  fluidSelected.y=Math.max(20,Math.min(height-20,p.y-fluidDragOffsetY));
+}
+
+function fluidPointerEnd(){
+  fluidDragging=false;
 }
 
 function spawnWater(x,y,vx=0,vy=0,count=1){
@@ -1618,247 +1646,164 @@ function spawnWater(x,y,vx=0,vy=0,count=1){
     fluidParticles.push({
       x:x+(Math.random()-.5)*8,
       y:y+(Math.random()-.5)*6,
-      vx:vx+(Math.random()-.5)*24,
-      vy:vy+Math.random()*20,
+      vx:vx+(Math.random()-.5)*18,
+      vy:vy+Math.random()*12,
       r:3+Math.random()*2,
       age:0
     });
   }
-  if(fluidParticles.length>900){
-    fluidParticles.splice(0,fluidParticles.length-900);
+  if(fluidParticles.length>1000){
+    fluidParticles.splice(0,fluidParticles.length-1000);
   }
 }
 
-function getFillBox(){
-  const w=width*.30;
-  const h=Math.min(190,height*.35);
-  const x=Math.max(10,Math.min(width-w-10,fluidContainerX==null?width*.35:fluidContainerX));
-  const y=height*.50;
-  return {x,y,w,h};
-}
-
-function getPipeGeometry(){
-  const topY=Math.min(160,height*.30);
-  const pumpX=Math.max(55,Math.min(width*.35,fluidPumpX==null?width*.10:fluidPumpX));
-  const tankX=Math.max(width*.55,Math.min(width-190,fluidTankX==null?width*.72:fluidTankX));
-  const elbowX=tankX-110;
-  const bottomY=Math.min(height-130,topY+150);
-  return {topY,pumpX,tankX,elbowX,bottomY};
-}
-
-function getWheelGeometry(){
-  return {
-    x:Math.max(90,Math.min(width-90,fluidWheelX==null?width*.58:fluidWheelX)),
-    y:Math.min(height*.62,260),
-    r:58
-  };
-}
-
-function fluidHitTest(x,y){
-  if(fluidActivity==='fill'){
-    const box=getFillBox();
-    if(Math.abs(x-fluidFaucetX)<35 && y<95) return 'faucet';
-    if(x>box.x&&x<box.x+box.w&&y>box.y&&y<box.y+box.h) return 'container';
-  }
-
-  if(fluidActivity==='pipes'){
-    const g=getPipeGeometry();
-    if(Math.abs(x-g.pumpX)<55 && Math.abs(y-g.topY)<55) return 'pump';
-    if(x>g.tankX&&x<g.tankX+180&&y>g.bottomY) return 'tank';
-  }
-
-  if(fluidActivity==='dam'){
-    const canalY=Math.max(170,height*.55);
-    if(x>width*.28&&x<width*.35&&y>canalY-55&&y<canalY+55) return 'gate';
-  }
-
-  if(fluidActivity==='wheel'){
-    const g=getWheelGeometry();
-    if(Math.hypot(x-g.x,y-g.y)<g.r+24) return 'wheel';
-  }
-
-  if(fluidActivity==='float'){
-    if(y<height*.58) return 'dropObject';
-  }
-
-  return null;
-}
-
-function fluidPointerStart(e){
-  const p=posFromEvent(e);
-  fluidPointerDown=true;
-  fluidDragTarget=fluidHitTest(p.x,p.y);
-
-  if(fluidDragTarget==='gate'){
-    fluidGateOpen=!fluidGateOpen;
-    fluidRunning=fluidGateOpen;
-    updateFluidActionLabel();
-  }
-
-  if(fluidDragTarget==='dropObject'){
-    addFloatObjectAt(p.x,p.y);
-    fluidDragTarget=null;
-  }
-}
-
-function fluidPointerMove(e){
-  if(!fluidPointerDown||!fluidDragTarget) return;
-  const p=posFromEvent(e);
-
-  if(fluidDragTarget==='faucet'){
-    fluidFaucetX=Math.max(25,Math.min(width-25,p.x));
-  }else if(fluidDragTarget==='container'){
-    const box=getFillBox();
-    fluidContainerX=Math.max(10,Math.min(width-box.w-10,p.x-box.w/2));
-  }else if(fluidDragTarget==='pump'){
-    fluidPumpX=Math.max(55,Math.min(width*.35,p.x));
-  }else if(fluidDragTarget==='tank'){
-    fluidTankX=Math.max(width*.55,Math.min(width-190,p.x-90));
-  }else if(fluidDragTarget==='wheel'){
-    fluidWheelX=Math.max(90,Math.min(width-90,p.x));
-  }
-}
-
-function fluidPointerEnd(){
-  fluidPointerDown=false;
-  fluidDragTarget=null;
+function pointNearPart(p,o,pad=10){
+  const b=fluidBounds(o);
+  return p.x>b.x-pad&&p.x<b.x+b.w+pad&&p.y>b.y-pad&&p.y<b.y+b.h+pad;
 }
 
 function updateFluid(dt){
   if(gameMode!=='fluid') return;
 
-  if(fluidActivity==='fill'&&fluidRunning){
-    spawnWater(fluidFaucetX==null?width*.5:fluidFaucetX,55,0,15,3);
-  }
-
-  if(fluidActivity==='pipes'&&fluidRunning){
-    const g=getPipeGeometry();
-    spawnWater(g.pumpX,g.topY-45,150,15,3);
-  }
-
-  if(fluidActivity==='dam'&&fluidGateOpen){
-    spawnWater(width*.32,Math.max(120,height*.42),170,20,4);
-  }
-
-  if(fluidActivity==='wheel'&&fluidRunning){
-    const g=getWheelGeometry();
-    spawnWater(g.x-95,55,40,10,3);
+  if(fluidRunning){
+    fluidObjects.filter(o=>o.type==='source').forEach(s=>{
+      const a=s.angle||0;
+      const vx=Math.sin(a)*90;
+      const vy=Math.cos(a)*60+35;
+      spawnWater(s.x,s.y+26,vx,vy,3);
+    });
   }
 
   fluidParticles.forEach(p=>{
     p.age+=dt;
-    p.vy+=420*dt;
+    p.vy+=430*dt;
+
+    // Pumps add energy to nearby water.
+    fluidObjects.filter(o=>o.type==='pump').forEach(o=>{
+      if(pointNearPart(p,o,28)){
+        const a=o.angle||0;
+        p.vx+=Math.cos(a)*260*dt;
+        p.vy+=Math.sin(a)*260*dt-80*dt;
+      }
+    });
+
+    // Pipes guide water along their angle.
+    fluidObjects.filter(o=>o.type==='pipe').forEach(o=>{
+      const dx=p.x-o.x,dy=p.y-o.y;
+      const ca=Math.cos(-o.angle),sa=Math.sin(-o.angle);
+      const lx=dx*ca-dy*sa,ly=dx*sa+dy*ca;
+      if(Math.abs(lx)<o.w/2&&Math.abs(ly)<24){
+        const dir=Math.sign(p.vx*Math.cos(o.angle)+p.vy*Math.sin(o.angle))||1;
+        p.vx=Math.cos(o.angle)*Math.max(110,Math.abs(p.vx))*dir;
+        p.vy=Math.sin(o.angle)*Math.max(110,Math.abs(p.vx))*dir;
+        p.y-=ly*.45;
+      }
+    });
+
+    // Canals act as shallow channels.
+    fluidObjects.filter(o=>o.type==='canal').forEach(o=>{
+      const b=fluidBounds(o);
+      if(p.x>b.x&&p.x<b.x+b.w&&p.y>b.y-18&&p.y<b.y+b.h+20){
+        p.y=Math.min(p.y,b.y+b.h*.35);
+        p.vy*=.15;
+        p.vx+=55*dt;
+      }
+    });
+
+    // Closed dams and gates block flow.
+    fluidObjects.filter(o=>o.type==='dam'||(o.type==='gate'&&!o.open)).forEach(o=>{
+      const b=fluidBounds(o);
+      if(pointNearPart(p,o,2)){
+        if(p.x<o.x){p.x=b.x-3;p.vx=-Math.abs(p.vx)*.25;}
+        else{p.x=b.x+b.w+3;p.vx=Math.abs(p.vx)*.25;}
+        p.vy*=.75;
+      }
+    });
+
+    // Closed valve slows nearby water.
+    fluidObjects.filter(o=>o.type==='valve'&&!o.open).forEach(o=>{
+      if(Math.hypot(p.x-o.x,p.y-o.y)<o.r+18){
+        p.vx*=.15;
+        p.vy*=.15;
+      }
+    });
+
+    // Tanks collect water.
+    fluidObjects.filter(o=>o.type==='tank').forEach(o=>{
+      const b=fluidBounds(o);
+      if(p.x>b.x+5&&p.x<b.x+b.w-5&&p.y>b.y+5&&p.y<b.y+b.h-4){
+        o.fill=Math.min(o.h-12,(o.fill||0)+.16);
+        const surface=b.y+b.h-o.fill;
+        if(p.y>surface){
+          p.y=surface;
+          p.vy=0;
+          p.vx*=.6;
+        }
+      }
+    });
+
+    // Drain removes water.
+    fluidObjects.filter(o=>o.type==='drain').forEach(o=>{
+      if(Math.hypot(p.x-o.x,p.y-o.y)<o.r){
+        p.dead=true;
+      }
+    });
+
+    // Water wheel spins.
+    fluidObjects.filter(o=>o.type==='wheel').forEach(o=>{
+      if(Math.hypot(p.x-o.x,p.y-o.y)<o.r+10){
+        o.spin=(o.spin||0)+1.6*dt;
+        p.vx+=70;
+        p.vy*=.55;
+      }
+      o.spin=(o.spin||0)*.995;
+      o.angle+=(o.spin||0);
+    });
+
     p.x+=p.vx*dt;
     p.y+=p.vy*dt;
 
-    if(fluidActivity==='pipes'){
-      const g=getPipeGeometry();
-      const topY=g.topY;
-      const pipeBottom=g.bottomY;
-
-      if(p.x>g.pumpX&&p.x<g.elbowX&&p.y>topY-14&&p.y<topY+18){
-        p.y=topY;
-        p.vy*=.05;
-        p.vx=Math.max(120,p.vx);
-      }
-      if(p.x>g.elbowX-18&&p.x<g.elbowX+18&&p.y<pipeBottom){
-        p.x=g.elbowX;
-        p.vx*=.1;
-        p.vy=Math.max(120,p.vy);
-      }
-      if(p.y>pipeBottom&&p.x>g.elbowX){
-        p.vx=85;
-      }
+    if(p.y>height-5){
+      p.y=height-5;
+      p.vy*=.12;
+      p.vx*=.985;
     }
-
-    if(fluidActivity==='dam'){
-      const canalY=Math.max(170,height*.55);
-      if(p.y>canalY){
-        p.y=canalY;
-        p.vy*=.08;
-        p.vx*=.995;
-      }
-    }
-
-    if(fluidActivity==='wheel'){
-      const g=getWheelGeometry();
-      const wx=g.x,wy=g.y;
-      const d=Math.hypot(p.x-wx,p.y-wy);
-      if(d<66){
-        fluidWheelSpeed+=.9*dt;
-        p.vx+=80;
-        p.vy*=.4;
-      }
-    }
-
-    if(fluidActivity==='fill'){
-      const box=getFillBox();
-      const inside=p.x>box.x&&p.x<box.x+box.w&&p.y>box.y;
-      if(inside&&p.y>box.y+box.h-fluidFill){
-        p.y=box.y+box.h-fluidFill;
-        p.vy=0;
-        p.vx*=.7;
-      }
-
-      if(inside&&p.y>box.y+box.h-8){
-        fluidFill=Math.min(box.h*.88,fluidFill+2.2);
-      }
-
-      if(!fluidSuccess&&fluidFill>=box.h*.68){
-        fluidSuccess=true;
-        fluidRunning=false;
-        document.getElementById('status').textContent='Success! You filled the container to the target line.';
-        launchConfetti();
-        tone(660,.18,'sine',.07);
-        tone(880,.28,'sine',.05,.08);
-        updateFluidActionLabel();
-      }
-    }
-
-    if(p.y>height+30||p.x>width+80||p.x<-80){
-      p.dead=true;
-    }
+    if(p.x<-30||p.x>width+30||p.age>12) p.dead=true;
   });
 
-  fluidParticles=fluidParticles.filter(p=>!p.dead&&p.age<10);
+  fluidParticles=fluidParticles.filter(p=>!p.dead);
 
-  fluidObjects.forEach(o=>{
-    if(o.settled) return;
-    o.vy+=420*dt;
+  // Float/sink objects react to nearby filled tanks or pooled water.
+  fluidObjects.filter(o=>o.type==='wood'||o.type==='metal').forEach(o=>{
+    o.vy=(o.vy||0)+360*dt;
     o.y+=o.vy*dt;
 
-    const waterTop=height*.58;
-    const tankBottom=height-18;
+    let inTank=null;
+    fluidObjects.filter(t=>t.type==='tank'&&(t.fill||0)>18).forEach(t=>{
+      const b=fluidBounds(t);
+      if(o.x>b.x&&o.x<b.x+b.w&&o.y>b.y&&o.y<b.y+b.h) inTank=t;
+    });
 
-    if(o.y>waterTop){
+    if(inTank){
+      const b=fluidBounds(inTank);
+      const surface=b.y+b.h-(inTank.fill||0);
       if(o.density<1){
-        const target=waterTop+20;
-        o.vy+=(target-o.y)*5*dt;
-        o.vy*=.94;
-        if(Math.abs(o.y-target)<3&&Math.abs(o.vy)<8){
-          o.y=target;
-          o.vy=0;
-          o.settled=true;
-          o.result='FLOATS';
-        }
-      }else{
-        o.vy*=.98;
-        if(o.y>tankBottom-18){
-          o.y=tankBottom-18;
-          o.vy=0;
-          o.settled=true;
-          o.result='SINKS';
-        }
+        const target=surface+8;
+        o.vy+=(target-o.y)*4.5*dt;
+        o.vy*=.93;
+      }else if(o.y>b.y+b.h-o.r-4){
+        o.y=b.y+b.h-o.r-4;
+        o.vy=0;
       }
+    }else if(o.y>height-o.r-5){
+      o.y=height-o.r-5;
+      o.vy=0;
     }
   });
-
-  fluidWheelSpeed*=.992;
-  fluidWheelAngle+=fluidWheelSpeed;
 }
 
 function drawWaterParticles(){
-  ctx.fillStyle='rgba(68,175,255,.78)';
+  ctx.fillStyle='rgba(68,175,255,.82)';
   fluidParticles.forEach(p=>{
     ctx.beginPath();
     ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
@@ -1866,10 +1811,112 @@ function drawWaterParticles(){
   });
 }
 
-function drawFluid(){
-  ctx.fillStyle='#102535';
-  ctx.fillRect(0,0,width,height);
+function drawFluidPart(o){
+  const selected=o===fluidSelected;
 
+  ctx.save();
+  ctx.translate(o.x,o.y);
+  ctx.rotate(o.angle||0);
+
+  if(selected){
+    ctx.strokeStyle='#55d9ff';
+    ctx.lineWidth=3;
+    const b=fluidBounds({...o,x:0,y:0});
+    ctx.strokeRect(b.x-6,b.y-6,b.w+12,b.h+12);
+  }
+
+  if(o.type==='source'){
+    ctx.fillStyle='#9fdcff';
+    ctx.fillRect(-17,-23,34,46);
+    ctx.fillStyle='#fff';
+    ctx.font='11px Arial';
+    ctx.textAlign='center';
+    ctx.fillText('WATER',0,4);
+  }
+
+  if(o.type==='pipe'){
+    ctx.strokeStyle='#9eabb5';
+    ctx.lineWidth=22;
+    ctx.lineCap='round';
+    ctx.beginPath();ctx.moveTo(-o.w/2,0);ctx.lineTo(o.w/2,0);ctx.stroke();
+    ctx.strokeStyle='#4e5e69';
+    ctx.lineWidth=12;ctx.stroke();
+  }
+
+  if(o.type==='pump'){
+    ctx.fillStyle='#647f91';
+    ctx.fillRect(-35,-29,70,58);
+    ctx.fillStyle='#fff';
+    ctx.font='bold 12px Arial';
+    ctx.textAlign='center';
+    ctx.fillText('PUMP',0,4);
+  }
+
+  if(o.type==='tank'){
+    ctx.strokeStyle='#d8eef8';
+    ctx.lineWidth=5;
+    ctx.strokeRect(-o.w/2,-o.h/2,o.w,o.h);
+    if((o.fill||0)>0){
+      ctx.fillStyle='rgba(46,157,230,.62)';
+      ctx.fillRect(-o.w/2+4,o.h/2-o.fill,o.w-8,o.fill-4);
+    }
+  }
+
+  if(o.type==='dam'){
+    ctx.fillStyle='#777f87';
+    ctx.fillRect(-o.w/2,-o.h/2,o.w,o.h);
+  }
+
+  if(o.type==='gate'){
+    ctx.fillStyle=o.open?'#7adf91':'#c8cdd1';
+    ctx.fillRect(-o.w/2,-o.h/2,o.w,o.h);
+    ctx.fillStyle='#17202a';
+    ctx.font='10px Arial';
+    ctx.textAlign='center';
+    ctx.fillText(o.open?'OPEN':'CLOSED',0,4);
+  }
+
+  if(o.type==='canal'){
+    ctx.fillStyle='#715a43';
+    ctx.fillRect(-o.w/2,-o.h/2,o.w,o.h);
+    ctx.fillStyle='rgba(44,142,215,.45)';
+    ctx.fillRect(-o.w/2+5,-o.h/2+5,o.w-10,o.h-10);
+  }
+
+  if(o.type==='wheel'){
+    ctx.strokeStyle='#c69250';
+    ctx.lineWidth=8;
+    ctx.beginPath();ctx.arc(0,0,o.r,0,Math.PI*2);ctx.stroke();
+    ctx.rotate(o.angle||0);
+    for(let i=0;i<8;i++){
+      ctx.rotate(Math.PI/4);
+      ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(o.r,0);ctx.stroke();
+    }
+  }
+
+  if(o.type==='wood'||o.type==='metal'){
+    ctx.font='34px Arial';
+    ctx.textAlign='center';
+    ctx.textBaseline='middle';
+    ctx.fillText(o.type==='wood'?'🪵':'🔩',0,0);
+  }
+
+  if(o.type==='drain'){
+    ctx.fillStyle='#0a1015';
+    ctx.beginPath();ctx.arc(0,0,o.r,0,Math.PI*2);ctx.fill();
+    ctx.strokeStyle='#87939d';ctx.lineWidth=3;ctx.stroke();
+  }
+
+  if(o.type==='valve'){
+    ctx.fillStyle=o.open?'#5bd16f':'#d15858';
+    ctx.beginPath();ctx.arc(0,0,o.r,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#fff';ctx.font='22px Arial';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('✚',0,0);
+  }
+
+  ctx.restore();
+}
+
+function drawFluid(){
   const grd=ctx.createLinearGradient(0,0,0,height);
   grd.addColorStop(0,'#18384a');
   grd.addColorStop(1,'#0e2230');
@@ -1880,223 +1927,38 @@ function drawFluid(){
   for(let x=0;x<width;x+=40) ctx.fillRect(x,0,1,height);
   for(let y=0;y<height;y+=40) ctx.fillRect(0,y,width,1);
 
-  if(fluidActivity==='fill') drawFillScene();
-  if(fluidActivity==='pipes') drawPipesScene();
-  if(fluidActivity==='dam') drawDamScene();
-  if(fluidActivity==='wheel') drawWheelScene();
-  if(fluidActivity==='float') drawFloatScene();
-
+  fluidObjects.forEach(drawFluidPart);
   drawWaterParticles();
-}
 
-function drawFillScene(){
-  const box=getFillBox();
-
-  ctx.strokeStyle='#d9edf8';
-  ctx.lineWidth=6;
-  ctx.strokeRect(box.x,box.y,box.w,box.h);
-
-  if(fluidFill>0){
-    ctx.fillStyle='rgba(46,157,230,.58)';
-    ctx.fillRect(box.x+3,box.y+box.h-fluidFill,box.w-6,fluidFill-3);
-  }
-
-  ctx.setLineDash([8,7]);
-  ctx.strokeStyle='#f4c542';
-  ctx.lineWidth=3;
-  ctx.beginPath();
-  ctx.moveTo(box.x+5,box.y+box.h-box.h*.68);
-  ctx.lineTo(box.x+box.w-5,box.y+box.h-box.h*.68);
-  ctx.stroke();
-  ctx.setLineDash([]);
-
-  ctx.fillStyle='#fff';
-  ctx.font='bold 16px Arial';
-  ctx.fillText('TARGET',box.x+box.w+12,box.y+box.h-box.h*.68+5);
-
-  const fx=fluidFaucetX==null?width*.5:fluidFaucetX;
-  ctx.fillStyle='#a9d8f5';
-  ctx.fillRect(fx-7,20,14,42);
-  ctx.fillStyle='#fff';
-  ctx.font='bold 18px Arial';
-  ctx.textAlign='center';
-  ctx.fillText('Faucet',fx,18);
-  ctx.font='12px Arial';
-  ctx.fillText('drag me',fx,78);
-  ctx.textAlign='left';
-}
-
-function drawPipesScene(){
-  const g=getPipeGeometry();
-  const topY=g.topY;
-  const rightX=g.elbowX;
-  const bottomY=g.bottomY;
-
-  ctx.strokeStyle='#a8bbc8';
-  ctx.lineWidth=28;
-  ctx.lineCap='round';
-  ctx.beginPath();
-  ctx.moveTo(g.pumpX,topY);
-  ctx.lineTo(rightX,topY);
-  ctx.lineTo(rightX,bottomY);
-  ctx.lineTo(g.tankX+20,bottomY);
-  ctx.stroke();
-
-  ctx.strokeStyle='#536775';
-  ctx.lineWidth=16;
-  ctx.stroke();
-
-  ctx.fillStyle='#6e9fba';
-  ctx.fillRect(g.pumpX-38,topY-38,76,76);
-  ctx.fillStyle='#fff';
-  ctx.font='bold 15px Arial';
-  ctx.fillText('PUMP',g.pumpX-24,topY+5);
-  ctx.font='12px Arial';
-  ctx.fillText('drag',g.pumpX-14,topY+62);
-
-  const tankY=bottomY+18,tankW=Math.min(180,width*.22),tankH=Math.min(150,height-bottomY-32);
-  ctx.strokeStyle='#d9edf8';
-  ctx.lineWidth=5;
-  ctx.strokeRect(g.tankX,tankY,tankW,tankH);
-
-  ctx.fillStyle='#fff';
-  ctx.font='bold 15px Arial';
-  ctx.fillText('Tank',g.tankX+8,tankY-10);
-  ctx.font='12px Arial';
-  ctx.fillText('drag',g.tankX+8,tankY+20);
-}
-
-function drawDamScene(){
-  const waterY=Math.max(120,height*.34);
-  const canalY=Math.max(170,height*.55);
-
-  ctx.fillStyle='rgba(44,142,215,.62)';
-  ctx.fillRect(0,waterY,width*.32,height-waterY);
-
-  ctx.fillStyle='#777f87';
-  ctx.fillRect(width*.30,waterY-35,36,height-waterY+35);
-
-  if(fluidGateOpen){
-    ctx.clearRect(width*.30,canalY-34,36,70);
-    ctx.fillStyle='rgba(44,142,215,.55)';
-    ctx.fillRect(width*.32,canalY,width*.68,70);
-  }else{
-    ctx.fillStyle='#c6cbd0';
-    ctx.fillRect(width*.30,canalY-35,36,70);
-  }
-
-  ctx.fillStyle='#715a43';
-  ctx.fillRect(width*.32,canalY+70,width*.68,16);
-
-  ctx.fillStyle='#fff';
-  ctx.font='bold 18px Arial';
-  ctx.fillText('Reservoir',24,waterY-14);
-  ctx.fillText(fluidGateOpen?'Gate OPEN':'Gate CLOSED',width*.34,canalY-14);
-  ctx.fillText('Canal',width*.68,canalY+58);
-}
-
-function drawWheelScene(){
-  const g=getWheelGeometry();
-  const wx=g.x,wy=g.y,r=g.r;
-
-  ctx.strokeStyle='#b98446';
-  ctx.lineWidth=10;
-  ctx.beginPath();
-  ctx.arc(wx,wy,r,0,Math.PI*2);
-  ctx.stroke();
-
-  ctx.save();
-  ctx.translate(wx,wy);
-  ctx.rotate(fluidWheelAngle);
-  ctx.strokeStyle='#d7a75f';
-  ctx.lineWidth=8;
-  for(let i=0;i<8;i++){
-    ctx.rotate(Math.PI/4);
-    ctx.beginPath();
-    ctx.moveTo(0,0);
-    ctx.lineTo(r,0);
-    ctx.stroke();
-  }
-  ctx.restore();
-
-  ctx.fillStyle='#a9d8f5';
-  ctx.fillRect(width*.42-7,20,14,45);
-
-  ctx.fillStyle='#fff';
-  ctx.font='bold 17px Arial';
-  ctx.fillText('Water Wheel — drag me',wx-r,wy+r+32);
-  ctx.fillText('Flowing water transfers energy and makes the wheel rotate.',Math.max(20,width*.22),height-28);
-}
-
-function drawFloatScene(){
-  const waterTop=height*.58;
-
-  ctx.fillStyle='rgba(43,145,217,.58)';
-  ctx.fillRect(width*.18,waterTop,width*.64,height-waterTop-8);
-
-  ctx.strokeStyle='#d9edf8';
-  ctx.lineWidth=5;
-  ctx.strokeRect(width*.18,waterTop,width*.64,height-waterTop-8);
-
-  ctx.fillStyle='#fff';
-  ctx.font='bold 18px Arial';
-  ctx.fillText('Water',width*.20,waterTop-12);
-
-  fluidObjects.forEach(o=>{
-    ctx.font='34px Arial';
+  if(!fluidObjects.length){
+    ctx.fillStyle='#d7e9f5';
     ctx.textAlign='center';
-    ctx.fillText(o.emoji,o.x,o.y);
-
-    ctx.font='bold 13px Arial';
-    ctx.fillStyle=o.result==='FLOATS'?'#7ee48d':o.result==='SINKS'?'#ff8989':'#fff';
-    ctx.fillText(o.name+(o.result?' — '+o.result:''),o.x,o.y+30);
-    ctx.fillStyle='#fff';
-  });
-  ctx.textAlign='left';
+    ctx.font='bold 22px Arial';
+    ctx.fillText('Build a fluid experiment',width/2,height*.42);
+    ctx.font='15px Arial';
+    ctx.fillText('Tap Water Source, Pipe, Pump, Tank, Dam, Gate, Canal, Water Wheel, or another part below.',width/2,height*.42+30);
+    ctx.textAlign='left';
+  }
 }
 
-function addFloatObjectAt(x,y=75){
-  if(fluidActivity!=='float') return;
-
-  const material=fluidMaterials[floatObjectIndex%fluidMaterials.length];
-  floatObjectIndex++;
-
-  fluidObjects.push({
-    ...material,
-    x:Math.max(width*.22,Math.min(width*.78,x)),
-    y:Math.max(45,Math.min(height*.48,y)),
-    vy:0,
-    settled:false,
-    result:''
-  });
-
-  document.getElementById('status').textContent=material.name+' added. Watch whether it floats or sinks.';
-  document.getElementById('fluidObjectBtn').lastChild.textContent=' Add '+fluidMaterials[floatObjectIndex%fluidMaterials.length].name;
-}
-
-function addFloatObject(){
-  addFloatObjectAt(width*.32+((floatObjectIndex)%4)*width*.12,75);
-}
-
-document.querySelectorAll('.fluidButton[data-fluid]').forEach(btn=>{
-  btn.addEventListener('click',()=>setFluidActivity(btn.dataset.fluid));
+document.querySelectorAll('.fluidButton[data-fluid-part]').forEach(btn=>{
+  btn.addEventListener('click',()=>addFluidPart(btn.dataset.fluidPart));
 });
 
 document.getElementById('fluidActionBtn').addEventListener('click',()=>{
   ensureAudio();
-
-  if(fluidActivity==='dam'){
-    fluidGateOpen=!fluidGateOpen;
-    fluidRunning=fluidGateOpen;
-  }else{
-    fluidRunning=!fluidRunning;
-  }
-
+  fluidRunning=!fluidRunning;
   updateFluidActionLabel();
+  document.getElementById('status').textContent=fluidRunning
+    ?'Water is running. Watch how it moves through your design.'
+    :'Water stopped. Rearrange your parts and try again.';
 });
 
-document.getElementById('fluidObjectBtn').addEventListener('click',addFloatObject);
-document.getElementById('fluidResetBtn').addEventListener('click',()=>setFluidActivity(fluidActivity));
+document.getElementById('fluidClearBtn').addEventListener('click',()=>{
+  resetFluidBuilder();
+  document.getElementById('status').textContent='Fluid workspace cleared. Add parts to build another experiment.';
+});
+
 
 defaultMachine();
 
