@@ -2891,10 +2891,13 @@ function resolveSimpleLeverContact(obj,lever){
   // A little side allowance keeps round objects from falling through the edge.
   if(Math.abs(lx)>halfBeam+radius*.55) return false;
 
-  // Catch objects that are touching or have just crossed the top surface.
+  // Only react after TRUE physical contact with the top of the beam.
+  // A negative penetration means there is still visible air between the object
+  // and the lever, so it must not create torque yet.
   const localVy=-(obj.vx||0)*sa+(obj.vy||0)*ca;
   const penetration=bottom-beamTop;
-  if(penetration>=-8 && penetration<Math.max(28,radius*.9) && localVy>=-25){
+  const maxCatch=Math.max(34,radius+16);
+  if(penetration>=0 && penetration<maxCatch && localVy>=-25){
     const targetLy=beamTop-radius;
     const worldX=lever.x+lx*ca-targetLy*sa;
     const worldY=lever.y+lx*sa+targetLy*ca;
