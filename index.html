@@ -821,6 +821,14 @@ canvas.addEventListener('touchmove',e=>{e.preventDefault();pointerMove(e)},{pass
 canvas.addEventListener('touchend',e=>{e.preventDefault();pointerUp()},{passive:false});
 
 function modifySelected(fn){
+  if(gameMode==='fluid'){
+    if(!fluidSelected) return;
+    fn(fluidSelected);
+    document.getElementById('status').textContent=
+      fluidPartName(fluidSelected.type)+' adjusted.';
+    return;
+  }
+
   if(running||!selected) return;
   pushHistory();
   fn(selected);
@@ -838,6 +846,21 @@ document.getElementById('flipBtn').addEventListener('click',()=>modifySelected(o
 }));
 
 document.getElementById('duplicateBtn').addEventListener('click',()=>{
+  if(gameMode==='fluid'){
+    if(!fluidSelected) return;
+    const copy=JSON.parse(JSON.stringify(fluidSelected));
+    copy.id=fluidId++;
+    copy.x=Math.min(width-20,copy.x+28);
+    copy.y=Math.min(height-20,copy.y+28);
+    if(copy.type==='tank') copy.fill=0;
+    if(copy.type==='wheel') copy.spin=0;
+    if(copy.type==='wood'||copy.type==='metal') copy.vy=0;
+    fluidObjects.push(copy);
+    setFluidSelected(copy);
+    document.getElementById('status').textContent=fluidPartName(copy.type)+' copied.';
+    return;
+  }
+
   if(running||!selected||selected.type==='ball'||selected.type==='bell') return;
   if(gameMode==='puzzle'&&budgetUsed()>=budgetLimit()){
     document.getElementById('status').textContent='No puzzle parts left.';
@@ -857,6 +880,14 @@ document.getElementById('duplicateBtn').addEventListener('click',()=>{
 });
 
 document.getElementById('deleteBtn').addEventListener('click',()=>{
+  if(gameMode==='fluid'){
+    if(!fluidSelected) return;
+    fluidObjects=fluidObjects.filter(o=>o.id!==fluidSelected.id);
+    setFluidSelected(null);
+    document.getElementById('status').textContent='Fluid part deleted.';
+    return;
+  }
+
   if(running||!selected) return;
   pushHistory();
   objects=objects.filter(o=>o.id!==selected.id);
@@ -1336,7 +1367,7 @@ function setMode(mode){
 
   document.getElementById('tray').style.display=mode==='fluid'?'none':'grid';
   document.getElementById('fluidTray').classList.toggle('show',mode==='fluid');
-  document.getElementById('selectionPanel').classList.remove('show');
+  if(mode!=='fluid') document.getElementById('selectionPanel').classList.remove('show');
   document.getElementById('runBtn').style.display=mode==='fluid'?'none':'inline-block';
   document.getElementById('undoBtn').style.display=mode==='fluid'?'none':'inline-block';
   document.getElementById('redoBtn').style.display=mode==='fluid'?'none':'inline-block';
@@ -1543,7 +1574,7 @@ function resetFluidBuilder(){
   fluidParticles=[];
   fluidObjects=[];
   fluidRunning=false;
-  fluidSelected=null;
+  setFluidSelected(null);
   fluidDragging=false;
   fluidWheelSpin=0;
   updateFluidActionLabel();
@@ -1577,7 +1608,7 @@ function addFluidPart(type){
   const stagger=(fluidObjects.length%5)*18;
   const p=makeFluidPart(type,width*.5+stagger-36,height*.40+stagger/2);
   fluidObjects.push(p);
-  fluidSelected=p;
+  setFluidSelected(p);
   document.querySelectorAll('.fluidButton[data-fluid-part]').forEach(b=>{
     b.classList.toggle('active',b.dataset.fluidPart===type);
   });
@@ -1593,9 +1624,15 @@ function fluidPartName(type){
 }
 
 function fluidBounds(o){
-  if(o.type==='wheel') return {x:o.x-o.r,y:o.y-o.r,w:o.r*2,h:o.r*2};
-  if(o.r) return {x:o.x-o.r,y:o.y-o.r,w:o.r*2,h:o.r*2};
-  return {x:o.x-(o.w||60)/2,y:o.y-(o.h||50)/2,w:o.w||60,h:o.h||50};
+  const s=o.scale||1;
+  if(o.type==='wheel') return {x:o.x-o.r*s,y:o.y-o.r*s,w:o.r*2*s,h:o.r*2*s};
+  if(o.r) return {x:o.x-o.r*s,y:o.y-o.r*s,w:o.r*2*s,h:o.r*2*s};
+  return {
+    x:o.x-((o.w||60)*s)/2,
+    y:o.y-((o.h||50)*s)/2,
+    w:(o.w||60)*s,
+    h:(o.h||50)*s
+  };
 }
 
 function fluidHitObject(x,y){
@@ -1607,24 +1644,28 @@ function fluidHitObject(x,y){
   return null;
 }
 
+function setFluidSelected(o){
+  fluidSelected=o||null;
+  const panel=document.getElementById('selectionPanel');
+  if(fluidSelected){
+    panel.classList.add('show');
+    document.getElementById('selectionLabel').textContent='Selected: '+fluidPartName(fluidSelected.type).toUpperCase();
+  }else{
+    panel.classList.remove('show');
+  }
+}
+
 function fluidPointerStart(e){
   const p=posFromEvent(e);
   const hit=fluidHitObject(p.x,p.y);
-  fluidSelected=hit;
+  setFluidSelected(hit);
 
   if(hit){
     fluidDragging=true;
     fluidDragOffsetX=p.x-hit.x;
     fluidDragOffsetY=p.y-hit.y;
-
-    if(hit.type==='gate' && !fluidRunning){
-      hit.open=!hit.open;
-      document.getElementById('status').textContent='Gate '+(hit.open?'opened.':'closed.');
-    }
-    if(hit.type==='valve' && !fluidRunning){
-      hit.open=!hit.open;
-      document.getElementById('status').textContent='Valve '+(hit.open?'opened.':'closed.');
-    }
+    hit._pointerStartX=p.x;
+    hit._pointerStartY=p.y;
   }else{
     fluidDragging=false;
   }
@@ -1638,6 +1679,18 @@ function fluidPointerMove(e){
 }
 
 function fluidPointerEnd(){
+  if(fluidSelected && fluidDragging){
+    const moved=Math.hypot(
+      (fluidSelected.x+fluidDragOffsetX)-(fluidSelected._pointerStartX||fluidSelected.x),
+      (fluidSelected.y+fluidDragOffsetY)-(fluidSelected._pointerStartY||fluidSelected.y)
+    );
+
+    if(moved<8 && (fluidSelected.type==='gate'||fluidSelected.type==='valve')){
+      fluidSelected.open=!fluidSelected.open;
+      document.getElementById('status').textContent=
+        fluidPartName(fluidSelected.type)+' '+(fluidSelected.open?'opened.':'closed.');
+    }
+  }
   fluidDragging=false;
 }
 
@@ -1692,7 +1745,8 @@ function updateFluid(dt){
       const dx=p.x-o.x,dy=p.y-o.y;
       const ca=Math.cos(-o.angle),sa=Math.sin(-o.angle);
       const lx=dx*ca-dy*sa,ly=dx*sa+dy*ca;
-      if(Math.abs(lx)<o.w/2&&Math.abs(ly)<24){
+      const s=o.scale||1;
+      if(Math.abs(lx)<(o.w*s)/2&&Math.abs(ly)<24*s){
         const dir=Math.sign(p.vx*Math.cos(o.angle)+p.vy*Math.sin(o.angle))||1;
         p.vx=Math.cos(o.angle)*Math.max(110,Math.abs(p.vx))*dir;
         p.vy=Math.sin(o.angle)*Math.max(110,Math.abs(p.vx))*dir;
@@ -1722,7 +1776,7 @@ function updateFluid(dt){
 
     // Closed valve slows nearby water.
     fluidObjects.filter(o=>o.type==='valve'&&!o.open).forEach(o=>{
-      if(Math.hypot(p.x-o.x,p.y-o.y)<o.r+18){
+      if(Math.hypot(p.x-o.x,p.y-o.y)<o.r*(o.scale||1)+18){
         p.vx*=.15;
         p.vy*=.15;
       }
@@ -1744,20 +1798,19 @@ function updateFluid(dt){
 
     // Drain removes water.
     fluidObjects.filter(o=>o.type==='drain').forEach(o=>{
-      if(Math.hypot(p.x-o.x,p.y-o.y)<o.r){
+      if(Math.hypot(p.x-o.x,p.y-o.y)<o.r*(o.scale||1)){
         p.dead=true;
       }
     });
 
     // Water wheel spins.
     fluidObjects.filter(o=>o.type==='wheel').forEach(o=>{
-      if(Math.hypot(p.x-o.x,p.y-o.y)<o.r+10){
+      if(Math.hypot(p.x-o.x,p.y-o.y)<o.r*(o.scale||1)+10){
         o.spin=(o.spin||0)+1.6*dt;
         p.vx+=70;
         p.vy*=.55;
       }
       o.spin=(o.spin||0)*.995;
-      o.angle+=(o.spin||0);
     });
 
     p.x+=p.vx*dt;
@@ -1791,12 +1844,12 @@ function updateFluid(dt){
         const target=surface+8;
         o.vy+=(target-o.y)*4.5*dt;
         o.vy*=.93;
-      }else if(o.y>b.y+b.h-o.r-4){
-        o.y=b.y+b.h-o.r-4;
+      }else if(o.y>b.y+b.h-o.r*(o.scale||1)-4){
+        o.y=b.y+b.h-o.r*(o.scale||1)-4;
         o.vy=0;
       }
-    }else if(o.y>height-o.r-5){
-      o.y=height-o.r-5;
+    }else if(o.y>height-o.r*(o.scale||1)-5){
+      o.y=height-o.r*(o.scale||1)-5;
       o.vy=0;
     }
   });
@@ -1817,12 +1870,14 @@ function drawFluidPart(o){
   ctx.save();
   ctx.translate(o.x,o.y);
   ctx.rotate(o.angle||0);
+  ctx.scale(o.scale||1,o.scale||1);
 
   if(selected){
     ctx.strokeStyle='#55d9ff';
-    ctx.lineWidth=3;
-    const b=fluidBounds({...o,x:0,y:0});
-    ctx.strokeRect(b.x-6,b.y-6,b.w+12,b.h+12);
+    ctx.lineWidth=3/(o.scale||1);
+    const localW=o.type==='wheel'||o.r ? (o.r||30)*2 : (o.w||60);
+    const localH=o.type==='wheel'||o.r ? (o.r||30)*2 : (o.h||50);
+    ctx.strokeRect(-localW/2-6,-localH/2-6,localW+12,localH+12);
   }
 
   if(o.type==='source'){
@@ -1887,11 +1942,13 @@ function drawFluidPart(o){
     ctx.strokeStyle='#c69250';
     ctx.lineWidth=8;
     ctx.beginPath();ctx.arc(0,0,o.r,0,Math.PI*2);ctx.stroke();
-    ctx.rotate(o.angle||0);
+    ctx.save();
+    ctx.rotate((o.spin||0)*8);
     for(let i=0;i<8;i++){
       ctx.rotate(Math.PI/4);
       ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(o.r,0);ctx.stroke();
     }
+    ctx.restore();
   }
 
   if(o.type==='wood'||o.type==='metal'){
