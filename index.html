@@ -4046,6 +4046,13 @@ document.getElementById('closeFluidSaveBtn').addEventListener('click',()=>docume
 document.getElementById('explainBtn').addEventListener('click',explainFluidExperiment);
 document.getElementById('closeExplainBtn').addEventListener('click',()=>document.getElementById('explainOverlay').classList.remove('open'));
 
+// Also close What Happened? by tapping/clicking the dark backdrop outside the white card.
+document.getElementById('explainOverlay').addEventListener('click',e=>{
+  if(e.target===e.currentTarget){
+    e.currentTarget.classList.remove('open');
+  }
+});
+
 document.querySelectorAll('[data-save-slot]').forEach(btn=>btn.addEventListener('click',()=>{
   const slot=btn.dataset.saveSlot;
   localStorage.setItem('fluid_experiment_'+slot,JSON.stringify(captureFluidLayout()));
