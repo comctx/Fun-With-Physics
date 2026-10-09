@@ -469,14 +469,21 @@ header{
 }
 .partButton,.fluidButton,.labButton{
   min-width:80px;
-  min-height:44px;
-  padding:4px 4px;
+  min-height:38px;
+  padding:5px 8px;
   font-size:10px;
   border-radius:9px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:5px;
+  line-height:1.05;
+  white-space:nowrap;
 }
 .partButton .icon,.fluidButton .icon,.labButton .icon{
-  font-size:17px;
-  margin-bottom:1px;
+  display:inline;
+  font-size:14px;
+  margin:0;
 }
 #mechanicsExplainBtn{
   background:#2b4658;
@@ -488,7 +495,7 @@ header{
 .rubePartsRow .partButton{
   flex-basis:86px;
   min-width:86px;
-  min-height:46px;
+  min-height:38px;
 }
 
 #workspace{
