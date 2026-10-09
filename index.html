@@ -169,6 +169,27 @@ canvas{
   overflow-x:auto;
 }
 #fluidTray.show{display:grid}
+.labTray{
+  flex:0 0 auto;
+  display:none;
+  grid-template-columns:repeat(10,minmax(82px,1fr));
+  gap:7px;
+  padding:8px;
+  background:#1d3340;
+  border-top:1px solid #3c5c69;
+  overflow-x:auto;
+}
+.labTray.show{display:grid}
+.labButton{
+  min-width:76px;
+  min-height:50px;
+  padding:5px 4px;
+  font-size:11px;
+  text-align:center;
+  background:#294858;
+}
+.labButton .icon{display:block;font-size:20px;margin-bottom:2px}
+.labButton.active{outline:2px solid #55d9ff}
 .fluidButton{
   min-width:76px;
   min-height:50px;
@@ -292,6 +313,8 @@ canvas{
   <button id="puzzleModeBtn">🧩 Puzzles</button>
   <button id="challengeModeBtn">🏆 Challenge</button>
   <button id="fluidModeBtn">🌊 Fluid Physics</button>
+  <button id="airModeBtn">💨 Air Physics</button>
+  <button id="electricModeBtn">⚡ Electricity</button>
   <div id="goalText" class="goal">Goal: Ring the bell any way you want.</div>
 </div>
 
@@ -456,6 +479,30 @@ canvas{
   <button class="fluidButton" id="explainBtn"><span class="icon">💡</span>What Happened?</button>
   <button class="fluidButton" id="fluidClearBtn"><span class="icon">🗑️</span>Clear</button>
 </div>
+
+<div id="airTray" class="labTray">
+  <button class="labButton" data-air-part="balloon"><span class="icon">🎈</span>Balloon</button>
+  <button class="labButton" data-air-part="parachute"><span class="icon">🪂</span>Parachute</button>
+  <button class="labButton" data-air-part="airjet"><span class="icon">💨</span>Air Jet</button>
+  <button class="labButton" data-air-part="wind"><span class="icon">🌬️</span>Wind Tunnel</button>
+  <button class="labButton" data-air-part="dragblock"><span class="icon">⬛</span>Drag Block</button>
+  <button class="labButton" id="airRunBtn"><span class="icon">▶️</span>Start Air</button>
+  <button class="labButton" id="airExplainBtn"><span class="icon">💡</span>What Happened?</button>
+  <button class="labButton" id="airClearBtn"><span class="icon">🗑️</span>Clear</button>
+</div>
+
+<div id="electricTray" class="labTray">
+  <button class="labButton" data-electric-part="battery"><span class="icon">🔋</span>Battery</button>
+  <button class="labButton" data-electric-part="wire"><span class="icon">➖</span>Wire</button>
+  <button class="labButton" data-electric-part="switch"><span class="icon">🎚️</span>Switch</button>
+  <button class="labButton" data-electric-part="bulb"><span class="icon">💡</span>Bulb</button>
+  <button class="labButton" data-electric-part="motor"><span class="icon">⚙️</span>Motor</button>
+  <button class="labButton" data-electric-part="magnet"><span class="icon">🧲</span>Electromagnet</button>
+  <button class="labButton" data-electric-part="metalball"><span class="icon">⚪</span>Metal Ball</button>
+  <button class="labButton" id="electricRunBtn"><span class="icon">▶️</span>Run Circuit</button>
+  <button class="labButton" id="electricExplainBtn"><span class="icon">💡</span>What Happened?</button>
+  <button class="labButton" id="electricClearBtn"><span class="icon">🗑️</span>Clear</button>
+</div>
 </div>
 
 <script>
@@ -496,6 +543,14 @@ let slowMotion=false;
 let measureMode=false;
 let fluidElapsed=0;
 let fluidRunSnapshot=null;
+
+let labObjects=[];
+let labSelected=null;
+let labDragging=false;
+let labDragOffsetX=0;
+let labDragOffsetY=0;
+let labRunning=false;
+let labId=1;
 
 const gravity=760;
 const SAVE_KEY='rube_goldberg_creator_machine_v3';
@@ -579,7 +634,7 @@ const tutorialSlides=[
   },
   {
     title:'5. Try Other Modes',
-    text:'Sandbox gives you everything. Puzzle mode limits your parts. Challenge mode gives you special goals. Fluid Physics is another builder where you place water parts and make your own experiments. It also has snapping, presets, measurements, and slow motion.'
+    text:'Sandbox gives you everything. Puzzle mode limits your parts. Challenge mode gives you special goals. Fluid Physics lets you build water and heat experiments. Air Physics explores balloons, parachutes, airflow, and drag. Electricity lets you test batteries, switches, bulbs, motors, and electromagnets.'
   }
 ];
 
@@ -863,6 +918,10 @@ function pointerDown(e){
     fluidPointerStart(e);
     return;
   }
+  if(gameMode==='air'||gameMode==='electric'){
+    labPointerStart(e);
+    return;
+  }
   if(running) return;
   const p=posFromEvent(e);
   setSelected(null);
@@ -885,6 +944,10 @@ function pointerMove(e){
     fluidPointerMove(e);
     return;
   }
+  if(gameMode==='air'||gameMode==='electric'){
+    labPointerMove(e);
+    return;
+  }
   if(!dragging||!selected||running) return;
   const p=posFromEvent(e);
   selected.x=Math.max(15,Math.min(width-15,p.x-dragOffsetX));
@@ -893,6 +956,7 @@ function pointerMove(e){
 
 function pointerUp(){
   if(gameMode==='fluid') fluidPointerEnd();
+  if(gameMode==='air'||gameMode==='electric') labPointerEnd();
   dragging=false;
 }
 
@@ -902,6 +966,8 @@ canvas.addEventListener('mousemove',e=>{
   if(gameMode==='fluid'){
     const p=posFromEvent(e);
     canvas.style.cursor=fluidDragging?'grabbing':(fluidHitTest(p.x,p.y)?'grab':'default');
+  }else if(gameMode==='air'||gameMode==='electric'){
+    canvas.style.cursor=labDragging?'grabbing':'grab';
   }else{
     canvas.style.cursor='default';
   }
@@ -1403,6 +1469,10 @@ function draw(){
     drawFluid();
     return;
   }
+  if(gameMode==='air'||gameMode==='electric'){
+    drawLab();
+    return;
+  }
 
   ctx.fillStyle='rgba(255,255,255,.08)';ctx.fillRect(0,height-5,width,5);
 
@@ -1432,6 +1502,10 @@ function update(dt){
     updateFluid(dt);
     return;
   }
+  if(gameMode==='air'||gameMode==='electric'){
+    updateLab(dt);
+    return;
+  }
 
   if(!running) return;
   const ball=objects.find(o=>o.type==='ball');
@@ -1459,17 +1533,22 @@ function setMode(mode){
   document.getElementById('puzzleModeBtn').classList.toggle('active',mode==='puzzle');
   document.getElementById('challengeModeBtn').classList.toggle('active',mode==='challenge');
   document.getElementById('fluidModeBtn').classList.toggle('active',mode==='fluid');
+  document.getElementById('airModeBtn').classList.toggle('active',mode==='air');
+  document.getElementById('electricModeBtn').classList.toggle('active',mode==='electric');
 
-  document.getElementById('tray').style.display=mode==='fluid'?'none':'grid';
+  const specialMode=mode==='fluid'||mode==='air'||mode==='electric';
+  document.getElementById('tray').style.display=specialMode?'none':'grid';
   document.getElementById('fluidTray').classList.toggle('show',mode==='fluid');
+  document.getElementById('airTray').classList.toggle('show',mode==='air');
+  document.getElementById('electricTray').classList.toggle('show',mode==='electric');
   if(mode!=='fluid') document.getElementById('measureCard').classList.remove('show');
   if(mode!=='fluid') document.getElementById('selectionPanel').classList.remove('show');
-  document.getElementById('runBtn').style.display=mode==='fluid'?'none':'inline-block';
-  document.getElementById('undoBtn').style.display=mode==='fluid'?'none':'inline-block';
-  document.getElementById('redoBtn').style.display=mode==='fluid'?'none':'inline-block';
-  document.getElementById('saveBtn').style.display=mode==='fluid'?'none':'inline-block';
-  document.getElementById('loadBtn').style.display=mode==='fluid'?'none':'inline-block';
-  document.getElementById('clearBtn').style.display=mode==='fluid'?'none':'inline-block';
+  document.getElementById('runBtn').style.display=specialMode?'none':'inline-block';
+  document.getElementById('undoBtn').style.display=specialMode?'none':'inline-block';
+  document.getElementById('redoBtn').style.display=specialMode?'none':'inline-block';
+  document.getElementById('saveBtn').style.display=specialMode?'none':'inline-block';
+  document.getElementById('loadBtn').style.display=specialMode?'none':'inline-block';
+  document.getElementById('clearBtn').style.display=specialMode?'none':'inline-block';
 
   if(mode==='sandbox'){
     updateScore();
@@ -1503,6 +1582,26 @@ function setMode(mode){
     document.getElementById('goalText').textContent='Fluid Physics: Add parts, arrange them, then start the water.';
     document.getElementById('status').textContent='Tap parts below to add them. Drag them into place on the workspace.';
     resetFluidBuilder();
+  }
+
+  if(mode==='air'){
+    resetLab();
+    document.getElementById('modeLabel').textContent='Air Physics';
+    document.getElementById('score').textContent='Air Lab';
+    document.getElementById('pieceCount').textContent='Lift • drag • airflow';
+    document.getElementById('starRow').textContent='💨🎈🪂';
+    document.getElementById('goalText').textContent='Air Physics: compare lift, drag, jets, and wind.';
+    document.getElementById('status').textContent='Add balloons, parachutes, air jets, or a wind tunnel, then start the air.';
+  }
+
+  if(mode==='electric'){
+    resetLab();
+    document.getElementById('modeLabel').textContent='Electricity Lab';
+    document.getElementById('score').textContent='Circuit Lab';
+    document.getElementById('pieceCount').textContent='Battery • switch • loads';
+    document.getElementById('starRow').textContent='🔋⚡💡';
+    document.getElementById('goalText').textContent='Electricity: build a simple powered circuit and test the switch.';
+    document.getElementById('status').textContent='Add a battery, switch, and a bulb, motor, or electromagnet.';
   }
 
   updateBudget();
@@ -1633,6 +1732,8 @@ document.getElementById('sandboxModeBtn').addEventListener('click',()=>setMode('
 document.getElementById('puzzleModeBtn').addEventListener('click',()=>setMode('puzzle'));
 document.getElementById('challengeModeBtn').addEventListener('click',()=>setMode('challenge'));
 document.getElementById('fluidModeBtn').addEventListener('click',()=>setMode('fluid'));
+document.getElementById('airModeBtn').addEventListener('click',()=>setMode('air'));
+document.getElementById('electricModeBtn').addEventListener('click',()=>setMode('electric'));
 document.getElementById('closePuzzleBtn').addEventListener('click',()=>{
   document.getElementById('puzzleOverlay').classList.remove('open');
   if(currentPuzzleIndex<0){
@@ -1665,6 +1766,201 @@ document.getElementById('nextPuzzleBtn').addEventListener('click',()=>{
 });
 
 
+
+function resetLab(){
+  labObjects=[];
+  labSelected=null;
+  labDragging=false;
+  labRunning=false;
+  document.getElementById('selectionPanel').classList.remove('show');
+  updateLabButtons();
+}
+
+function makeLabPart(type,x=width*.5,y=height*.45){
+  const base={id:labId++,type,x,y,vx:0,vy:0,angle:0,scale:1};
+  if(type==='balloon') return {...base,r:28};
+  if(type==='parachute') return {...base,w:70,h:70};
+  if(type==='airjet') return {...base,w:80,h:48};
+  if(type==='wind') return {...base,w:220,h:120};
+  if(type==='dragblock') return {...base,w:55,h:55};
+  if(type==='battery') return {...base,w:90,h:50};
+  if(type==='wire') return {...base,w:130,h:14};
+  if(type==='switch') return {...base,w:80,h:45,closed:true};
+  if(type==='bulb') return {...base,r:28,powered:false};
+  if(type==='motor') return {...base,r:32,powered:false,spin:0};
+  if(type==='magnet') return {...base,w:90,h:52,powered:false};
+  if(type==='metalball') return {...base,r:18};
+  return base;
+}
+
+function labName(type){
+  return ({balloon:'Balloon',parachute:'Parachute',airjet:'Air Jet',wind:'Wind Tunnel',
+    dragblock:'Drag Block',battery:'Battery',wire:'Wire',switch:'Switch',
+    bulb:'Bulb',motor:'Motor',magnet:'Electromagnet',metalball:'Metal Ball'})[type]||type;
+}
+
+function addLabPart(type){
+  const p=makeLabPart(type,width*.46+(labObjects.length%4)*24,height*.38+(labObjects.length%3)*20);
+  labObjects.push(p);
+  labSelected=p;
+  document.getElementById('status').textContent=labName(type)+' added. Drag it into place.';
+}
+
+function labBounds(o){
+  const s=o.scale||1;
+  if(o.r) return {x:o.x-o.r*s,y:o.y-o.r*s,w:o.r*2*s,h:o.r*2*s};
+  return {x:o.x-o.w*s/2,y:o.y-o.h*s/2,w:o.w*s,h:o.h*s};
+}
+
+function labHit(x,y){
+  for(let i=labObjects.length-1;i>=0;i--){
+    const b=labBounds(labObjects[i]);
+    if(x>b.x-10&&x<b.x+b.w+10&&y>b.y-10&&y<b.y+b.h+10) return labObjects[i];
+  }
+  return null;
+}
+
+function labPointerStart(e){
+  const p=posFromEvent(e),hit=labHit(p.x,p.y);
+  labSelected=hit;
+  if(!hit){labDragging=false;return;}
+  labDragging=true;
+  labDragOffsetX=p.x-hit.x;labDragOffsetY=p.y-hit.y;
+  hit._sx=p.x;hit._sy=p.y;
+}
+
+function labPointerMove(e){
+  if(!labDragging||!labSelected) return;
+  const p=posFromEvent(e);
+  labSelected.x=Math.max(30,Math.min(width-30,p.x-labDragOffsetX));
+  labSelected.y=Math.max(30,Math.min(height-30,p.y-labDragOffsetY));
+  labSelected.vx=0;labSelected.vy=0;
+}
+
+function labPointerEnd(){
+  if(!labSelected||!labDragging){labDragging=false;return;}
+  const moved=Math.hypot((labSelected.x+labDragOffsetX)-(labSelected._sx||0),(labSelected.y+labDragOffsetY)-(labSelected._sy||0));
+  if(gameMode==='electric'&&labSelected.type==='switch'&&moved<8){
+    labSelected.closed=!labSelected.closed;
+    document.getElementById('status').textContent='Switch '+(labSelected.closed?'closed: circuit can conduct.':'open: circuit is broken.');
+  }
+  labDragging=false;
+}
+
+function updateLabButtons(){
+  const air=document.getElementById('airRunBtn'),elec=document.getElementById('electricRunBtn');
+  if(air){air.querySelector('.icon').textContent=labRunning?'⏸️':'▶️';air.lastChild.textContent=labRunning?' Stop Air':' Start Air';}
+  if(elec){elec.querySelector('.icon').textContent=labRunning?'⏸️':'▶️';elec.lastChild.textContent=labRunning?' Stop Circuit':' Run Circuit';}
+}
+
+function updateLab(dt){
+  if(!labRunning) return;
+
+  if(gameMode==='air'){
+    labObjects.forEach(o=>{
+      if(o.type==='balloon'){
+        o.vy-=95*dt;
+        o.vy=Math.max(-65,o.vy);
+      }else if(o.type==='parachute'){
+        o.vy+=70*dt;
+        o.vy=Math.min(48,o.vy);
+      }else if(o.type==='dragblock'){
+        o.vy+=300*dt;
+        o.vy=Math.min(220,o.vy);
+      }
+
+      if(o.type==='balloon'||o.type==='parachute'||o.type==='dragblock'){
+        labObjects.filter(j=>j.type==='airjet').forEach(j=>{
+          const d=Math.hypot(o.x-j.x,o.y-j.y);
+          if(d<180&&o.x>j.x-20){o.vx+=210*dt;o.vy-=45*dt;}
+        });
+        labObjects.filter(w=>w.type==='wind').forEach(w=>{
+          const b=labBounds(w);
+          if(o.x>b.x&&o.x<b.x+b.w&&o.y>b.y&&o.y<b.y+b.h)o.vx+=140*dt;
+        });
+        o.x+=o.vx*dt;o.y+=o.vy*dt;o.vx*=.985;
+        if(o.y<25){o.y=25;o.vy=0}
+        if(o.y>height-30){o.y=height-30;o.vy=0}
+        if(o.x>width-25){o.x=width-25;o.vx=0}
+      }
+    });
+  }
+
+  if(gameMode==='electric'){
+    const hasBattery=labObjects.some(o=>o.type==='battery');
+    const switches=labObjects.filter(o=>o.type==='switch');
+    const circuitClosed=hasBattery && switches.every(s=>s.closed);
+    labObjects.forEach(o=>{
+      if(o.type==='bulb'||o.type==='motor'||o.type==='magnet') o.powered=circuitClosed;
+      if(o.type==='motor'&&o.powered)o.spin=(o.spin||0)+dt*6;
+    });
+
+    labObjects.filter(m=>m.type==='magnet'&&m.powered).forEach(m=>{
+      labObjects.filter(b=>b.type==='metalball').forEach(b=>{
+        const dx=m.x-b.x,dy=m.y-b.y,d=Math.max(25,Math.hypot(dx,dy));
+        b.vx+=dx/d*240*dt;b.vy+=dy/d*240*dt;
+        b.x+=b.vx*dt;b.y+=b.vy*dt;b.vx*=.96;b.vy*=.96;
+      });
+    });
+  }
+}
+
+function drawLab(){
+  const grd=ctx.createLinearGradient(0,0,0,height);
+  if(gameMode==='air'){grd.addColorStop(0,'#17364b');grd.addColorStop(1,'#102331');}
+  else{grd.addColorStop(0,'#272b36');grd.addColorStop(1,'#131820');}
+  ctx.fillStyle=grd;ctx.fillRect(0,0,width,height);
+  ctx.fillStyle='rgba(255,255,255,.05)';
+  for(let x=0;x<width;x+=40)ctx.fillRect(x,0,1,height);
+  for(let y=0;y<height;y+=40)ctx.fillRect(0,y,width,1);
+
+  labObjects.forEach(o=>{
+    ctx.save();ctx.translate(o.x,o.y);
+    if(o.type==='balloon'){ctx.fillStyle='#ff6f8d';ctx.beginPath();ctx.ellipse(0,0,23,30,0,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#eee';ctx.beginPath();ctx.moveTo(0,30);ctx.lineTo(0,55);ctx.stroke();}
+    if(o.type==='parachute'){ctx.fillStyle='#f5c94e';ctx.beginPath();ctx.arc(0,-12,32,Math.PI,0);ctx.fill();ctx.strokeStyle='#eee';ctx.beginPath();ctx.moveTo(-28,-10);ctx.lineTo(-12,28);ctx.moveTo(28,-10);ctx.lineTo(12,28);ctx.stroke();ctx.fillStyle='#8a5d3b';ctx.fillRect(-13,24,26,18);}
+    if(o.type==='airjet'){ctx.fillStyle='#607d8b';ctx.fillRect(-40,-24,80,48);ctx.fillStyle='#a7ebff';ctx.font='bold 12px Arial';ctx.textAlign='center';ctx.fillText('AIR JET',0,4);ctx.fillText('➜',52,5);}
+    if(o.type==='wind'){ctx.strokeStyle='#7fdcff';ctx.lineWidth=4;ctx.strokeRect(-110,-60,220,120);ctx.fillStyle='rgba(127,220,255,.12)';ctx.fillRect(-110,-60,220,120);ctx.fillStyle='#fff';ctx.font='bold 11px Arial';ctx.textAlign='center';ctx.fillText('WIND TUNNEL ➜',0,-42);}
+    if(o.type==='dragblock'){ctx.fillStyle='#9fa9b1';ctx.fillRect(-27,-27,54,54);ctx.fillStyle='#fff';ctx.font='10px Arial';ctx.textAlign='center';ctx.fillText('DRAG',0,4);}
+    if(o.type==='battery'){ctx.fillStyle='#355f3f';ctx.fillRect(-45,-25,90,50);ctx.fillStyle='#fff';ctx.font='bold 13px Arial';ctx.textAlign='center';ctx.fillText('BATTERY',0,5);ctx.fillText('+',35,-32);ctx.fillText('−',-35,-32);}
+    if(o.type==='wire'){ctx.strokeStyle='#d9a441';ctx.lineWidth=10;ctx.beginPath();ctx.moveTo(-65,0);ctx.lineTo(65,0);ctx.stroke();}
+    if(o.type==='switch'){ctx.fillStyle='#444';ctx.fillRect(-40,-18,80,36);ctx.strokeStyle=o.closed?'#72e080':'#ff8c8c';ctx.lineWidth=6;ctx.beginPath();ctx.moveTo(-22,0);ctx.lineTo(o.closed?22:12,o.closed?0:-18);ctx.stroke();ctx.fillStyle='#fff';ctx.font='9px Arial';ctx.textAlign='center';ctx.fillText(o.closed?'CLOSED':'OPEN',0,32);}
+    if(o.type==='bulb'){ctx.fillStyle=o.powered?'#ffe85e':'#777';ctx.beginPath();ctx.arc(0,-5,24,0,Math.PI*2);ctx.fill();ctx.fillStyle='#aab2b8';ctx.fillRect(-12,18,24,18);if(o.powered){ctx.strokeStyle='rgba(255,232,94,.5)';ctx.lineWidth=8;ctx.beginPath();ctx.arc(0,-5,34,0,Math.PI*2);ctx.stroke();}}
+    if(o.type==='motor'){ctx.strokeStyle='#aab7c1';ctx.lineWidth=5;ctx.beginPath();ctx.arc(0,0,30,0,Math.PI*2);ctx.stroke();ctx.save();ctx.rotate(o.spin||0);ctx.strokeStyle=o.powered?'#6ee7ff':'#667';for(let i=0;i<4;i++){ctx.rotate(Math.PI/2);ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(25,0);ctx.stroke();}ctx.restore();}
+    if(o.type==='magnet'){ctx.fillStyle=o.powered?'#c74d5b':'#6c747b';ctx.fillRect(-45,-26,90,52);ctx.fillStyle='#fff';ctx.font='bold 11px Arial';ctx.textAlign='center';ctx.fillText('ELECTROMAGNET',0,4);}
+    if(o.type==='metalball'){ctx.fillStyle='#c2cbd2';ctx.beginPath();ctx.arc(0,0,18,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#fff';ctx.stroke();}
+    if(o===labSelected){const b=labBounds(o);ctx.strokeStyle='#55d9ff';ctx.lineWidth=2;ctx.strokeRect(b.x-o.x-5,b.y-o.y-5,b.w+10,b.h+10);}
+    ctx.restore();
+  });
+}
+
+function explainLab(){
+  const lines=[];
+  if(gameMode==='air'){
+    if(labObjects.some(o=>o.type==='balloon')) lines.push('The balloon rises because the surrounding air provides buoyancy; in this model, lift exceeds its effective weight.');
+    if(labObjects.some(o=>o.type==='parachute')) lines.push('The parachute increases air resistance, so it falls more slowly than a compact object.');
+    if(labObjects.some(o=>o.type==='airjet'||o.type==='wind')) lines.push('Moving air transfers momentum to objects and pushes them in the airflow direction.');
+    if(labObjects.some(o=>o.type==='dragblock')) lines.push('The drag block shows how shape and air resistance affect falling speed.');
+  }else{
+    const closed=labObjects.filter(o=>o.type==='switch').every(s=>s.closed);
+    if(labObjects.some(o=>o.type==='battery')) lines.push('The battery supplies electrical energy to the circuit.');
+    if(labObjects.some(o=>o.type==='switch')) lines.push(closed?'The closed switch completes the conducting path.':'The open switch breaks the circuit, so current cannot power the loads.');
+    if(labObjects.some(o=>o.type==='bulb')) lines.push('The bulb converts electrical energy into light and heat when the circuit is powered.');
+    if(labObjects.some(o=>o.type==='motor')) lines.push('The motor converts electrical energy into rotational mechanical motion.');
+    if(labObjects.some(o=>o.type==='magnet')) lines.push('Current in the electromagnet creates a magnetic field that can attract nearby metal.');
+  }
+  if(!lines.length)lines.push('Add some parts and run the experiment first.');
+  document.getElementById('explainText').innerHTML='<p>'+lines.join('</p><p>')+'</p>';
+  document.getElementById('explainOverlay').classList.add('open');
+}
+
+document.querySelectorAll('[data-air-part]').forEach(b=>b.addEventListener('click',()=>addLabPart(b.dataset.airPart)));
+document.querySelectorAll('[data-electric-part]').forEach(b=>b.addEventListener('click',()=>addLabPart(b.dataset.electricPart)));
+document.getElementById('airRunBtn').addEventListener('click',()=>{labRunning=!labRunning;updateLabButtons();});
+document.getElementById('electricRunBtn').addEventListener('click',()=>{labRunning=!labRunning;updateLabButtons();});
+document.getElementById('airClearBtn').addEventListener('click',resetLab);
+document.getElementById('electricClearBtn').addEventListener('click',resetLab);
+document.getElementById('airExplainBtn').addEventListener('click',explainLab);
+document.getElementById('electricExplainBtn').addEventListener('click',explainLab);
 
 function resetFluidBuilder(){
   fluidParticles=[];
