@@ -512,6 +512,7 @@ canvas{
   <button class="partButton" data-part="pendulum"><span class="icon">🕰️</span>Pendulum</button>
   <button class="partButton" data-part="blast"><span class="icon">💥</span>Blast</button>
   <button class="partButton" data-part="bell"><span class="icon">🔔</span>Bell</button>
+  <button class="partButton" id="mechanicsExplainBtn"><span class="icon">💡</span>What Happened?</button>
 </div>
 
 <div id="rubeTray">
@@ -521,6 +522,7 @@ canvas{
     <button class="rubeCatBtn" data-rube-cat="electric">⚡ Electricity</button>
     <button class="rubeCatBtn" data-rube-cat="air">💨 Air</button>
     <button class="rubeCatBtn" data-rube-cat="fluid">🌊 Fluid & Heat</button>
+    <button class="rubeCatBtn" id="rubeExplainBtn">💡 What Happened?</button>
   </div>
 
   <div class="rubePartsRow show" data-rube-row="mechanics">
@@ -959,7 +961,7 @@ document.querySelectorAll('.rubeCatBtn').forEach(btn=>{
   });
 });
 
-document.querySelectorAll('.partButton').forEach(btn=>{
+document.querySelectorAll('.partButton[data-part]').forEach(btn=>{
   btn.addEventListener('click',()=>{
     ensureAudio();
     addPart(btn.dataset.part);
@@ -2384,6 +2386,64 @@ function drawLab(){
   });
 }
 
+function explainMechanics(){
+  const lines=[];
+  if(objects.some(o=>o.type==='ball')) lines.push('Gravity accelerates the ball downward, changing its speed and direction over time.');
+  if(objects.some(o=>o.type==='ramp')) lines.push('A ramp redirects the ball along its surface and changes how gravitational force affects its motion.');
+  if(objects.some(o=>o.type==='spring')) lines.push('The spring stores elastic energy when compressed and releases it to launch the ball.');
+  if(objects.some(o=>o.type==='fan')) lines.push('The fan applies a force to the ball through moving air, changing the ball’s velocity.');
+  if(objects.some(o=>o.type==='magnet')) lines.push('The magnet attracts the ball in this simulation, pulling it toward the magnetic field source.');
+  if(objects.some(o=>o.type==='domino')) lines.push('Dominoes transfer motion through collisions, passing energy from one piece to the next.');
+  if(objects.some(o=>o.type==='pendulum')) lines.push('The pendulum continuously trades gravitational potential energy for kinetic energy as it swings.');
+  if(objects.some(o=>o.type==='blast')) lines.push('The cartoon blast adds a sudden impulse, causing a rapid change in the ball’s momentum.');
+  if(objects.some(o=>o.type==='bell'&&o.rung)) lines.push('The bell rang because the ball reached it after the forces and energy transfers in your machine.');
+  if(!lines.length) lines.push('Build and run a Mechanics experiment first. This explanation will describe the forces and energy transfers in your setup.');
+
+  document.getElementById('explainText').innerHTML='<p>'+lines.join('</p><p>')+'</p>';
+  document.getElementById('explainOverlay').classList.add('open');
+}
+
+function explainRube(){
+  const lines=[];
+  const hasBattery=objects.some(o=>o.type==='batteryUnit');
+  const switches=objects.filter(o=>o.type==='switchUnit');
+  const circuitOn=hasBattery&&switches.every(s=>s.closed);
+
+  if(objects.some(o=>['ramp','spring','domino','pendulum','fan'].includes(o.type))){
+    lines.push('The Mechanics parts transfer motion and energy through gravity, collisions, springs, swinging motion, and applied forces.');
+  }
+  if(hasBattery) lines.push('The battery supplies electrical energy to the integrated machine.');
+  if(switches.length) lines.push(circuitOn?'The closed switch completes the electrical path so powered devices can operate.':'An open switch breaks the electrical path, so powered devices stop.');
+  if(objects.some(o=>o.type==='motorUnit')){
+    lines.push('The motor converts electrical energy into rotational mechanical motion.');
+  }
+  if(objects.some(o=>o.type==='pumpUnit')){
+    lines.push('When a powered motor is close enough to the pump, the motor drives the pump and creates moving water.');
+  }
+  if(objects.some(o=>o.type==='waterWheelUnit'&&(o.spin||0)>.02)){
+    lines.push('Moving water transfers momentum to the water wheel and makes it rotate.');
+  }
+  if(objects.some(o=>o.type==='airJetUnit')){
+    lines.push('The air jet transfers momentum through moving air and can push the ball.');
+  }
+  if(objects.some(o=>o.type==='electromagnet')){
+    lines.push('The electromagnet uses electrical current to create a magnetic field that can pull the ball.');
+  }
+  if(objects.some(o=>o.type==='heaterUnit'&&(o.temp||20)>20)){
+    lines.push('The heater converts electrical energy into thermal energy. At high enough temperature, it produces steam.');
+  }
+  if(objects.some(o=>o.type==='pistonUnit'&&(o.lift||0)>1)){
+    lines.push('Steam pressure pushes the piston, converting thermal energy into mechanical motion.');
+  }
+  if(objects.some(o=>o.type==='bell'&&o.rung)){
+    lines.push('The chain reaction succeeded because several energy transfers worked together to move the ball into the bell.');
+  }
+  if(!lines.length) lines.push('Build and run an integrated Rube Goldberg machine first. This explanation will show how the different physics systems worked together.');
+
+  document.getElementById('explainText').innerHTML='<p>'+lines.join('</p><p>')+'</p>';
+  document.getElementById('explainOverlay').classList.add('open');
+}
+
 function explainLab(){
   const lines=[];
   if(gameMode==='air'){
@@ -2412,6 +2472,8 @@ document.getElementById('airClearBtn').addEventListener('click',resetLab);
 document.getElementById('electricClearBtn').addEventListener('click',resetLab);
 document.getElementById('airExplainBtn').addEventListener('click',explainLab);
 document.getElementById('electricExplainBtn').addEventListener('click',explainLab);
+document.getElementById('mechanicsExplainBtn').addEventListener('click',explainMechanics);
+document.getElementById('rubeExplainBtn').addEventListener('click',explainRube);
 
 function resetFluidBuilder(){
   fluidParticles=[];
