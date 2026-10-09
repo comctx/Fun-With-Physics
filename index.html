@@ -2033,6 +2033,8 @@ function updateFluid(dt){
   const drains=fluidObjects.filter(o=>o.type==='drain');
   const tanks=fluidObjects.filter(o=>o.type==='tank');
 
+  drains.forEach(d=>d.activeDrain=false);
+
   drains.forEach(d=>{
     const dr=d.r*(d.scale||1);
 
@@ -2040,37 +2042,54 @@ function updateFluid(dt){
       if((t.fill||0)<=0) return;
 
       const b=fluidBounds(t);
+      const tankBottom=b.y+b.h;
 
-      // Treat the drain as connected when its circle overlaps or sits just outside the tank wall.
+      // A drain is considered connected if its circle overlaps the tank
+      // or its center is just outside one of the tank walls.
       const nearestX=Math.max(b.x,Math.min(d.x,b.x+b.w));
       const nearestY=Math.max(b.y,Math.min(d.y,b.y+b.h));
       const distance=Math.hypot(d.x-nearestX,d.y-nearestY);
+      if(distance>dr+34) return;
 
-      if(distance<=dr+28){
-        // Side drains lower the water to the drain opening.
-        // Bottom drains empty the tank completely.
-        const tankBottom=b.y+b.h;
-        const tankTop=b.y;
-        const drainLevel=Math.max(tankTop,Math.min(tankBottom,d.y));
-        const targetFill=Math.max(0,tankBottom-drainLevel);
+      // Find the nearest wall. That is the wall the drain is connected to.
+      const leftDist=Math.abs(d.x-b.x);
+      const rightDist=Math.abs(d.x-(b.x+b.w));
+      const topDist=Math.abs(d.y-b.y);
+      const bottomDist=Math.abs(d.y-tankBottom);
+      const minDist=Math.min(leftDist,rightDist,topDist,bottomDist);
 
-        const isBottomDrain=d.y>=tankBottom-dr*.45;
-        const desiredFill=isBottomDrain?0:targetFill;
+      let edge='right';
+      if(minDist===leftDist) edge='left';
+      else if(minDist===rightDist) edge='right';
+      else if(minDist===bottomDist) edge='bottom';
+      else if(minDist===topDist) edge=(d.x<t.x?'left':'right');
 
-        if((t.fill||0)>desiredFill+1){
-          const drainRate=105*dt*(d.scale||1);
-          t.fill=Math.max(desiredFill,(t.fill||0)-drainRate);
+      // Bottom drains can empty the whole tank.
+      // Side drains lower water until the surface reaches the drain opening.
+      let desiredFill=0;
+      if(edge==='left'||edge==='right'){
+        const drainLevel=Math.max(b.y,Math.min(tankBottom,d.y));
+        desiredFill=Math.max(0,tankBottom-drainLevel);
+      }
 
-          // Show water leaving the drain so it is obvious that it is working.
-          const outDir=d.x>=t.x?1:-1;
-          spawnWater(
-            d.x+outDir*dr*.65,
-            d.y+2,
-            135*outDir,
-            55,
-            2
-          );
+      if((t.fill||0)>desiredFill+0.5){
+        d.activeDrain=true;
+
+        // Strong enough to visibly beat a normal incoming water source.
+        const drainRate=190*dt*(d.scale||1);
+        t.fill=Math.max(desiredFill,(t.fill||0)-drainRate);
+
+        let ox=d.x,oy=d.y,vx=0,vy=75;
+        if(edge==='left'){
+          ox=b.x-dr-6; oy=d.y; vx=-170;
+        }else if(edge==='right'){
+          ox=b.x+b.w+dr+6; oy=d.y; vx=170;
+        }else{
+          ox=d.x; oy=tankBottom+dr+6; vx=0; vy=190;
         }
+
+        // Visible outflow stream.
+        spawnWater(ox,oy,vx,vy,3);
       }
     });
   });
@@ -2346,10 +2365,10 @@ function drawFluidPart(o){
       ctx.stroke();
     }
 
-    ctx.fillStyle='#dbe5ec';
+    ctx.fillStyle=o.activeDrain?'#7ee48d':'#dbe5ec';
     ctx.font='bold 9px Arial';
     ctx.textAlign='center';
-    ctx.fillText('DRAIN',0,40);
+    ctx.fillText(o.activeDrain?'DRAINING':'DRAIN',0,40);
   }
 
   if(o.type==='valve'){
