@@ -1385,7 +1385,7 @@ canvas.addEventListener('mousemove',e=>{
   if(gameMode==='fluid'){
     const p=posFromEvent(e);
     canvas.style.cursor=fluidDragging?'grabbing':(fluidHitTest(p.x,p.y)?'grab':'default');
-  }else if(gameMode==='air'||gameMode==='electric'){
+  }else if(gameMode==='air'||gameMode==='electric'||gameMode==='simple'){
     canvas.style.cursor=labDragging?'grabbing':'grab';
   }else{
     canvas.style.cursor='default';
@@ -1405,7 +1405,7 @@ function modifySelected(fn){
     return;
   }
 
-  if(gameMode==='air'||gameMode==='electric'){
+  if(gameMode==='air'||gameMode==='electric'||gameMode==='simple'){
     if(!labSelected) return;
     fn(labSelected);
     document.getElementById('status').textContent=
@@ -1431,7 +1431,7 @@ document.getElementById('flipBtn').addEventListener('click',()=>modifySelected(o
 }));
 
 document.getElementById('duplicateBtn').addEventListener('click',()=>{
-  if(gameMode==='air'||gameMode==='electric'){
+  if(gameMode==='air'||gameMode==='electric'||gameMode==='simple'){
     if(!labSelected) return;
     const copy=JSON.parse(JSON.stringify(labSelected));
     copy.id=labId++;
@@ -1439,6 +1439,12 @@ document.getElementById('duplicateBtn').addEventListener('click',()=>{
     copy.y=Math.min(height-30,copy.y+28);
     copy.vx=0;copy.vy=0;
     if(copy.type==='motor') copy.spin=0;
+    if(copy.type==='gearSmall'||copy.type==='gearLarge'||copy.type==='wheelaxle') copy.spin=0;
+    if(copy.type==='pulley1'||copy.type==='pulley2'){copy.ropeOffset=0;copy.lifting=false;}
+    if(copy.type==='crate'){copy.vx=0;copy.vy=0;copy.lifted=false;}
+    if(copy.type==='boulder'){copy.vx=0;copy.vy=0;copy.moved=false;}
+    if(copy.type==='simpleBall'){copy.vx=0;copy.vy=0;}
+    if(copy.type==='simpleBell') copy.rung=false;
     labObjects.push(copy);
     labSelected=copy;
     document.getElementById('selectionLabel').textContent='Selected: '+labName(copy.type).toUpperCase();
@@ -1484,7 +1490,7 @@ document.getElementById('duplicateBtn').addEventListener('click',()=>{
 });
 
 document.getElementById('deleteBtn').addEventListener('click',()=>{
-  if(gameMode==='air'||gameMode==='electric'){
+  if(gameMode==='air'||gameMode==='electric'||gameMode==='simple'){
     if(!labSelected) return;
     labObjects=labObjects.filter(o=>o.id!==labSelected.id);
     labSelected=null;
