@@ -1614,7 +1614,7 @@ function addFluidPart(type){
   document.querySelectorAll('.fluidButton[data-fluid-part]').forEach(b=>{
     b.classList.toggle('active',b.dataset.fluidPart===type);
   });
-  document.getElementById('status').textContent=fluidPartName(type)+' added. Drag it into place.';
+  document.getElementById('status').textContent=fluidPartName(type)+' added. Drag it into place. Overlap pipe ends slightly so the water transfers cleanly.';
 }
 
 function fluidPartName(type){
@@ -1747,9 +1747,13 @@ function updateFluid(dt){
   if(fluidRunning){
     fluidObjects.filter(o=>o.type==='source').forEach(s=>{
       const a=s.angle||0;
-      const vx=Math.sin(a)*90;
-      const vy=Math.cos(a)*60+35;
-      spawnWater(s.x,s.y+26,vx,vy,3);
+      const scale=s.scale||1;
+      const outlet=28*scale;
+      const ox=s.x+Math.sin(a)*outlet;
+      const oy=s.y+Math.cos(a)*outlet;
+      const vx=Math.sin(a)*120;
+      const vy=Math.cos(a)*120;
+      spawnWater(ox,oy,vx,vy,3);
     });
   }
 
@@ -1766,52 +1770,104 @@ function updateFluid(dt){
       }
     });
 
-    // Pipes guide water along their angle.
+    // Straight pipes capture nearby water, center it, and carry it along the pipe.
     fluidObjects.filter(o=>o.type==='pipe').forEach(o=>{
-      const dx=p.x-o.x,dy=p.y-o.y;
-      const ca=Math.cos(-o.angle),sa=Math.sin(-o.angle);
-      const lx=dx*ca-dy*sa,ly=dx*sa+dy*ca;
+      const a=o.angle||0;
       const s=o.scale||1;
-      if(Math.abs(lx)<(o.w*s)/2&&Math.abs(ly)<24*s){
-        const dir=Math.sign(p.vx*Math.cos(o.angle)+p.vy*Math.sin(o.angle))||1;
-        p.vx=Math.cos(o.angle)*Math.max(110,Math.abs(p.vx))*dir;
-        p.vy=Math.sin(o.angle)*Math.max(110,Math.abs(p.vx))*dir;
-        p.y-=ly*.45;
+      const ca=Math.cos(-a),sa=Math.sin(-a);
+      const dx=p.x-o.x,dy=p.y-o.y;
+      const lx=dx*ca-dy*sa;
+      const ly=dx*sa+dy*ca;
+      const half=(o.w*s)/2;
+      const capture=32*s;
+
+      if(Math.abs(lx)<half+10*s && Math.abs(ly)<capture){
+        // Pull the drop toward the center line so small placement gaps still connect.
+        const centerPull=Math.min(1,dt*18);
+        const targetX=o.x+lx*Math.cos(a);
+        const targetY=o.y+lx*Math.sin(a);
+        p.x+=(targetX-p.x)*centerPull;
+        p.y+=(targetY-p.y)*centerPull;
+
+        const localVx=p.vx*ca-p.vy*sa;
+        const speed=Math.max(150,Math.hypot(p.vx,p.vy));
+        let dir=Math.sign(localVx);
+
+        // If the incoming motion is mostly perpendicular, choose the nearer exit direction.
+        if(Math.abs(localVx)<35){
+          dir=lx<=0?1:-1;
+        }
+        if(!dir) dir=1;
+
+        const guided=speed*.94;
+        p.vx=Math.cos(a)*guided*dir;
+        p.vy=Math.sin(a)*guided*dir;
       }
     });
 
-    // Elbows turn water through a 90-degree bend.
+    // Pipe elbows capture water and route it around a true 90-degree bend.
     fluidObjects.filter(o=>o.type==='elbow').forEach(o=>{
+      const a=o.angle||0;
       const s=o.scale||1;
-      const a=-(o.angle||0);
+      const ca=Math.cos(-a),sa=Math.sin(-a);
       const dx=p.x-o.x,dy=p.y-o.y;
-      const ca=Math.cos(a),sa=Math.sin(a);
-      const lx=dx*ca-dy*sa;
-      const ly=dx*sa+dy*ca;
-      const arm=44*s;
-      const thick=20*s;
+      let lx=dx*ca-dy*sa;
+      let ly=dx*sa+dy*ca;
 
-      const inHorizontal=lx>-arm&&lx<8*s&&Math.abs(ly)<thick;
-      const inVertical=Math.abs(lx)<thick&&ly>-8*s&&ly<arm;
+      const arm=46*s;
+      const capture=31*s;
+      const onHorizontal=lx>-arm-8*s&&lx<12*s&&Math.abs(ly)<capture;
+      const onVertical=Math.abs(lx)<capture&&ly>-12*s&&ly<arm+8*s;
 
-      if(inHorizontal||inVertical){
-        // Convert local elbow direction back to world velocity.
+      if(onHorizontal||onVertical){
         let lvx=p.vx*ca-p.vy*sa;
         let lvy=p.vx*sa+p.vy*ca;
-        const speed=Math.max(120,Math.hypot(lvx,lvy));
+        const speed=Math.max(150,Math.hypot(lvx,lvy));
 
-        if(inHorizontal){
-          lvx=Math.max(0,Math.abs(lvx));
-          lvy=Math.abs(lvy)<20?speed*.75:lvy;
-          if(lx>-10*s) lvy=Math.max(90,lvy);
-        }
-        if(inVertical){
-          lvy=Math.max(90,Math.abs(lvy));
-          lvx=Math.abs(lvx)<20?speed*.45:lvx;
+        if(onHorizontal && !onVertical){
+          // Snap to horizontal arm.
+          const wx=o.x+lx*Math.cos(a);
+          const wy=o.y+lx*Math.sin(a);
+          p.x+=(wx-p.x)*Math.min(1,dt*20);
+          p.y+=(wy-p.y)*Math.min(1,dt*20);
+
+          // Moving toward the corner from the left -> turn downward.
+          if(lvx>0 && lx>-15*s){
+            lvx=0;
+            lvy=speed;
+          }else{
+            lvx=(Math.sign(lvx)||1)*speed;
+            lvy=0;
+          }
+        }else if(onVertical && !onHorizontal){
+          // Snap to vertical arm.
+          const wx=o.x-ly*Math.sin(a);
+          const wy=o.y+ly*Math.cos(a);
+          p.x+=(wx-p.x)*Math.min(1,dt*20);
+          p.y+=(wy-p.y)*Math.min(1,dt*20);
+
+          // Moving toward the corner from below -> turn left.
+          if(lvy<0 && ly<15*s){
+            lvx=-speed;
+            lvy=0;
+          }else{
+            lvx=0;
+            lvy=(Math.sign(lvy)||1)*speed;
+          }
+        }else{
+          // In the bend itself: choose the turn from the dominant incoming direction.
+          if(Math.abs(lvy)>=Math.abs(lvx)){
+            if(lvy<0){ lvx=-speed; lvy=0; }
+            else { lvx=0; lvy=speed; }
+          }else{
+            if(lvx>0){ lvx=0; lvy=speed; }
+            else { lvx=-speed; lvy=0; }
+          }
         }
 
-        p.vx=lvx*ca+lvy*sa;
-        p.vy=-lvx*sa+lvy*ca;
+        // Convert local velocity back to world coordinates.
+        p.vx=lvx*Math.cos(a)-lvy*Math.sin(a);
+        p.vy=lvx*Math.sin(a)+lvy*Math.cos(a);
       }
     });
 
