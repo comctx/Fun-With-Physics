@@ -589,6 +589,7 @@ header{
   <button class="partButton" data-part="pendulum"><span class="icon">🕰️</span>Pendulum</button>
   <button class="partButton" data-part="blast"><span class="icon">💥</span>Blast</button>
   <button class="partButton" data-part="bell"><span class="icon">🔔</span>Bell</button>
+  <button class="partButton" id="mechanicsTestBtn"><span class="icon">▶️</span>Test Machine</button>
   <button class="partButton" id="mechanicsExplainBtn"><span class="icon">💡</span>What Happened?</button>
 </div>
 
@@ -1562,6 +1563,17 @@ function resetRunState(){
   rubeParticles=[];rubeSteam=[];
 }
 
+function updateMainRunButtons(){
+  const top=document.getElementById('runBtn');
+  const test=document.getElementById('mechanicsTestBtn');
+  if(top) top.textContent=running?'■ STOP':'▶ RUN';
+  if(test){
+    const icon=test.querySelector('.icon');
+    if(icon) icon.textContent=running?'⏹️':'▶️';
+    test.lastChild.textContent=running?' Stop & Build':' Test Machine';
+  }
+}
+
 function startRun(){
   if(running) return;
   ensureAudio();
@@ -1576,8 +1588,8 @@ function startRun(){
   running=true;
   won=false;
   setSelected(null);
-  document.getElementById('runBtn').textContent='■ STOP';
-  document.getElementById('status').textContent='Machine running...';
+  updateMainRunButtons();
+  document.getElementById('status').textContent='Machine running... Press Stop & Build to return to your layout.';
   updateUndoRedoButtons();
   updateTrayLocks();
 }
@@ -1587,14 +1599,17 @@ function stopRun(){
   running=false;
   if(runSnapshot) objects=cloneMachine(runSnapshot);
   runSnapshot=null;
-  document.getElementById('runBtn').textContent='▶ RUN';
-  document.getElementById('status').textContent='Back to building.';
+  updateMainRunButtons();
+  document.getElementById('status').textContent='Back to building. Your pre-test layout has been restored.';
   updateScore();
   updateUndoRedoButtons();
   updateTrayLocks();
 }
 
 document.getElementById('runBtn').addEventListener('click',()=>{
+  if(running) stopRun(); else startRun();
+});
+document.getElementById('mechanicsTestBtn').addEventListener('click',()=>{
   if(running) stopRun(); else startRun();
 });
 
@@ -1961,8 +1976,7 @@ function winGame(){
 
   won=true;
   running=false;
-  runSnapshot=null;
-  document.getElementById('runBtn').textContent='▶ RUN';
+  updateMainRunButtons();
   playSound('bell');
 
   const stars=calculateStars();
@@ -2605,8 +2619,16 @@ document.getElementById('keepBuildingBtn').addEventListener('click',()=>{
   if(gameMode==='puzzle'&&currentPuzzleIndex>=0){
     startPuzzle(currentPuzzleIndex);
   }else{
+    if(runSnapshot) objects=cloneMachine(runSnapshot);
+    runSnapshot=null;
+    running=false;
     won=false;
-    document.getElementById('status').textContent='Keep making it more ridiculous!';
+    setSelected(null);
+    updateMainRunButtons();
+    updateScore();
+    updateUndoRedoButtons();
+    updateTrayLocks();
+    document.getElementById('status').textContent='Back to building. Your machine is restored exactly as it was before the test.';
   }
 });
 
@@ -4794,6 +4816,7 @@ document.getElementById('fluidClearBtn').addEventListener('click',()=>{
 
 
 defaultMachine();
+updateMainRunButtons();
 
 setTimeout(()=>{
   if(localStorage.getItem(FIRST_TUTORIAL_KEY)!=='yes'){
