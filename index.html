@@ -574,6 +574,7 @@ header{
     <button class="rubeCatBtn" data-rube-cat="electric">⚡ Electricity</button>
     <button class="rubeCatBtn" data-rube-cat="air">💨 Air</button>
     <button class="rubeCatBtn" data-rube-cat="fluid">🌊 Fluid & Heat</button>
+    <button class="rubeCatBtn" data-rube-cat="simple">🛠️ Simple Machines</button>
     <button class="rubeCatBtn" id="rubeExplainBtn">💡 What Happened?</button>
   </div>
 
@@ -604,6 +605,16 @@ header{
     <button class="partButton" data-part="waterWheelUnit"><span class="icon">🛞</span>Water Wheel</button>
     <button class="partButton" data-part="heaterUnit"><span class="icon">♨️</span>Heater</button>
     <button class="partButton" data-part="pistonUnit"><span class="icon">↕️</span>Piston</button>
+  </div>
+
+  <div class="rubePartsRow" data-rube-row="simple">
+    <button class="partButton" data-part="simpleLeverUnit"><span class="icon">⚖️</span>Lever</button>
+    <button class="partButton" data-part="simplePulleyUnit"><span class="icon">🪢</span>Pulley</button>
+    <button class="partButton" data-part="simpleGearUnit"><span class="icon">⚙️</span>Gear</button>
+    <button class="partButton" data-part="simpleWheelUnit"><span class="icon">🛞</span>Wheel & Axle</button>
+    <button class="partButton" data-part="simpleInclineUnit"><span class="icon">📐</span>Inclined Plane</button>
+    <button class="partButton" data-part="simpleWedgeUnit"><span class="icon">🔺</span>Wedge</button>
+    <button class="partButton" data-part="generatorUnit"><span class="icon">⚡</span>Generator</button>
   </div>
 </div>
 
@@ -1064,6 +1075,13 @@ function makeObject(type,x,y){
   if(type==='waterWheelUnit') return {...base,radius:44,spin:0};
   if(type==='heaterUnit') return {...base,width:132,height:118,powered:false,temp:20,boiling:false};
   if(type==='pistonUnit') return {...base,width:70,height:96,lift:0};
+  if(type==='simpleLeverUnit') return {...base,width:180,height:18,fulcrum:.5};
+  if(type==='simplePulleyUnit') return {...base,width:92,height:120,ratio:2,ropeOffset:0};
+  if(type==='simpleGearUnit') return {...base,radius:34,spin:0};
+  if(type==='simpleWheelUnit') return {...base,radius:42,spin:0};
+  if(type==='simpleInclineUnit') return {...base,width:175,height:18,angle:-.28};
+  if(type==='simpleWedgeUnit') return {...base,width:75,height:65};
+  if(type==='generatorUnit') return {...base,width:88,height:52,powered:false,spin:0};
   return base;
 }
 
@@ -1174,7 +1192,7 @@ function calculateAbsurdity(){
     if(o.type==='magnet') score+=22;
     if(o.type==='pendulum') score+=25;
     if(o.type==='blast') score+=30;
-    if(['batteryUnit','switchUnit','motorUnit','electromagnet','airJetUnit','pumpUnit','waterWheelUnit','heaterUnit','pistonUnit'].includes(o.type)) score+=16;
+    if(['batteryUnit','switchUnit','motorUnit','electromagnet','airJetUnit','pumpUnit','waterWheelUnit','heaterUnit','pistonUnit','simpleLeverUnit','simplePulleyUnit','simpleGearUnit','simpleWheelUnit','simpleInclineUnit','simpleWedgeUnit','generatorUnit'].includes(o.type)) score+=16;
   });
   if(objects.length>10) score+=(objects.length-10)*5;
   return score;
@@ -1243,14 +1261,14 @@ function posFromEvent(e){
 
 function objectRadius(o){
   if(o.type==='ball') return o.radius*(o.scale||1);
-  if(['fan','magnet','blast','motorUnit','waterWheelUnit'].includes(o.type)) return 40*(o.scale||1);
+  if(['fan','magnet','blast','motorUnit','waterWheelUnit','simpleGearUnit','simpleWheelUnit'].includes(o.type)) return 44*(o.scale||1);
   if(o.type==='pendulum') return 42*(o.scale||1);
   if(o.type==='bell') return 42*(o.scale||1);
   if(o.type==='spring') return 42*(o.scale||1);
   if(o.type==='domino') return 38*(o.scale||1);
   if(o.type==='ramp') return Math.max(45,(o.width*(o.scale||1))/2);
   if(o.type==='heaterUnit') return 72*(o.scale||1);
-  if(['batteryUnit','switchUnit','electromagnet','airJetUnit','pumpUnit','pistonUnit'].includes(o.type)) return 52*(o.scale||1);
+  if(['batteryUnit','switchUnit','electromagnet','airJetUnit','pumpUnit','pistonUnit','simpleLeverUnit','simplePulleyUnit','simpleInclineUnit','simpleWedgeUnit','generatorUnit'].includes(o.type)) return 60*(o.scale||1);
   return 40;
 }
 
@@ -1506,6 +1524,9 @@ function resetRunState(){
     if(o.type==='electromagnet'||o.type==='airJetUnit')o.powered=false;
     if(o.type==='heaterUnit'){o.powered=false;o.temp=20;o.boiling=false}
     if(o.type==='pistonUnit')o.lift=0;
+    if(o.type==='simpleGearUnit'||o.type==='simpleWheelUnit')o.spin=0;
+    if(o.type==='generatorUnit'){o.powered=false;o.spin=0}
+    if(o.type==='simplePulleyUnit')o.ropeOffset=0;
   });
   rubeParticles=[];rubeSteam=[];
 }
@@ -1701,7 +1722,31 @@ function updateBall(ball,dt){
 function updateRubeIntegration(dt,ball){
   const hasBattery=objects.some(o=>o.type==='batteryUnit');
   const switches=objects.filter(o=>o.type==='switchUnit');
-  const circuitOn=hasBattery&&switches.every(s=>s.closed);
+
+  // Water wheel or motor can drive a nearby gear; a spinning gear can drive a generator.
+  objects.filter(g=>g.type==='simpleGearUnit').forEach(g=>{
+    let drive=0;
+    objects.filter(w=>w.type==='waterWheelUnit'||w.type==='motorUnit'||w.type==='simpleWheelUnit').forEach(w=>{
+      if(Math.hypot(g.x-w.x,g.y-w.y)<105){
+        drive=Math.max(drive,Math.abs(w.spin||0));
+      }
+    });
+    if(drive>0.01) g.spin+=(drive-g.spin)*Math.min(1,dt*5);
+    g.spin*=.995;
+    g.angle=(g.angle||0)+g.spin*dt;
+  });
+
+  objects.filter(gen=>gen.type==='generatorUnit').forEach(gen=>{
+    let drive=0;
+    objects.filter(g=>g.type==='simpleGearUnit').forEach(g=>{
+      if(Math.hypot(gen.x-g.x,gen.y-g.y)<105) drive=Math.max(drive,Math.abs(g.spin||0));
+    });
+    gen.powered=drive>.08;
+    gen.spin=drive;
+  });
+
+  const hasGenerator=objects.some(o=>o.type==='generatorUnit'&&o.powered);
+  const circuitOn=(hasBattery||hasGenerator)&&switches.every(s=>s.closed);
 
   objects.forEach(o=>{
     if(['motorUnit','electromagnet','airJetUnit','heaterUnit'].includes(o.type))o.powered=circuitOn;
@@ -1742,6 +1787,47 @@ function updateRubeIntegration(dt,ball){
     objects.filter(m=>m.type==='electromagnet'&&m.powered).forEach(m=>{
       const dx=m.x-ball.x,dy=m.y-ball.y,d=Math.max(30,Math.hypot(dx,dy));
       if(d<280){const force=(1-d/280)*1250;ball.vx+=dx/d*force*dt;ball.vy+=dy/d*force*dt;}
+    });
+  }
+
+  if(ball){
+    objects.filter(l=>l.type==='simpleLeverUnit').forEach(l=>{
+      if(Math.hypot(ball.x-l.x,ball.y-l.y)<105){
+        const arm=Math.max(.35,Math.abs((l.fulcrum||.5)-.5)+.5);
+        ball.vy-=420*arm*dt;
+        ball.vx+=110*dt;
+      }
+    });
+
+    objects.filter(p=>p.type==='simplePulleyUnit').forEach(p=>{
+      if(Math.abs(ball.x-p.x)<70&&ball.y>p.y&&ball.y-p.y<190){
+        ball.vy-=260*dt*(p.ratio||2);
+        p.ropeOffset=(p.ropeOffset||0)+30*dt;
+      }
+    });
+
+    objects.filter(w=>w.type==='simpleWheelUnit').forEach(w=>{
+      w.spin=(w.spin||0)+1.2*dt;
+      if(Math.hypot(ball.x-w.x,ball.y-w.y)<100){
+        ball.vx+=140*dt;
+      }
+    });
+
+    objects.filter(r=>r.type==='simpleInclineUnit').forEach(r=>{
+      const a=r.angle||-.28;
+      const dx=ball.x-r.x,dy=ball.y-r.y,ca=Math.cos(-a),sa=Math.sin(-a);
+      const lx=dx*ca-dy*sa,ly=dx*sa+dy*ca;
+      if(Math.abs(lx)<90&&Math.abs(ly)<38){
+        ball.vx+=Math.cos(a)*90*dt;
+        ball.vy+=Math.sin(a)*90*dt;
+      }
+    });
+
+    objects.filter(w=>w.type==='simpleWedgeUnit').forEach(w=>{
+      if(Math.hypot(ball.x-w.x,ball.y-w.y)<70){
+        ball.vx+=180*dt;
+        ball.vy-=90*dt;
+      }
     });
   }
 
@@ -2024,6 +2110,39 @@ function drawIntegratedPart(o){
     ctx.fillText(Math.round(temp)+'°C',gx,-46);
     ctx.fillText(o.boiling?'BOILING / STEAM':(o.powered?'HEATER ON':'HEATER OFF'),0,52);
   }
+  if(o.type==='simpleLeverUnit'){
+    ctx.fillStyle='#d4a24e';ctx.fillRect(-90,-9,180,18);
+    const fx=(o.fulcrum-.5)*180;
+    ctx.fillStyle='#ef6f6c';ctx.beginPath();ctx.moveTo(fx-16,27);ctx.lineTo(fx+16,27);ctx.lineTo(fx,5);ctx.closePath();ctx.fill();
+    ctx.fillStyle='#fff';ctx.font='bold 9px Arial';ctx.textAlign='center';ctx.fillText('LEVER',0,-18);
+  }
+  if(o.type==='simplePulleyUnit'){
+    ctx.strokeStyle='#d9e7ef';ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(0,-52);ctx.lineTo(0,52);ctx.stroke();
+    [-22,22].forEach(x=>{ctx.fillStyle='#596b76';ctx.beginPath();ctx.arc(x,-15,20,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#bdd0da';ctx.stroke();});
+    ctx.strokeStyle='#d7b36b';ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(-44,-15);ctx.quadraticCurveTo(0,-54,44,-15);ctx.lineTo(44,48);ctx.stroke();
+    ctx.fillStyle='#fff';ctx.font='bold 9px Arial';ctx.textAlign='center';ctx.fillText('PULLEY',0,67);
+  }
+  if(o.type==='simpleGearUnit'){
+    ctx.strokeStyle='#6fa8dc';ctx.lineWidth=8;ctx.beginPath();ctx.arc(0,0,32,0,Math.PI*2);ctx.stroke();
+    ctx.save();ctx.rotate(o.spin||0);for(let i=0;i<8;i++){ctx.rotate(Math.PI/4);ctx.fillStyle='#6fa8dc';ctx.fillRect(27,-5,13,10);}ctx.restore();
+    ctx.fillStyle='#17222a';ctx.beginPath();ctx.arc(0,0,10,0,Math.PI*2);ctx.fill();
+  }
+  if(o.type==='simpleWheelUnit'){
+    ctx.strokeStyle='#d2a85b';ctx.lineWidth=7;ctx.beginPath();ctx.arc(0,0,40,0,Math.PI*2);ctx.stroke();
+    ctx.fillStyle='#72838d';ctx.beginPath();ctx.arc(0,0,13,0,Math.PI*2);ctx.fill();
+  }
+  if(o.type==='simpleInclineUnit'){
+    ctx.fillStyle='#c9954d';ctx.fillRect(-87,-9,174,18);
+    ctx.fillStyle='#fff';ctx.font='bold 9px Arial';ctx.textAlign='center';ctx.fillText('INCLINED PLANE',0,28);
+  }
+  if(o.type==='simpleWedgeUnit'){
+    ctx.fillStyle='#d98555';ctx.beginPath();ctx.moveTo(-38,32);ctx.lineTo(38,0);ctx.lineTo(-38,-32);ctx.closePath();ctx.fill();
+  }
+  if(o.type==='generatorUnit'){
+    ctx.fillStyle=o.powered?'#3e8f64':'#59666d';ctx.fillRect(-44,-26,88,52);
+    ctx.fillStyle='#fff';ctx.font='bold 10px Arial';ctx.textAlign='center';ctx.fillText(o.powered?'GENERATOR ⚡':'GENERATOR',0,4);
+  }
+
   if(o.type==='pistonUnit'){ctx.strokeStyle='#c9d3da';ctx.lineWidth=4;ctx.strokeRect(-35,-48,70,96);ctx.fillStyle='#7d8b95';ctx.fillRect(-27,15-(o.lift||0),54,20);ctx.fillStyle='#fff';ctx.font='9px Arial';ctx.textAlign='center';ctx.fillText('PISTON',0,-58);}
   ctx.restore();
 }
@@ -2059,7 +2178,7 @@ function draw(){
     else if(o.type==='pendulum') drawPendulum(o);
     else if(o.type==='blast') drawBlast(o);
     else if(o.type==='bell') drawBell(o);
-    else if(['batteryUnit','switchUnit','motorUnit','electromagnet','airJetUnit','pumpUnit','waterWheelUnit','heaterUnit','pistonUnit'].includes(o.type)) drawIntegratedPart(o);
+    else if(['batteryUnit','switchUnit','motorUnit','electromagnet','airJetUnit','pumpUnit','waterWheelUnit','heaterUnit','pistonUnit','simpleLeverUnit','simplePulleyUnit','simpleGearUnit','simpleWheelUnit','simpleInclineUnit','simpleWedgeUnit','generatorUnit'].includes(o.type)) drawIntegratedPart(o);
   });
 
   if(gameMode==='rube'){
@@ -3008,6 +3127,13 @@ function explainRube(){
   if(objects.some(o=>o.type==='pistonUnit'&&(o.lift||0)>1)){
     lines.push('Steam pressure pushes the piston, converting thermal energy into mechanical motion.');
   }
+  if(objects.some(o=>o.type==='simpleLeverUnit')) lines.push('The lever changes force and distance around its fulcrum, allowing one motion to launch or lift another part.');
+  if(objects.some(o=>o.type==='simplePulleyUnit')) lines.push('The pulley redirects lifting force and can provide mechanical advantage by sharing the load across rope segments.');
+  if(objects.some(o=>o.type==='simpleGearUnit')) lines.push('The gear transfers rotation. When driven by a motor or water wheel it can pass rotational energy to another device.');
+  if(objects.some(o=>o.type==='generatorUnit'&&o.powered)) lines.push('The generator is being driven mechanically by a nearby spinning gear, converting mechanical rotation into electrical energy.');
+  if(objects.some(o=>o.type==='simpleWheelUnit')) lines.push('The wheel & axle converts rotational force into motion with mechanical advantage.');
+  if(objects.some(o=>o.type==='simpleInclineUnit')) lines.push('The inclined plane trades more travel distance for less required force.');
+  if(objects.some(o=>o.type==='simpleWedgeUnit')) lines.push('The wedge redirects force sideways and can trigger a chain reaction.');
   if(objects.some(o=>o.type==='bell'&&o.rung)){
     lines.push('The chain reaction succeeded because several energy transfers worked together to move the ball into the bell.');
   }
