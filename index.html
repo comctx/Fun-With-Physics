@@ -309,12 +309,13 @@ canvas{
 </header>
 
 <div class="modebar">
-  <button id="sandboxModeBtn" class="active">🧰 Sandbox</button>
+  <button id="sandboxModeBtn" class="active">⚙️ Mechanics</button>
   <button id="puzzleModeBtn">🧩 Puzzles</button>
   <button id="challengeModeBtn">🏆 Challenge</button>
   <button id="fluidModeBtn">🌊 Fluid Physics</button>
   <button id="airModeBtn">💨 Air Physics</button>
   <button id="electricModeBtn">⚡ Electricity</button>
+  <button id="rubeModeBtn">🎭 Rube Goldberg</button>
   <div id="goalText" class="goal">Goal: Ring the bell any way you want.</div>
 </div>
 
@@ -328,7 +329,7 @@ canvas{
     </div>
     <div class="hudCard">
       <strong id="starRow">☆☆☆</strong>
-      <span id="modeLabel">Sandbox Mode</span>
+      <span id="modeLabel">Mechanics Lab</span>
     </div>
     <div class="hudCard" id="budgetCard" hidden>
       <strong id="budgetText">Parts left: 0</strong>
@@ -447,6 +448,25 @@ canvas{
   <button class="partButton" data-part="bell"><span class="icon">🔔</span>Bell</button>
 </div>
 
+<div id="rubeTray" class="labTray">
+  <button class="partButton" data-part="ball"><span class="icon">🔴</span>Ball</button>
+  <button class="partButton" data-part="ramp"><span class="icon">📐</span>Ramp</button>
+  <button class="partButton" data-part="domino"><span class="icon">▮</span>Domino</button>
+  <button class="partButton" data-part="spring"><span class="icon">🌀</span>Spring</button>
+  <button class="partButton" data-part="fan"><span class="icon">🌀</span>Fan</button>
+  <button class="partButton" data-part="pendulum"><span class="icon">🕰️</span>Pendulum</button>
+  <button class="partButton" data-part="bell"><span class="icon">🔔</span>Bell</button>
+  <button class="partButton" data-part="batteryUnit"><span class="icon">🔋</span>Battery</button>
+  <button class="partButton" data-part="switchUnit"><span class="icon">🎚️</span>Switch</button>
+  <button class="partButton" data-part="motorUnit"><span class="icon">⚙️</span>Motor</button>
+  <button class="partButton" data-part="electromagnet"><span class="icon">🧲</span>Electromagnet</button>
+  <button class="partButton" data-part="airJetUnit"><span class="icon">💨</span>Air Jet</button>
+  <button class="partButton" data-part="pumpUnit"><span class="icon">🚰</span>Pump</button>
+  <button class="partButton" data-part="waterWheelUnit"><span class="icon">🛞</span>Water Wheel</button>
+  <button class="partButton" data-part="heaterUnit"><span class="icon">♨️</span>Heater</button>
+  <button class="partButton" data-part="pistonUnit"><span class="icon">↕️</span>Piston</button>
+</div>
+
 <div id="fluidTray">
   <button class="fluidButton" data-fluid-part="source"><span class="icon">💧</span>Water Source</button>
   <button class="fluidButton" data-fluid-part="pipe"><span class="icon">🚰</span>Pipe</button>
@@ -552,6 +572,9 @@ let labDragOffsetY=0;
 let labRunning=false;
 let labId=1;
 
+let rubeParticles=[];
+let rubeSteam=[];
+
 const gravity=760;
 const SAVE_KEY='rube_goldberg_creator_machine_v3';
 const FIRST_TUTORIAL_KEY='rube_goldberg_tutorial_seen_v1';
@@ -634,7 +657,7 @@ const tutorialSlides=[
   },
   {
     title:'5. Try Other Modes',
-    text:'Sandbox gives you everything. Puzzle mode limits your parts. Challenge mode gives you special goals. Fluid Physics lets you build water and heat experiments. Air Physics explores balloons, parachutes, airflow, and drag. Electricity lets you test batteries, switches, bulbs, motors, and electromagnets.'
+    text:'Sandbox gives you everything. Puzzle mode limits your parts. Challenge mode gives you special goals. Mechanics teaches motion and forces. Fluid Physics covers water and temperature. Air Physics explores lift and drag. Electricity covers circuits and energy. Rube Goldberg is the Integration Lab where those systems can interact in one chain reaction.'
   }
 ];
 
@@ -743,6 +766,15 @@ function makeObject(type,x,y){
   if(type==='pendulum') return {...base,length:105,swing:.72,velocity:0};
   if(type==='blast') return {...base,radius:26,triggered:false};
   if(type==='bell') return {...base,width:54,height:64,rung:false};
+  if(type==='batteryUnit') return {...base,width:74,height:44,powered:true};
+  if(type==='switchUnit') return {...base,width:72,height:42,closed:true};
+  if(type==='motorUnit') return {...base,radius:30,powered:false,spin:0};
+  if(type==='electromagnet') return {...base,width:88,height:48,powered:false,strength:1200};
+  if(type==='airJetUnit') return {...base,width:78,height:46,powered:false};
+  if(type==='pumpUnit') return {...base,width:78,height:50,powered:false,pumpTick:0};
+  if(type==='waterWheelUnit') return {...base,radius:44,spin:0};
+  if(type==='heaterUnit') return {...base,width:92,height:76,powered:false,temp:20,boiling:false};
+  if(type==='pistonUnit') return {...base,width:70,height:96,lift:0};
   return base;
 }
 
@@ -834,6 +866,7 @@ function calculateAbsurdity(){
     if(o.type==='magnet') score+=22;
     if(o.type==='pendulum') score+=25;
     if(o.type==='blast') score+=30;
+    if(['batteryUnit','switchUnit','motorUnit','electromagnet','airJetUnit','pumpUnit','waterWheelUnit','heaterUnit','pistonUnit'].includes(o.type)) score+=16;
   });
   if(objects.length>10) score+=(objects.length-10)*5;
   return score;
@@ -893,12 +926,13 @@ function posFromEvent(e){
 
 function objectRadius(o){
   if(o.type==='ball') return o.radius*(o.scale||1);
-  if(['fan','magnet','blast'].includes(o.type)) return 36*(o.scale||1);
+  if(['fan','magnet','blast','motorUnit','waterWheelUnit'].includes(o.type)) return 40*(o.scale||1);
   if(o.type==='pendulum') return 42*(o.scale||1);
   if(o.type==='bell') return 42*(o.scale||1);
   if(o.type==='spring') return 42*(o.scale||1);
   if(o.type==='domino') return 38*(o.scale||1);
   if(o.type==='ramp') return Math.max(45,(o.width*(o.scale||1))/2);
+  if(['batteryUnit','switchUnit','electromagnet','airJetUnit','pumpUnit','heaterUnit','pistonUnit'].includes(o.type)) return 52*(o.scale||1);
   return 40;
 }
 
@@ -934,6 +968,8 @@ function pointerDown(e){
       dragging=true;
       dragOffsetX=p.x-o.x;
       dragOffsetY=p.y-o.y;
+      o._pointerStartX=p.x;
+      o._pointerStartY=p.y;
       return;
     }
   }
@@ -957,6 +993,13 @@ function pointerMove(e){
 function pointerUp(){
   if(gameMode==='fluid') fluidPointerEnd();
   if(gameMode==='air'||gameMode==='electric') labPointerEnd();
+  if(gameMode==='rube'&&selected&&dragging&&selected.type==='switchUnit'){
+    const moved=Math.hypot((selected.x+dragOffsetX)-(selected._pointerStartX||selected.x),(selected.y+dragOffsetY)-(selected._pointerStartY||selected.y));
+    if(moved<8){
+      selected.closed=!selected.closed;
+      document.getElementById('status').textContent='Rube circuit switch '+(selected.closed?'closed.':'opened.');
+    }
+  }
   dragging=false;
 }
 
@@ -1064,7 +1107,14 @@ function resetRunState(){
     if(o.type==='bell') o.rung=false;
     if(o.type==='pendulum') o.velocity=0;
     if(o.type==='fan') o.fanTick=0;
+    if(o.type==='motorUnit'){o.powered=false;o.spin=0}
+    if(o.type==='pumpUnit'){o.powered=false;o.pumpTick=0}
+    if(o.type==='waterWheelUnit')o.spin=0;
+    if(o.type==='electromagnet'||o.type==='airJetUnit')o.powered=false;
+    if(o.type==='heaterUnit'){o.powered=false;o.temp=20;o.boiling=false}
+    if(o.type==='pistonUnit')o.lift=0;
   });
+  rubeParticles=[];rubeSteam=[];
 }
 
 function startRun(){
@@ -1253,6 +1303,73 @@ function updateBall(ball,dt){
   ball.x+=ball.vx*dt;
   ball.y+=ball.vy*dt;
   groundCollision(ball);
+}
+
+function updateRubeIntegration(dt,ball){
+  const hasBattery=objects.some(o=>o.type==='batteryUnit');
+  const switches=objects.filter(o=>o.type==='switchUnit');
+  const circuitOn=hasBattery&&switches.every(s=>s.closed);
+
+  objects.forEach(o=>{
+    if(['motorUnit','electromagnet','airJetUnit','heaterUnit'].includes(o.type))o.powered=circuitOn;
+  });
+
+  objects.filter(m=>m.type==='motorUnit').forEach(m=>{
+    if(m.powered)m.spin=(m.spin||0)+dt*7;
+    objects.filter(p=>p.type==='pumpUnit').forEach(p=>{
+      p.powered=m.powered&&Math.hypot(m.x-p.x,m.y-p.y)<145;
+    });
+  });
+
+  objects.filter(p=>p.type==='pumpUnit'&&p.powered).forEach(p=>{
+    p.pumpTick=(p.pumpTick||0)-dt;
+    if(p.pumpTick<=0){
+      const a=p.angle||0;
+      for(let i=0;i<3;i++)rubeParticles.push({x:p.x+Math.cos(a)*45,y:p.y+Math.sin(a)*45,vx:Math.cos(a)*(210+Math.random()*50),vy:Math.sin(a)*(210+Math.random()*50)-20,r:4+Math.random()*2,age:0});
+      p.pumpTick=.07;
+    }
+  });
+
+  rubeParticles.forEach(p=>{
+    p.age+=dt;p.vy+=430*dt;p.x+=p.vx*dt;p.y+=p.vy*dt;
+    objects.filter(w=>w.type==='waterWheelUnit').forEach(w=>{
+      if(Math.hypot(p.x-w.x,p.y-w.y)<50*(w.scale||1)){w.spin=(w.spin||0)+dt*5;p.vx+=55;p.vy*=.6;}
+    });
+    if(ball&&Math.hypot(p.x-ball.x,p.y-ball.y)<22){ball.vx+=p.vx*.018;ball.vy+=p.vy*.008;}
+    if(p.age>6||p.y>height+20||p.x<-30||p.x>width+30)p.dead=true;
+  });
+  rubeParticles=rubeParticles.filter(p=>!p.dead).slice(-700);
+  objects.filter(w=>w.type==='waterWheelUnit').forEach(w=>w.spin=(w.spin||0)*.995);
+
+  if(ball){
+    objects.filter(j=>j.type==='airJetUnit'&&j.powered).forEach(j=>{
+      const a=j.angle||0,dx=ball.x-j.x,dy=ball.y-j.y,forward=dx*Math.cos(a)+dy*Math.sin(a),side=-dx*Math.sin(a)+dy*Math.cos(a);
+      if(forward>0&&forward<260&&Math.abs(side)<70){const force=(1-forward/260)*760;ball.vx+=Math.cos(a)*force*dt;ball.vy+=Math.sin(a)*force*dt;}
+    });
+    objects.filter(m=>m.type==='electromagnet'&&m.powered).forEach(m=>{
+      const dx=m.x-ball.x,dy=m.y-ball.y,d=Math.max(30,Math.hypot(dx,dy));
+      if(d<280){const force=(1-d/280)*1250;ball.vx+=dx/d*force*dt;ball.vy+=dy/d*force*dt;}
+    });
+  }
+
+  objects.filter(h=>h.type==='heaterUnit').forEach(h=>{
+    if(h.powered){h.temp=Math.min(100,(h.temp||20)+18*dt);h.boiling=h.temp>=99.5;}
+    else{h.temp=Math.max(20,(h.temp||20)-5*dt);h.boiling=false;}
+    if(h.boiling&&Math.random()<dt*16)rubeSteam.push({x:h.x+(Math.random()-.5)*45,y:h.y-42,vx:(Math.random()-.5)*18,vy:-85-Math.random()*35,r:5+Math.random()*3,age:0});
+  });
+
+  rubeSteam.forEach(s=>{
+    s.age+=dt;s.vy-=12*dt;s.x+=s.vx*dt;s.y+=s.vy*dt;
+    objects.filter(p=>p.type==='pistonUnit').forEach(p=>{
+      if(Math.abs(s.x-p.x)<45&&s.y>p.y-85&&s.y<p.y+55){
+        p.lift=Math.min(44,(p.lift||0)+55*dt);
+        if(ball&&Math.hypot(ball.x-p.x,ball.y-(p.y+5-(p.lift||0)))<55)ball.vy-=360*dt;
+      }
+    });
+    if(s.age>4||s.y<-30)s.dead=true;
+  });
+  rubeSteam=rubeSteam.filter(s=>!s.dead).slice(-500);
+  objects.filter(p=>p.type==='pistonUnit').forEach(p=>p.lift=Math.max(0,(p.lift||0)-10*dt));
 }
 
 function updateDominoes(dt){
@@ -1455,6 +1572,20 @@ function drawBell(o){
   ctx.font='52px Arial';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('🔔',0,0);ctx.restore();
 }
 
+function drawIntegratedPart(o){
+  ctx.save();ctx.translate(o.x,o.y);ctx.rotate(o.angle||0);ctx.scale(o.scale||1,o.scale||1);
+  if(o.type==='batteryUnit'){ctx.fillStyle='#355f3f';ctx.fillRect(-37,-22,74,44);ctx.fillStyle='#fff';ctx.font='bold 11px Arial';ctx.textAlign='center';ctx.fillText('BATTERY',0,4);}
+  if(o.type==='switchUnit'){ctx.fillStyle='#3a4148';ctx.fillRect(-36,-18,72,36);ctx.strokeStyle=o.closed?'#72e080':'#ff8c8c';ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(-20,0);ctx.lineTo(o.closed?20:10,o.closed?0:-16);ctx.stroke();ctx.fillStyle='#fff';ctx.font='9px Arial';ctx.textAlign='center';ctx.fillText(o.closed?'CLOSED':'OPEN',0,31);}
+  if(o.type==='motorUnit'){ctx.strokeStyle=o.powered?'#6ee7ff':'#7d8992';ctx.lineWidth=5;ctx.beginPath();ctx.arc(0,0,28,0,Math.PI*2);ctx.stroke();ctx.save();ctx.rotate(o.spin||0);for(let i=0;i<4;i++){ctx.rotate(Math.PI/2);ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(23,0);ctx.stroke();}ctx.restore();ctx.fillStyle='#fff';ctx.font='9px Arial';ctx.textAlign='center';ctx.fillText('MOTOR',0,43);}
+  if(o.type==='electromagnet'){ctx.fillStyle=o.powered?'#c84f5d':'#68727a';ctx.fillRect(-44,-24,88,48);ctx.fillStyle='#fff';ctx.font='bold 9px Arial';ctx.textAlign='center';ctx.fillText('ELECTROMAGNET',0,4);}
+  if(o.type==='airJetUnit'){ctx.fillStyle=o.powered?'#567d8f':'#555e64';ctx.fillRect(-39,-23,78,46);ctx.fillStyle='#c8f4ff';ctx.font='bold 10px Arial';ctx.textAlign='center';ctx.fillText('AIR JET ➜',0,4);}
+  if(o.type==='pumpUnit'){ctx.fillStyle=o.powered?'#477c91':'#59666d';ctx.fillRect(-39,-25,78,50);ctx.fillStyle='#fff';ctx.font='bold 10px Arial';ctx.textAlign='center';ctx.fillText('PUMP',0,4);}
+  if(o.type==='waterWheelUnit'){ctx.strokeStyle='#c69250';ctx.lineWidth=7;ctx.beginPath();ctx.arc(0,0,42,0,Math.PI*2);ctx.stroke();ctx.save();ctx.rotate(o.spin||0);for(let i=0;i<8;i++){ctx.rotate(Math.PI/4);ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(42,0);ctx.stroke();}ctx.restore();}
+  if(o.type==='heaterUnit'){ctx.fillStyle=o.powered?'#8b5550':'#5f666c';ctx.fillRect(-46,-38,92,76);ctx.fillStyle='#fff';ctx.font='bold 9px Arial';ctx.textAlign='center';ctx.fillText(Math.round(o.temp||20)+'°C',0,-8);ctx.fillText(o.boiling?'STEAM':'HEATER',0,12);}
+  if(o.type==='pistonUnit'){ctx.strokeStyle='#c9d3da';ctx.lineWidth=4;ctx.strokeRect(-35,-48,70,96);ctx.fillStyle='#7d8b95';ctx.fillRect(-27,15-(o.lift||0),54,20);ctx.fillStyle='#fff';ctx.font='9px Arial';ctx.textAlign='center';ctx.fillText('PISTON',0,-58);}
+  ctx.restore();
+}
+
 function drawSelection(){
   if(!selected||running) return;
   const r=objectRadius(selected)+8;
@@ -1486,7 +1617,14 @@ function draw(){
     else if(o.type==='pendulum') drawPendulum(o);
     else if(o.type==='blast') drawBlast(o);
     else if(o.type==='bell') drawBell(o);
+    else if(['batteryUnit','switchUnit','motorUnit','electromagnet','airJetUnit','pumpUnit','waterWheelUnit','heaterUnit','pistonUnit'].includes(o.type)) drawIntegratedPart(o);
   });
+
+  if(gameMode==='rube'){
+    ctx.fillStyle='rgba(68,175,255,.82)';
+    rubeParticles.forEach(p=>{ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fill();});
+    rubeSteam.forEach(p=>{ctx.fillStyle='rgba(240,245,250,'+Math.max(.1,.65-p.age*.15)+')';ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fill();});
+  }
 
   drawSelection();
 
@@ -1509,6 +1647,7 @@ function update(dt){
 
   if(!running) return;
   const ball=objects.find(o=>o.type==='ball');
+  if(gameMode==='rube') updateRubeIntegration(dt,ball);
   if(ball) updateBall(ball,dt);
   updateDominoes(dt);
   updatePendulums(dt);
@@ -1535,9 +1674,11 @@ function setMode(mode){
   document.getElementById('fluidModeBtn').classList.toggle('active',mode==='fluid');
   document.getElementById('airModeBtn').classList.toggle('active',mode==='air');
   document.getElementById('electricModeBtn').classList.toggle('active',mode==='electric');
+  document.getElementById('rubeModeBtn').classList.toggle('active',mode==='rube');
 
   const specialMode=mode==='fluid'||mode==='air'||mode==='electric';
-  document.getElementById('tray').style.display=specialMode?'none':'grid';
+  document.getElementById('tray').style.display=(specialMode||mode==='rube')?'none':'grid';
+  document.getElementById('rubeTray').classList.toggle('show',mode==='rube');
   document.getElementById('fluidTray').classList.toggle('show',mode==='fluid');
   document.getElementById('airTray').classList.toggle('show',mode==='air');
   document.getElementById('electricTray').classList.toggle('show',mode==='electric');
@@ -1554,8 +1695,9 @@ function setMode(mode){
     updateScore();
     currentPuzzleIndex=-1;
     activeChallenge=null;
-    document.getElementById('modeLabel').textContent='Sandbox Mode';
-    document.getElementById('goalText').textContent='Goal: Ring the bell any way you want.';
+    document.getElementById('modeLabel').textContent='Mechanics Lab';
+    document.getElementById('goalText').textContent='Mechanics: Motion & Forces.';
+    document.getElementById('status').textContent='Build with ramps, springs, dominoes, fans, magnets, and pendulums.';
     defaultMachine();
   }
 
@@ -1602,6 +1744,15 @@ function setMode(mode){
     document.getElementById('starRow').textContent='🔋⚡💡';
     document.getElementById('goalText').textContent='Electricity: build a simple powered circuit and test the switch.';
     document.getElementById('status').textContent='Add a battery, switch, and a bulb, motor, or electromagnet.';
+  }
+
+  if(mode==='rube'){
+    currentPuzzleIndex=-1;
+    activeChallenge=null;
+    document.getElementById('modeLabel').textContent='Integration Lab';
+    document.getElementById('goalText').textContent='Rube Goldberg: Combine mechanics, water, air, heat, and electricity.';
+    document.getElementById('status').textContent='Build a cross-system chain reaction and ring the bell.';
+    defaultMachine();
   }
 
   updateBudget();
@@ -1734,6 +1885,7 @@ document.getElementById('challengeModeBtn').addEventListener('click',()=>setMode
 document.getElementById('fluidModeBtn').addEventListener('click',()=>setMode('fluid'));
 document.getElementById('airModeBtn').addEventListener('click',()=>setMode('air'));
 document.getElementById('electricModeBtn').addEventListener('click',()=>setMode('electric'));
+document.getElementById('rubeModeBtn').addEventListener('click',()=>setMode('rube'));
 document.getElementById('closePuzzleBtn').addEventListener('click',()=>{
   document.getElementById('puzzleOverlay').classList.remove('open');
   if(currentPuzzleIndex<0){
