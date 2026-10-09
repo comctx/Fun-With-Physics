@@ -2021,35 +2021,51 @@ function updateFluid(dt){
 
   fluidParticles=fluidParticles.filter(p=>!p.dead);
 
-  // A drain placed against or inside a tank actively lowers that tank's water level.
-  if(fluidRunning){
-    const drains=fluidObjects.filter(o=>o.type==='drain');
-    const tanks=fluidObjects.filter(o=>o.type==='tank');
+  // Drains are passive: if attached to a tank they work whether or not a source is running.
+  const drains=fluidObjects.filter(o=>o.type==='drain');
+  const tanks=fluidObjects.filter(o=>o.type==='tank');
 
-    drains.forEach(d=>{
-      const dr=d.r*(d.scale||1);
+  drains.forEach(d=>{
+    const dr=d.r*(d.scale||1);
 
-      tanks.forEach(t=>{
-        if((t.fill||0)<=0) return;
+    tanks.forEach(t=>{
+      if((t.fill||0)<=0) return;
 
-        const b=fluidBounds(t);
-        const nearestX=Math.max(b.x,Math.min(d.x,b.x+b.w));
-        const nearestY=Math.max(b.y,Math.min(d.y,b.y+b.h));
-        const distance=Math.hypot(d.x-nearestX,d.y-nearestY);
+      const b=fluidBounds(t);
 
-        // Drain works when placed just inside the tank or against an outside wall.
-        if(distance<=dr+18){
-          const drainRate=72*dt*(d.scale||1);
-          t.fill=Math.max(0,(t.fill||0)-drainRate);
+      // Treat the drain as connected when its circle overlaps or sits just outside the tank wall.
+      const nearestX=Math.max(b.x,Math.min(d.x,b.x+b.w));
+      const nearestY=Math.max(b.y,Math.min(d.y,b.y+b.h));
+      const distance=Math.hypot(d.x-nearestX,d.y-nearestY);
 
-          if((t.fill||0)>0){
-            const outDir=d.x>=t.x?1:-1;
-            spawnWater(d.x+outDir*dr*.65,d.y,120*outDir,45,1);
-          }
+      if(distance<=dr+28){
+        // Side drains lower the water to the drain opening.
+        // Bottom drains empty the tank completely.
+        const tankBottom=b.y+b.h;
+        const tankTop=b.y;
+        const drainLevel=Math.max(tankTop,Math.min(tankBottom,d.y));
+        const targetFill=Math.max(0,tankBottom-drainLevel);
+
+        const isBottomDrain=d.y>=tankBottom-dr*.45;
+        const desiredFill=isBottomDrain?0:targetFill;
+
+        if((t.fill||0)>desiredFill+1){
+          const drainRate=105*dt*(d.scale||1);
+          t.fill=Math.max(desiredFill,(t.fill||0)-drainRate);
+
+          // Show water leaving the drain so it is obvious that it is working.
+          const outDir=d.x>=t.x?1:-1;
+          spawnWater(
+            d.x+outDir*dr*.65,
+            d.y+2,
+            135*outDir,
+            55,
+            2
+          );
         }
-      });
+      }
     });
-  }
+  });
 
   // Float/sink objects stay where the user places them until water is running.
   fluidObjects.filter(o=>o.type==='wood'||o.type==='metal').forEach(o=>{
@@ -2301,9 +2317,17 @@ function drawFluidPart(o){
   }
 
   if(o.type==='drain'){
+    ctx.strokeStyle='#87939d';
+    ctx.lineWidth=10;
+    ctx.lineCap='round';
+    ctx.beginPath();
+    ctx.moveTo(-o.r-18,0);
+    ctx.lineTo(-o.r+2,0);
+    ctx.stroke();
+
     ctx.fillStyle='#0a1015';
     ctx.beginPath();ctx.arc(0,0,o.r,0,Math.PI*2);ctx.fill();
-    ctx.strokeStyle='#87939d';ctx.lineWidth=3;ctx.stroke();
+    ctx.strokeStyle='#aab4bd';ctx.lineWidth=3;ctx.stroke();
 
     ctx.strokeStyle='#4e5963';
     ctx.lineWidth=2;
