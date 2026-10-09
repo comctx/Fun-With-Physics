@@ -2946,19 +2946,45 @@ function updateSimpleMachines(dt){
     });
   }
 
-  // Wheel & axle: rotation converts applied force into motion of nearby heavy objects.
+  // Wheel & axle: rotation converts torque into useful linear motion.
+  // Nearby loads are pushed only when they are actually close enough to the rim.
   wheels.forEach(w=>{
-    w.spin=(w.spin||0)+1.35*dt;
+    const s=w.scale||1;
+    const wheelR=w.r*s;
+    const axleR=w.axleR*s;
+    const mechanicalAdvantage=Math.max(1,wheelR/Math.max(8,axleR));
+    w.mechanicalAdvantage=mechanicalAdvantage;
+
+    // Give the wheel a steady applied effort so its motion is easy to see.
+    w.spin=(w.spin||0)+1.6*dt;
+    w.spin=Math.min(w.spin,3.0);
     w.angle+=w.spin*dt;
-    boulders.forEach(b=>{
-      if(Math.hypot(b.x-w.x,b.y-w.y)<145){
-        b.vx+=95*dt;
-        b.moved=true;
+
+    const pushLoad=(obj,basePush)=>{
+      const objR=obj.r ? obj.r*(obj.scale||1) : ((obj.w||60)*(obj.scale||1))/2;
+      const dx=obj.x-w.x;
+      const dy=obj.y-w.y;
+      const d=Math.max(1,Math.hypot(dx,dy));
+      const contactDistance=wheelR+objR+18;
+
+      if(d<=contactDistance){
+        // Push away from the wheel along the contact direction.
+        const nx=dx/d;
+        const ny=dy/d;
+        const drive=Math.min(260,basePush*mechanicalAdvantage);
+
+        obj.vx=(obj.vx||0)+nx*drive*dt;
+        // Keep most of the demonstration horizontal while allowing a little lift.
+        obj.vy=(obj.vy||0)+ny*drive*.18*dt;
+        obj.moved=true;
+        obj.drivenByWheel=true;
+        w.driving=true;
       }
-    });
-    crates.forEach(b=>{
-      if(Math.hypot(b.x-w.x,b.y-w.y)<140) b.vx+=80*dt;
-    });
+    };
+
+    w.driving=false;
+    boulders.forEach(b=>pushLoad(b,70));
+    crates.forEach(b=>pushLoad(b,58));
   });
 
   // Levers pivot around a fixed fulcrum. The fulcrum stays put while the beam rotates.
@@ -3255,7 +3281,19 @@ function drawSimplePart(o){
     ctx.strokeStyle='#d3aa58';ctx.lineWidth=8;ctx.beginPath();ctx.arc(0,0,o.r,0,Math.PI*2);ctx.stroke();
     ctx.fillStyle='#768792';ctx.beginPath();ctx.arc(0,0,o.axleR,0,Math.PI*2);ctx.fill();
     ctx.strokeStyle=rotationColor;ctx.lineWidth=3;ctx.beginPath();ctx.arc(0,0,o.r+13,.3,5.1);ctx.stroke();
-    ctx.fillStyle='#fff';ctx.font='bold 10px Arial';ctx.textAlign='center';ctx.fillText('WHEEL & AXLE',0,o.r+28);
+
+    // Rotation and output-motion indicators.
+    ctx.fillStyle=rotationColor;ctx.font='bold 18px Arial';ctx.textAlign='center';
+    ctx.fillText('↻',0,-o.r-14);
+    ctx.strokeStyle=forceColor;ctx.lineWidth=3;
+    ctx.beginPath();ctx.moveTo(o.r+18,0);ctx.lineTo(o.r+52,0);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(o.r+52,0);ctx.lineTo(o.r+42,-7);ctx.moveTo(o.r+52,0);ctx.lineTo(o.r+42,7);ctx.stroke();
+
+    ctx.fillStyle='#fff';ctx.font='bold 10px Arial';ctx.textAlign='center';
+    ctx.fillText('WHEEL & AXLE',0,o.r+28);
+    if(o.mechanicalAdvantage){
+      ctx.fillText('MA '+o.mechanicalAdvantage.toFixed(1)+'×',0,o.r+42);
+    }
   }
   if(o.type==='incline'){
     ctx.fillStyle='#c9954d';ctx.fillRect(-o.w/2,-o.h/2,o.w,o.h);
@@ -3405,7 +3443,7 @@ function explainSimpleMachines(){
   if(labObjects.some(o=>o.type==='pulley1')) lines.push('Single pulley: mainly changes the direction of the pulling force. In this lab its mechanical advantage is about 1×.');
   if(labObjects.some(o=>o.type==='pulley2')) lines.push('Double pulley: shares the load across more supporting rope, increasing mechanical advantage while requiring more rope distance.');
   if(labObjects.some(o=>o.type==='gearSmall'||o.type==='gearLarge')) lines.push('Gears: touching gears rotate in opposite directions. A small gear driving a large gear slows rotation and increases torque; a large gear driving a small gear increases speed.');
-  if(labObjects.some(o=>o.type==='wheelaxle')) lines.push('Wheel & axle: applying force at the larger wheel creates torque around the smaller axle, converting force into useful rotation and motion.');
+  if(labObjects.some(o=>o.type==='wheelaxle')) lines.push('Wheel & axle: applying force at the larger wheel creates torque around the smaller axle. A nearby crate or boulder touching the rim is pushed into linear motion, and a larger wheel compared with the axle gives greater mechanical advantage.');
   if(labObjects.some(o=>o.type==='incline')) lines.push('Inclined plane: moving through a longer distance reduces the force needed to gain the same height. The work is spread over more distance.');
   if(labObjects.some(o=>o.type==='wedge')) lines.push('Wedge: forward force is redirected sideways along the wedge faces, pushing objects apart.');
   if(labObjects.some(o=>o.type==='crate'&&o.lifted)) lines.push('The heavy crate was lifted because the machine traded distance or direction for greater useful force.');
