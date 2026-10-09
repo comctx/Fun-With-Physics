@@ -161,7 +161,7 @@ canvas{
 #fluidTray{
   flex:0 0 auto;
   display:none;
-  grid-template-columns:repeat(19,minmax(82px,1fr));
+  grid-template-columns:repeat(30,minmax(82px,1fr));
   gap:7px;
   padding:8px;
   background:#173142;
@@ -260,7 +260,7 @@ canvas{
   .topButtons button{flex:1;padding:7px 5px;font-size:12px}
   .modebar .goal{min-width:230px}
   #tray{grid-template-columns:repeat(9,78px)}
-  #fluidTray{grid-template-columns:repeat(19,78px)}
+  #fluidTray{grid-template-columns:repeat(30,78px)}
   #selectionPanel{grid-template-columns:repeat(4,1fr)}
   .levelGrid{grid-template-columns:1fr}
   .presetGrid{grid-template-columns:1fr}
@@ -378,6 +378,27 @@ canvas{
     </div>
   </div>
 
+  <div id="fluidSaveOverlay" class="overlay">
+    <div class="modal">
+      <h2>Saved Fluid Experiments</h2>
+      <p>Save up to three different layouts on this device.</p>
+      <div class="presetGrid">
+        <div class="presetCard"><h3>Experiment 1</h3><button data-save-slot="1">Save</button><button data-load-slot="1">Load</button></div>
+        <div class="presetCard"><h3>Experiment 2</h3><button data-save-slot="2">Save</button><button data-load-slot="2">Load</button></div>
+        <div class="presetCard"><h3>Experiment 3</h3><button data-save-slot="3">Save</button><button data-load-slot="3">Load</button></div>
+      </div>
+      <div class="actions"><button id="closeFluidSaveBtn">Close</button></div>
+    </div>
+  </div>
+
+  <div id="explainOverlay" class="overlay">
+    <div class="modal">
+      <h2>What Happened?</h2>
+      <div id="explainText"></div>
+      <div class="actions"><button id="closeExplainBtn">Close</button></div>
+    </div>
+  </div>
+
   <div id="successOverlay" class="overlay">
     <div class="modal" id="successCard">
       <div id="successTitle">🔔 DING!</div>
@@ -418,10 +439,21 @@ canvas{
   <button class="fluidButton" data-fluid-part="metal"><span class="icon">🔩</span>Metal</button>
   <button class="fluidButton" data-fluid-part="drain"><span class="icon">🕳️</span>Drain</button>
   <button class="fluidButton" data-fluid-part="valve"><span class="icon">🔧</span>Valve</button>
+  <button class="fluidButton" data-fluid-part="funnel"><span class="icon">🔻</span>Funnel</button>
+  <button class="fluidButton" data-fluid-part="hose"><span class="icon">〰️</span>Hose</button>
+  <button class="fluidButton" data-fluid-part="tee"><span class="icon">🔀</span>T-Junction</button>
+  <button class="fluidButton" data-fluid-part="check"><span class="icon">➡️</span>Check Valve</button>
+  <button class="fluidButton" data-fluid-part="reservoir"><span class="icon">🛢️</span>Reservoir</button>
+  <button class="fluidButton" data-fluid-part="piston"><span class="icon">↕️</span>Piston</button>
+  <button class="fluidButton" data-fluid-part="ice"><span class="icon">🧊</span>Ice</button>
+  <button class="fluidButton" data-fluid-part="thermometer"><span class="icon">🌡️</span>Thermometer</button>
   <button class="fluidButton" id="fluidActionBtn"><span class="icon">▶️</span>Start Water</button>
   <button class="fluidButton" id="slowMoBtn"><span class="icon">🐢</span>Slow Motion</button>
   <button class="fluidButton" id="measureBtn"><span class="icon">📏</span>Measure</button>
   <button class="fluidButton" id="presetBtn"><span class="icon">🧪</span>Presets</button>
+  <button class="fluidButton" id="resetFluidBtn"><span class="icon">↺</span>Reset Run</button>
+  <button class="fluidButton" id="fluidSaveBtn"><span class="icon">💾</span>Save Labs</button>
+  <button class="fluidButton" id="explainBtn"><span class="icon">💡</span>What Happened?</button>
   <button class="fluidButton" id="fluidClearBtn"><span class="icon">🗑️</span>Clear</button>
 </div>
 </div>
@@ -463,6 +495,7 @@ let fluidWheelSpin=0;
 let slowMotion=false;
 let measureMode=false;
 let fluidElapsed=0;
+let fluidRunSnapshot=null;
 
 const gravity=760;
 const SAVE_KEY='rube_goldberg_creator_machine_v3';
@@ -1642,6 +1675,7 @@ function resetFluidBuilder(){
   fluidDragging=false;
   fluidWheelSpin=0;
   fluidElapsed=0;
+  fluidRunSnapshot=null;
   updateFluidActionLabel();
   updateMeasureHUD();
   document.querySelectorAll('.fluidButton[data-fluid-part]').forEach(b=>b.classList.remove('active'));
@@ -1669,6 +1703,14 @@ function makeFluidPart(type,x=width*.5,y=height*.45){
   if(type==='metal') return {...base,r:20,density:1.8,vy:0,label:'METAL',held:true};
   if(type==='drain') return {...base,r:28,open:true};
   if(type==='valve') return {...base,r:25,open:true};
+  if(type==='funnel') return {...base,w:90,h:80};
+  if(type==='hose') return {...base,w:150,h:18};
+  if(type==='tee') return {...base,w:92,h:92};
+  if(type==='check') return {...base,w:90,h:28,open:true};
+  if(type==='reservoir') return {...base,w:210,h:150,fill:0};
+  if(type==='piston') return {...base,w:90,h:120,pressure:0};
+  if(type==='ice') return {...base,r:20,temp:0,melt:0,vy:0,held:true};
+  if(type==='thermometer') return {...base,w:34,h:110,temp:20};
   return base;
 }
 
@@ -1676,6 +1718,7 @@ function addFluidPart(type){
   const stagger=(fluidObjects.length%5)*18;
   const p=makeFluidPart(type,width*.5+stagger-36,height*.40+stagger/2);
   fluidObjects.push(p);
+  fluidRunSnapshot=null;
   setFluidSelected(p,false);
   fluidLastTapId=null;
   document.querySelectorAll('.fluidButton[data-fluid-part]').forEach(b=>{
@@ -1697,7 +1740,9 @@ function fluidPartName(type){
   return ({
     source:'Water Source',pipe:'Pipe',elbow:'Pipe Elbow',pump:'Pump',tank:'Tank',heater:'Water Heater',dam:'Dam',
     gate:'Gate',canal:'Canal',wheel:'Water Wheel',wood:'Wood',
-    metal:'Metal',drain:'Drain',valve:'Valve'
+    metal:'Metal',drain:'Drain',valve:'Valve',funnel:'Funnel',hose:'Hose',
+    tee:'T-Junction',check:'Check Valve',reservoir:'Reservoir',piston:'Piston',
+    ice:'Ice',thermometer:'Thermometer'
   })[type]||type;
 }
 
@@ -1792,8 +1837,16 @@ function fluidConnectors(o){
     add(-o.w/2,0);
     add(o.w/2,0);
     add(0,o.h/2);
-  }else if(o.type==='canal'){
+  }else if(o.type==='canal'||o.type==='hose'||o.type==='check'){
     add(-o.w/2,0); add(o.w/2,0);
+  }else if(o.type==='funnel'){
+    add(0,o.h/2);
+  }else if(o.type==='tee'){
+    add(-46,0); add(46,0); add(0,46);
+  }else if(o.type==='reservoir'){
+    add(0,-o.h/2); add(-o.w/2,0); add(o.w/2,0); add(0,o.h/2);
+  }else if(o.type==='piston'){
+    add(0,o.h/2);
   }
 
   return pts;
@@ -1841,8 +1894,11 @@ function updateMeasureHUD(){
     if(fluidSelected.type==='tank'){
       const percent=Math.round(((fluidSelected.fill||0)/(fluidSelected.h-14))*100);
       detail='Tank level: '+Math.max(0,Math.min(100,percent))+'%';
-    }else if(fluidSelected.type==='heater'){
-      detail='Water temperature: '+Math.round(fluidSelected.temp||20)+'°C';
+    }else if(fluidSelected.type==='heater'||fluidSelected.type==='thermometer'){
+      detail='Temperature: '+Math.round(fluidSelected.temp||20)+'°C';
+    }else if(fluidSelected.type==='reservoir'){
+      const percent=Math.round(((fluidSelected.fill||0)/(fluidSelected.h-14))*100);
+      detail='Reservoir level: '+Math.max(0,Math.min(100,percent))+'%';
     }else if(fluidSelected.type==='wheel'){
       detail='Wheel speed: '+Math.abs(fluidSelected.spin||0).toFixed(2);
     }else{
@@ -1927,6 +1983,7 @@ function fluidPointerEnd(){
 
   if(fluidSelected && moved>=8){
     snapFluidPart(fluidSelected);
+    fluidRunSnapshot=null;
   }
 
   fluidDragging=false;
@@ -2090,6 +2147,59 @@ function updateFluid(dt){
       }
     });
 
+    // Flexible hose guides water along its centerline.
+    fluidObjects.filter(o=>o.type==='hose').forEach(o=>{
+      const a=o.angle||0,s=o.scale||1,ca=Math.cos(-a),sa=Math.sin(-a);
+      const dx=p.x-o.x,dy=p.y-o.y, lx=dx*ca-dy*sa, ly=dx*sa+dy*ca;
+      const half=o.w*s/2;
+      if(Math.abs(lx)<half+10*s&&Math.abs(ly)<24*s){
+        const speed=Math.max(140,Math.hypot(p.vx,p.vy));
+        const dir=(p.vx*ca-p.vy*sa)>=0?1:-1;
+        p.x=o.x+lx*Math.cos(a); p.y=o.y+lx*Math.sin(a);
+        p.vx=Math.cos(a)*speed*dir; p.vy=Math.sin(a)*speed*dir;
+        p.inPipeId='h'+o.id;
+      }
+    });
+
+    // Funnel gathers a wider falling stream into one outlet.
+    fluidObjects.filter(o=>o.type==='funnel').forEach(o=>{
+      const b=fluidBounds(o);
+      if(p.y>b.y-12&&p.y<b.y+b.h+15&&p.x>b.x-18&&p.x<b.x+b.w+18){
+        const targetX=o.x;
+        p.x+=(targetX-p.x)*Math.min(1,dt*10);
+        p.vy=Math.max(90,p.vy);
+      }
+    });
+
+    // T-junction guides water through any of its three legs.
+    fluidObjects.filter(o=>o.type==='tee').forEach(o=>{
+      const a=o.angle||0,s=o.scale||1,ca=Math.cos(-a),sa=Math.sin(-a);
+      const dx=p.x-o.x,dy=p.y-o.y, lx=dx*ca-dy*sa, ly=dx*sa+dy*ca;
+      if((Math.abs(ly)<25*s&&Math.abs(lx)<58*s)||(Math.abs(lx)<25*s&&ly>-10*s&&ly<58*s)){
+        const speed=Math.max(145,Math.hypot(p.vx,p.vy));
+        if(Math.abs(ly)<25*s){
+          const dir=lx<0?1:-1;
+          p.vx=Math.cos(a)*speed*dir; p.vy=Math.sin(a)*speed*dir;
+        }else{
+          p.vx=-Math.sin(a)*speed; p.vy=Math.cos(a)*speed;
+        }
+      }
+    });
+
+    // Check valve permits flow only in its forward direction.
+    fluidObjects.filter(o=>o.type==='check').forEach(o=>{
+      const a=o.angle||0,s=o.scale||1,ca=Math.cos(-a),sa=Math.sin(-a);
+      const dx=p.x-o.x,dy=p.y-o.y,lx=dx*ca-dy*sa,ly=dx*sa+dy*ca;
+      if(Math.abs(lx)<o.w*s/2+8&&Math.abs(ly)<24*s){
+        const localVx=p.vx*ca-p.vy*sa;
+        if(localVx<0){
+          p.vx=Math.cos(a)*8; p.vy=Math.sin(a)*8;
+        }else{
+          p.inPipeId='c'+o.id;
+        }
+      }
+    });
+
     // Pipe elbows keep water inside the bend and switch cleanly between the two legs.
     fluidObjects.filter(o=>o.type==='elbow').forEach(o=>{
       const a=o.angle||0;
@@ -2213,6 +2323,19 @@ function updateFluid(dt){
       }
     });
 
+    // Reservoirs store a larger volume of water.
+    fluidObjects.filter(o=>o.type==='reservoir').forEach(o=>{
+      const b=fluidBounds(o);
+      const maxFill=o.h-14;
+      if(p.x>b.x+7&&p.x<b.x+b.w-7&&p.y>b.y+5&&p.y<b.y+b.h-4){
+        if((o.fill||0)<maxFill){
+          o.fill=Math.min(maxFill,(o.fill||0)+.12);
+          const surface=b.y+b.h-o.fill;
+          if(p.y>surface){ p.y=surface; p.vy*=.1; p.vx*=.7; }
+        }
+      }
+    });
+
     // Tanks collect water. A connected drain becomes the effective maximum water level.
     fluidObjects.filter(o=>o.type==='tank').forEach(o=>{
       const s=o.scale||1;
@@ -2327,6 +2450,27 @@ function updateFluid(dt){
 
   fluidParticles=fluidParticles.filter(p=>!p.dead);
 
+  // Pistons respond to nearby water pressure.
+  fluidObjects.filter(o=>o.type==='piston').forEach(o=>{
+    const b=fluidBounds(o);
+    let hits=0;
+    fluidParticles.forEach(p=>{
+      if(p.phase!=='steam'&&p.x>b.x-15&&p.x<b.x+b.w+15&&p.y>b.y-20&&p.y<b.y+b.h+25) hits++;
+    });
+    o.pressure+=(hits-o.pressure)*Math.min(1,dt*5);
+  });
+
+  // Thermometers read the nearest heater or water container.
+  fluidObjects.filter(o=>o.type==='thermometer').forEach(o=>{
+    let best=null,bestD=Infinity;
+    fluidObjects.filter(t=>t.type==='heater'||t.type==='tank'||t.type==='reservoir').forEach(t=>{
+      const d=Math.hypot(o.x-t.x,o.y-t.y);
+      if(d<bestD){bestD=d;best=t;}
+    });
+    const target=best&&bestD<180?(best.type==='heater'?(best.temp||20):20):20;
+    o.temp+=(target-(o.temp||20))*Math.min(1,dt*2);
+  });
+
   // Heat water toward boiling; at 100°C liquid gradually becomes rising steam.
   fluidObjects.filter(o=>o.type==='heater').forEach(o=>{
     const hasWater=(o.fill||0)>0.5;
@@ -2396,7 +2540,7 @@ function updateFluid(dt){
   });
 
   // Float/sink objects stay where the user places them until water is running.
-  fluidObjects.filter(o=>o.type==='wood'||o.type==='metal').forEach(o=>{
+  fluidObjects.filter(o=>o.type==='wood'||o.type==='metal'||o.type==='ice').forEach(o=>{
     if((fluidDragging && fluidSelected===o) || o.held){
       o.vy=0;
       return;
@@ -2411,7 +2555,7 @@ function updateFluid(dt){
     o.y+=o.vy*dt;
 
     let inTank=null;
-    fluidObjects.filter(t=>(t.type==='tank'||t.type==='heater')&&(t.fill||0)>18).forEach(t=>{
+    fluidObjects.filter(t=>(t.type==='tank'||t.type==='heater'||t.type==='reservoir')&&(t.fill||0)>18).forEach(t=>{
       const b=fluidBounds(t);
       const pad=t.type==='heater'?10:0;
       if(o.x>b.x+pad&&o.x<b.x+b.w-pad&&o.y>b.y-18&&o.y<b.y+b.h) inTank=t;
@@ -2423,13 +2567,14 @@ function updateFluid(dt){
       const radius=o.r*(o.scale||1);
       const bottom=b.y+b.h-radius-4;
 
-      if(o.density<1){
+      const density=o.type==='ice'?.92:o.density;
+      if(density<1){
         // Softer buoyancy so wood rises naturally without launching above the tank.
         const desiredY=surface+radius*.42;
         const submersion=Math.max(0,(o.y+radius)-surface);
 
         if(submersion>0){
-          const buoyancy=(1-o.density)*760 + submersion*7.5;
+          const buoyancy=(1-density)*760 + submersion*7.5;
           o.vy-=buoyancy*dt;
           o.vy*=.93;
         }
@@ -2453,6 +2598,14 @@ function updateFluid(dt){
           o.y=desiredY;
           o.vy=0;
         }
+
+        if(o.type==='ice'){
+          let surrounding=20;
+          if(inTank.type==='heater') surrounding=inTank.temp||20;
+          o.temp+=(surrounding-o.temp)*dt*.65;
+          if(o.temp>0) o.melt=Math.min(1,(o.melt||0)+dt*(o.temp/100)*.18);
+          if(o.melt>=1) o.dead=true;
+        }
       }else{
         if(o.y>bottom){
           o.y=bottom;
@@ -2464,6 +2617,7 @@ function updateFluid(dt){
       o.vy=0;
     }
   });
+  fluidObjects=fluidObjects.filter(o=>!o.dead);
 }
 
 function drawWaterParticles(){
@@ -2616,6 +2770,62 @@ function drawFluidPart(o){
     ctx.textAlign='center';
     ctx.fillText(Math.round(temp)+'°C',gx,-o.h/2+12);
     ctx.fillText(o.boiling?'BOILING / STEAM':(o.heating?'HEATER ON':'HEATER OFF'),0,o.h/2+18);
+  }
+
+  if(o.type==='funnel'){
+    ctx.strokeStyle='#b8c4cc';ctx.lineWidth=7;ctx.lineJoin='round';
+    ctx.beginPath();ctx.moveTo(-42,-34);ctx.lineTo(-12,18);ctx.lineTo(-8,38);ctx.lineTo(8,38);ctx.lineTo(12,18);ctx.lineTo(42,-34);ctx.stroke();
+  }
+
+  if(o.type==='hose'){
+    ctx.strokeStyle='#67b36b';ctx.lineWidth=18;ctx.lineCap='round';
+    ctx.beginPath();ctx.moveTo(-o.w/2,0);ctx.quadraticCurveTo(0,-18,o.w/2,0);ctx.stroke();
+    ctx.strokeStyle='#254d2a';ctx.lineWidth=8;ctx.stroke();
+  }
+
+  if(o.type==='tee'){
+    ctx.strokeStyle='#9eabb5';ctx.lineWidth=24;ctx.lineCap='round';
+    ctx.beginPath();ctx.moveTo(-46,0);ctx.lineTo(46,0);ctx.moveTo(0,0);ctx.lineTo(0,46);ctx.stroke();
+    ctx.strokeStyle='#4e5e69';ctx.lineWidth=13;ctx.stroke();
+  }
+
+  if(o.type==='check'){
+    ctx.strokeStyle='#8f9ba6';ctx.lineWidth=22;ctx.lineCap='round';
+    ctx.beginPath();ctx.moveTo(-o.w/2,0);ctx.lineTo(o.w/2,0);ctx.stroke();
+    ctx.fillStyle='#7ee48d';ctx.beginPath();ctx.moveTo(-10,-12);ctx.lineTo(14,0);ctx.lineTo(-10,12);ctx.closePath();ctx.fill();
+  }
+
+  if(o.type==='reservoir'){
+    ctx.strokeStyle='#d8eef8';ctx.lineWidth=5;
+    ctx.strokeRect(-o.w/2,-o.h/2,o.w,o.h);
+    if((o.fill||0)>0){ctx.fillStyle='rgba(46,157,230,.58)';ctx.fillRect(-o.w/2+4,o.h/2-o.fill,o.w-8,Math.max(0,o.fill-4));}
+    ctx.fillStyle='#fff';ctx.font='bold 10px Arial';ctx.textAlign='center';ctx.fillText('RESERVOIR',0,o.h/2+16);
+  }
+
+  if(o.type==='piston'){
+    ctx.strokeStyle='#c9d3da';ctx.lineWidth=5;ctx.strokeRect(-o.w/2,-o.h/2,o.w,o.h);
+    const lift=Math.min(45,(o.pressure||0)*1.3);
+    ctx.fillStyle='#7d8b95';ctx.fillRect(-o.w/2+8,o.h/2-34-lift,o.w-16,26);
+    ctx.fillStyle='#fff';ctx.font='bold 9px Arial';ctx.textAlign='center';ctx.fillText('PRESSURE',0,-o.h/2-7);
+  }
+
+  if(o.type==='ice'){
+    const melt=Math.min(1,o.melt||0);
+    ctx.globalAlpha=1-melt*.7;
+    ctx.fillStyle='#c8f0ff';ctx.strokeStyle='#fff';ctx.lineWidth=3;
+    ctx.beginPath();ctx.roundRect(-20,-18,40,36,8);ctx.fill();ctx.stroke();
+    ctx.fillStyle='#2a6d8f';ctx.font='bold 10px Arial';ctx.textAlign='center';ctx.fillText('ICE',0,3);
+    ctx.globalAlpha=1;
+  }
+
+  if(o.type==='thermometer'){
+    const t=Math.max(0,Math.min(100,o.temp||20));
+    ctx.strokeStyle='#e7eef2';ctx.lineWidth=4;
+    ctx.beginPath();ctx.arc(0,35,13,0,Math.PI*2);ctx.stroke();
+    ctx.strokeRect(-6,-45,12,80);
+    ctx.fillStyle='#ff5454';ctx.beginPath();ctx.arc(0,35,9,0,Math.PI*2);ctx.fill();
+    ctx.fillRect(-3,30-t*.7,6,t*.7);
+    ctx.fillStyle='#fff';ctx.font='bold 10px Arial';ctx.textAlign='center';ctx.fillText(Math.round(t)+'°C',0,57);
   }
 
   if(o.type==='dam'){
@@ -2784,7 +2994,8 @@ document.getElementById('fluidActionBtn').addEventListener('click',()=>{
   fluidRunning=!fluidRunning;
 
   if(fluidRunning){
-    fluidObjects.filter(o=>o.type==='wood'||o.type==='metal').forEach(o=>{
+    if(!fluidRunSnapshot) fluidRunSnapshot=captureFluidLayout();
+    fluidObjects.filter(o=>o.type==='wood'||o.type==='metal'||o.type==='ice').forEach(o=>{
       o.vy=0;
     });
   }
@@ -2855,6 +3066,68 @@ function loadFluidPreset(name){
 document.querySelectorAll('[data-preset]').forEach(btn=>{
   btn.addEventListener('click',()=>loadFluidPreset(btn.dataset.preset));
 });
+
+function captureFluidLayout(){
+  return JSON.parse(JSON.stringify({objects:fluidObjects,elapsed:fluidElapsed}));
+}
+function restoreFluidLayout(data){
+  if(!data||!Array.isArray(data.objects)) return false;
+  fluidObjects=JSON.parse(JSON.stringify(data.objects));
+  fluidParticles=[];
+  fluidElapsed=data.elapsed||0;
+  fluidRunning=false;
+  setFluidSelected(null);
+  updateFluidActionLabel();
+  updateMeasureHUD();
+  return true;
+}
+function resetFluidRun(){
+  if(fluidRunSnapshot){
+    restoreFluidLayout(fluidRunSnapshot);
+    document.getElementById('status').textContent='Simulation reset. Your layout is unchanged.';
+  }else{
+    fluidParticles=[];
+    fluidElapsed=0;
+    fluidObjects.forEach(o=>{
+      if(o.type==='wheel') o.spin=0;
+      if(o.type==='wood'||o.type==='metal'||o.type==='ice') o.vy=0;
+    });
+    document.getElementById('status').textContent='Simulation effects reset.';
+  }
+}
+function explainFluidExperiment(){
+  const lines=[];
+  if(fluidObjects.some(o=>o.type==='wood')) lines.push('Wood floats because its average density is lower than water, so buoyancy can support it.');
+  if(fluidObjects.some(o=>o.type==='metal')) lines.push('Metal sinks because its density is greater than water, so its weight exceeds the buoyant force.');
+  if(fluidObjects.some(o=>o.type==='wheel'&&(o.spin||0)>.02)) lines.push('The water wheel turned because moving water transferred momentum and energy to the wheel.');
+  if(fluidObjects.some(o=>o.type==='heater'&&(o.temp||20)>90)) lines.push('The heater raised the water temperature. Near 100°C, liquid water boils and changes into water vapor (steam).');
+  if(fluidObjects.some(o=>o.type==='ice'&&(o.melt||0)>.1)) lines.push('The ice absorbed heat from its surroundings. Once enough energy entered the ice, it began melting into liquid water.');
+  if(fluidObjects.some(o=>o.type==='piston'&&(o.pressure||0)>2)) lines.push('Water pressure pushed on the piston. Fluid pressure can transmit force to moving mechanical parts.');
+  if(fluidObjects.some(o=>o.type==='check')) lines.push('The check valve allows flow in one direction and resists reverse flow.');
+  if(fluidObjects.some(o=>o.type==='drain'&&o.activeDrain)) lines.push('The drain lowered the water level because water flowed from the tank through the lower outlet.');
+  if(!lines.length) lines.push('Run the experiment, then come back here. The explanation will describe the main physics that occurred.');
+  document.getElementById('explainText').innerHTML='<p>'+lines.join('</p><p>')+'</p>';
+  document.getElementById('explainOverlay').classList.add('open');
+}
+
+document.getElementById('resetFluidBtn').addEventListener('click',resetFluidRun);
+document.getElementById('fluidSaveBtn').addEventListener('click',()=>document.getElementById('fluidSaveOverlay').classList.add('open'));
+document.getElementById('closeFluidSaveBtn').addEventListener('click',()=>document.getElementById('fluidSaveOverlay').classList.remove('open'));
+document.getElementById('explainBtn').addEventListener('click',explainFluidExperiment);
+document.getElementById('closeExplainBtn').addEventListener('click',()=>document.getElementById('explainOverlay').classList.remove('open'));
+
+document.querySelectorAll('[data-save-slot]').forEach(btn=>btn.addEventListener('click',()=>{
+  const slot=btn.dataset.saveSlot;
+  localStorage.setItem('fluid_experiment_'+slot,JSON.stringify(captureFluidLayout()));
+  document.getElementById('status').textContent='Fluid experiment '+slot+' saved.';
+}));
+document.querySelectorAll('[data-load-slot]').forEach(btn=>btn.addEventListener('click',()=>{
+  const slot=btn.dataset.loadSlot;
+  const raw=localStorage.getItem('fluid_experiment_'+slot);
+  if(!raw){document.getElementById('status').textContent='Experiment '+slot+' is empty.';return;}
+  try{restoreFluidLayout(JSON.parse(raw));document.getElementById('status').textContent='Fluid experiment '+slot+' loaded.';}catch(e){document.getElementById('status').textContent='Could not load that saved experiment.';}
+  document.getElementById('fluidSaveOverlay').classList.remove('open');
+}));
 
 document.getElementById('fluidClearBtn').addEventListener('click',()=>{
   resetFluidBuilder();
