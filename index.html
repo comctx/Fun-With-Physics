@@ -804,6 +804,8 @@ header{min-height:50px;padding:5px 10px;background:#102839}
  #fluidTray.tileExpanded,#tray.tileExpanded,.labTray.tileExpanded{flex-wrap:wrap!important}
  .tileMoreButton{display:flex!important;flex-direction:column!important;justify-content:center;align-items:center;flex:0 0 73px!important;width:73px!important;height:73px!important}
 }
+.tileCaption{display:block;text-align:center;line-height:1.12;font-size:10px;max-width:100%;overflow-wrap:anywhere}
+@media(min-width:951px){#tray .icon,#fluidTray .icon,.labTray .icon{font-size:23px!important}#tray,#fluidTray,.labTray{scrollbar-width:none}#tray::-webkit-scrollbar,#fluidTray::-webkit-scrollbar,.labTray::-webkit-scrollbar{display:none}}
 </style>
 </head>
 <body>
@@ -5842,6 +5844,38 @@ setTimeout(()=>{
    });
    tray.appendChild(more);
  });
+})();
+</script>
+<script>
+/* Enforce the approved compact tile layout after the existing app initializes. */
+(function(){
+ const trays=[document.getElementById('tray'),document.getElementById('fluidTray'),...document.querySelectorAll('.labTray')];
+ const set=(el,k,v)=>el.style.setProperty(k,v,'important');
+ function layout(){
+   const desktop=window.innerWidth>=951;
+   for(const tray of trays){
+     if(!tray)continue;
+     const buttons=[...tray.children].filter(el=>el.matches('button:not(.tileMoreButton)'));
+     for(const btn of buttons){
+       if(!btn.querySelector('.tileCaption')){
+         const caption=document.createElement('span');
+         caption.className='tileCaption';
+         for(const node of [...btn.childNodes]){
+           if(node.nodeType===Node.TEXT_NODE&&node.textContent.trim()){caption.appendChild(node)}
+         }
+         btn.appendChild(caption);
+       }
+       if(desktop){
+         [['width','72px'],['min-width','72px'],['max-width','72px'],['height','72px'],['min-height','72px'],['flex','0 0 72px'],['display','flex'],['flex-direction','column'],['align-items','center'],['justify-content','center'],['gap','4px'],['padding','5px 3px'],['white-space','normal'],['text-align','center']].forEach(([k,v])=>set(btn,k,v));
+       }else{
+         ['width','min-width','max-width','height','min-height','flex','display','flex-direction','align-items','justify-content','gap','padding','white-space','text-align'].forEach(k=>btn.style.removeProperty(k));
+       }
+     }
+     if(desktop){set(tray,'display','flex');set(tray,'flex-wrap',tray.classList.contains('tileExpanded')?'wrap':'nowrap');set(tray,'overflow','visible')}
+     else{['display','flex-wrap','overflow'].forEach(k=>tray.style.removeProperty(k))}
+   }
+ }
+ layout();window.addEventListener('resize',layout);
 })();
 </script>
 </body>
