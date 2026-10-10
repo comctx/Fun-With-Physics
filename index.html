@@ -871,6 +871,12 @@ header{min-height:50px;padding:5px 10px;background:#102839}
 .promptBuildExamples button{font-size:11px;padding:7px}
 #promptBuildGenerate{background:#087ab0;border:1px solid #66d4ff;font-weight:bold;padding:9px;border-radius:9px}
 </style>
+<style>
+#successCard{position:relative;padding-top:40px}
+.doncoSuccessMark{position:absolute;top:12px;right:15px;display:flex;flex-direction:column;align-items:center;gap:1px;color:#19384b;font-weight:900;font-size:14px;letter-spacing:1.2px;line-height:1}
+.doncoSuccessMark span{font-size:7px;letter-spacing:2px;color:#5a7786;font-weight:700}
+@media(max-width:480px){.doncoSuccessMark{font-size:11px;top:9px;right:11px}.doncoSuccessMark span{font-size:6px}}
+</style>
 </head>
 <body>
 <div id="app">
@@ -1239,6 +1245,7 @@ header{min-height:50px;padding:5px 10px;background:#102839}
 
   <div id="successOverlay" class="overlay">
     <div class="modal" id="successCard">
+      <div class="doncoSuccessMark" aria-label="DONCO BAYCITY">DONCO<span>BAYCITY</span></div>
       <div id="successTitle">🔔 DING!</div>
       <div id="successStars">★★★</div>
       <p id="successMessage"></p>
