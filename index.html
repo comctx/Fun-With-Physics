@@ -927,6 +927,42 @@ header{min-height:50px;padding:5px 10px;background:#102839}
 .wpCitySearch button{background:#156bbb;border:1px solid #74c8f9;border-radius:9px;padding:9px 12px}
 #wpCityChosen{font-size:12px;color:#bde4fc}
 </style>
+<style>
+/* Photo-led Weather dashboard, matching the selected visual direction. */
+#weatherLabPage{background:linear-gradient(140deg,#09284f,#0d497e 58%,#081c36)!important}
+#weatherLabPage .wpHead strong{font-size:clamp(24px,3vw,40px)}
+#weatherLabPage .wpHead span{color:#dcf0ff}
+#weatherLabPage .wpCitySearch{background:#092a4bcf;border-color:#80c2f0}
+#weatherLabPage .wpConditions{background:linear-gradient(110deg,#075ba2,#15335b);box-shadow:0 5px 18px #021a3b6b}
+#weatherLabPage .wpConditions>div{min-width:100px}
+#weatherLabPage .wpSky{min-height:330px;background:linear-gradient(180deg,#065b9c55,#08376030),url('https://images.unsplash.com/photo-1534088568595-a066f410bcda?auto=format&fit=crop&w=1500&q=85') center/cover no-repeat;border-color:#9ecde7;box-shadow:inset 0 -70px 85px #06294f9e}
+#weatherLabPage .wpSky:after{display:none}
+#weatherLabPage .wpSun{filter:drop-shadow(0 2px 14px #fffa92);text-shadow:0 0 30px #fff8}
+#weatherLabPage .wpClouds{opacity:.78;top:28%}
+#weatherLabPage .wpAtmos span{background:#05233edb;border-color:#9bc5e9}
+.wpPhotoCredit{position:absolute;bottom:5px;right:12px;color:#e9f2ff;font-size:10px;text-shadow:0 1px 3px #001b2a}
+.wpFeatureDeck{display:grid;grid-template-columns:1fr 1.25fr 1fr;gap:12px;margin:12px 0}
+.wpLowerDeck{display:grid;grid-template-columns:1.25fr 1fr .9fr;gap:12px}
+.wpFeatureCard{min-width:0;background:linear-gradient(150deg,#0e3a69,#09233f);border:1px solid #4d96c8;box-shadow:0 5px 15px #001a3790;border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:8px}
+.wpFeatureCard h3{font-size:17px;margin:0;color:#f4faff}
+.wpFeatureCard p{font-size:12px;line-height:1.5;margin:0;color:#daecff}
+.wpFeatureCard>button{border:1px solid #55baff;background:linear-gradient(#1374d8,#0b54a2);padding:10px;border-radius:9px;color:white;font-weight:700;text-align:center;margin-top:auto}
+.wpFeatureImage{height:140px;border-radius:9px;border:1px solid #71a6cd}
+.wpTargetPhoto{background:url('https://images.unsplash.com/photo-1500534623283-312aade485b7?auto=format&fit=crop&w=700&q=80') center/cover}
+.wpFlightPhoto{background:url('https://images.unsplash.com/photo-1470252649378-9c29740c9fa8?auto=format&fit=crop&w=800&q=80') center/cover}
+.wpExtremeCard button[data-weather-topic]{background:#e3f0fa;color:#102b49;border:1px solid #bad5e8;padding:9px;border-radius:8px;text-align:left;font-weight:700}
+.wpExtremeCard button[data-weather-topic] small{display:block;font-weight:400;font-size:11px;margin-left:25px;color:#395c76}
+#wpTopicDetail{background:#0b3355;padding:9px;border-radius:8px}
+.wpMapIllustration{height:210px;border-radius:9px;background:linear-gradient(125deg,#207aa3,#103a70);display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:75px}
+.wpMapIllustration span{font-size:12px}
+.wpCycle{flex:1;display:flex;flex-direction:column;justify-content:center;text-align:center;gap:6px;border-radius:10px;background:linear-gradient(150deg,#d7f2fc,#83bfdb);color:#0b3353;font-weight:700;padding:15px}
+.wpCycle span{font-size:18px;color:#267bc2}
+.wpCurrentSummary{padding:18px 12px;border-radius:11px;background:linear-gradient(#1773ba,#0b4176);flex:1;display:flex;flex-direction:column;gap:8px}
+.wpCurrentSummary strong{font-size:42px}.wpCurrentSummary span{font-size:12px}
+#weatherLabPage .wpDashboardCards button{background:linear-gradient(#165a8b,#102e4e);min-height:145px}
+@media(max-width:980px){.wpFeatureDeck,.wpLowerDeck{grid-template-columns:1fr 1fr}.wpExtremeCard{grid-column:1/-1}}
+@media(max-width:680px){.wpFeatureDeck,.wpLowerDeck{grid-template-columns:1fr}.wpExtremeCard{grid-column:auto}#weatherLabPage .wpSky{min-height:260px}.wpAtmos span{font-size:10px}.wpFeatureImage{height:125px}}
+</style>
 </head>
 <body>
 <div id="app">
@@ -1156,7 +1192,17 @@ header{min-height:50px;padding:5px 10px;background:#102839}
 <section id="weatherLabPage" aria-label="Weather Physics Lab" hidden>
  <div class="wpHead"><strong>🌤️ Weather Physics Lab</strong><span id="wpDataState">Choose a city or use your location</span></div>
  <div class="wpCitySearch"><label for="wpCityInput">Weather location</label><input id="wpCityInput" type="search" placeholder="Enter a city (e.g., Bay City, Michigan)" autocomplete="off"><button id="wpCitySearchBtn" type="button">🔎 Find Weather</button><span id="wpCityChosen">No city selected — manual experiment settings</span></div>
- <div id="wpDashboard"><div class="wpConditions"><div><span>☀️</span><strong id="wpHomeTemp">72°F</strong><small>Current conditions</small></div><div>💨 Wind <strong id="wpHomeWind">10 m/s</strong></div><div>💧 Humidity <strong id="wpHomeHum">55%</strong></div><div>◉ Pressure <strong id="wpHomePress">1013 hPa</strong></div><button id="wpHomeLive" type="button">📍 Refresh local weather</button></div><div class="wpHero"><div class="wpSky"><div class="wpSun">☀️</div><div class="wpClouds">☁️ ☁️</div><div class="wpAtmos"><span>☀️ Solar radiation heats the surface</span><span>☁️ Rising air cools and forms clouds</span><span>💨 Pressure differences create wind</span></div></div><aside class="wpFocus"><h3>Today’s Physics Focus</h3><div class="wpFocusTabs"><button data-focus="temperature">Temperature</button><button data-focus="wind">Wind</button><button data-focus="humidity">Humidity</button><button data-focus="clouds">Clouds</button><button data-focus="pressure">Pressure</button></div><h4 id="wpFocusTitle"></h4><p id="wpFocusText"></p><button data-weather-open="projectile">🎯 Start Today’s Challenge →</button></aside></div><h3 class="wpExpHeading">Hands-On Experiments</h3><div class="wpDashboardCards"><button data-weather-open="projectile">🎯<strong>Projectile Simulator</strong><small>Test how wind affects a water balloon.</small><span>Try It →</span></button><button data-weather-open="parachute">🪂<strong>Parachute Lab</strong><small>Explore falling speed and air resistance.</small><span>Try It →</span></button><button data-weather-open="clouds">☁️<strong>Cloud Formation</strong><small>Cool moist air to create a cloud.</small><span>Try It →</span></button><button data-weather-open="drag">💨<strong>Drag Force Explorer</strong><small>Compare different shapes in wind.</small><span>Try It →</span></button><button data-weather-open="machine">🌦️<strong>Weather Machine Builder</strong><small>Connect sunlight, evaporation and rain.</small><span>Open Builder →</span></button></div></div><div class="wpExperimentView" id="wpProjectileView" hidden><button class="wpBack" data-weather-home>← Weather Home</button><h3>🎯 Wind-Affected Projectile Simulator</h3><div class="wpLayout">
+ <div id="wpDashboard"><div class="wpConditions"><div><span>☀️</span><strong id="wpHomeTemp">72°F</strong><small>Current conditions</small></div><div>💨 Wind <strong id="wpHomeWind">10 m/s</strong></div><div>💧 Humidity <strong id="wpHomeHum">55%</strong></div><div>◉ Pressure <strong id="wpHomePress">1013 hPa</strong></div><button id="wpHomeLive" type="button">📍 Refresh local weather</button></div><div class="wpHero"><div class="wpSky"><div class="wpSun">☀️</div><div class="wpClouds">☁️ ☁️</div><div class="wpAtmos"><span>☀️ Solar energy warms the ground</span><span>☁️ Rising moist air forms clouds</span><span>💨 Pressure differences drive wind</span></div><div class="wpPhotoCredit">Illustrative weather photograph • not a live city view</div></div><aside class="wpFocus"><h3>Today’s Physics Focus</h3><div class="wpFocusTabs"><button data-focus="temperature">Temperature</button><button data-focus="wind">Wind</button><button data-focus="humidity">Humidity</button><button data-focus="clouds">Clouds</button><button data-focus="pressure">Pressure</button></div><h4 id="wpFocusTitle"></h4><p id="wpFocusText"></p><button data-weather-open="projectile">🎯 Start Today’s Challenge →</button></aside></div><div class="wpFeatureDeck">
+ <article class="wpFeatureCard wpChallengeCard"><h3>🎯 Today's Physics Challenge</h3><p>Can you adjust the wind and land a water balloon within 3 meters of the target 50 meters away?</p><div class="wpFeatureImage wpTargetPhoto" aria-hidden="true"></div><button type="button" data-weather-open="projectile">Try the challenge →</button></article>
+ <article class="wpFeatureCard wpLiveCard"><h3>🔬 Live Weather Simulator</h3><p>Test today's conditions in the projectile simulator. Try zero wind, then use the weather you've selected.</p><div class="wpFeatureImage wpFlightPhoto" aria-hidden="true"></div><button type="button" data-weather-open="projectile">Run simulation →</button></article>
+ <article class="wpFeatureCard wpExtremeCard"><h3>⚡ Extreme Weather Science</h3><button type="button" data-weather-topic="lightning">⚡ Lightning <small>Electrical breakdown in air</small></button><button type="button" data-weather-topic="tornadoes">🌪️ Tornadoes <small>Rotation and rising air</small></button><button type="button" data-weather-topic="hurricanes">🌀 Hurricanes <small>Heat and angular momentum</small></button><button type="button" data-weather-topic="rainbows">🌈 Rainbows <small>Refraction and dispersion</small></button><button type="button" data-weather-topic="snowflakes">❄️ Snowflakes <small>Crystallization and symmetry</small></button><p id="wpTopicDetail" role="status">Select a topic to learn about the physics behind it.</p></article>
+ </div>
+ <div class="wpLowerDeck">
+ <article class="wpFeatureCard"><h3>🌍 Global Weather Map</h3><p>Explore a geographic weather map, then pick a city for its live conditions.</p><div class="wpMapIllustration" aria-label="Decorative map showing the globe">🌎 <span>Choose a city above to load its weather</span></div><button type="button" id="wpMapChoose">Choose a city →</button></article>
+ <article class="wpFeatureCard"><h3>⚙️ Weather Machine Builder</h3><p>Discover the linked physical processes behind the water cycle.</p><div class="wpCycle">☀️ Sunlight <span>↓</span> ♨️ Warm air rises <span>↓</span> ☁️ Clouds form <span>↓</span> 🌧️ Rain falls</div><button type="button" data-weather-open="machine">Start building →</button></article>
+ <article class="wpFeatureCard"><h3>📍 Your Weather Location</h3><p id="wpLocationNote">Choose any city above, or use local weather. No city is selected by default.</p><div class="wpCurrentSummary"><strong id="wpCurrentSummaryTemp">—</strong><span id="wpCurrentSummaryDesc">Use the location search to fetch weather data</span></div><button id="wpLocationChange" type="button">Change location ↑</button></article>
+ </div>
+ <h3 class="wpExpHeading">Hands-On Experiments</h3><div class="wpDashboardCards"><button data-weather-open="projectile">🎯<strong>Projectile Simulator</strong><small>Test how wind affects a water balloon.</small><span>Try It →</span></button><button data-weather-open="parachute">🪂<strong>Parachute Lab</strong><small>Explore falling speed and air resistance.</small><span>Try It →</span></button><button data-weather-open="clouds">☁️<strong>Cloud Formation</strong><small>Cool moist air to create a cloud.</small><span>Try It →</span></button><button data-weather-open="drag">💨<strong>Drag Force Explorer</strong><small>Compare different shapes in wind.</small><span>Try It →</span></button><button data-weather-open="machine">🌦️<strong>Weather Machine Builder</strong><small>Connect sunlight, evaporation and rain.</small><span>Open Builder →</span></button></div></div><div class="wpExperimentView" id="wpProjectileView" hidden><button class="wpBack" data-weather-home>← Weather Home</button><h3>🎯 Wind-Affected Projectile Simulator</h3><div class="wpLayout">
   <div class="wpControls">
    <label>Temperature <output id="wpTempOut">72°F</output><input id="wpTemp" type="range" min="-20" max="115" value="72"></label>
    <label>Wind speed <output id="wpWindOut">10 m/s</output><input id="wpWind" type="range" min="0" max="35" value="10"></label>
@@ -6416,6 +6462,29 @@ setTimeout(()=>{
  button.addEventListener('click',cityWeather);
  input.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();cityWeather()}});
  try{const saved=localStorage.getItem('weatherLabChosenCity');if(saved){input.value=saved;label.textContent='Previously searched: '+saved+' — press Find Weather to refresh'}}catch(e){}
+})();
+</script>
+<script>
+(function(){
+ const topics={
+ lightning:'Charge separation in storm clouds can produce enormous electric fields. Lightning occurs when air becomes conductive.',
+ tornadoes:'Strong wind shear and rising air can generate a rotating updraft. Stretching the rotating column increases angular speed.',
+ hurricanes:'Warm oceans supply heat and moisture. Condensation releases latent heat that helps fuel tropical cyclones.',
+ rainbows:'Raindrops refract and reflect sunlight. Different wavelengths bend by different amounts, separating the colors.',
+ snowflakes:'Ice crystals grow as water vapor deposits on their surfaces. Temperature and humidity affect their sixfold patterns.'
+ };
+ document.querySelectorAll('[data-weather-topic]').forEach(b=>b.addEventListener('click',()=>document.getElementById('wpTopicDetail').textContent=topics[b.dataset.weatherTopic]));
+ ['wpMapChoose','wpLocationChange'].forEach(id=>document.getElementById(id).addEventListener('click',()=>{
+ document.getElementById('wpCityInput').focus();document.getElementById('weatherLabPage').scrollTo({top:0,behavior:'smooth'});
+ }));
+ const locationLabel=document.getElementById('wpCityChosen'),note=document.getElementById('wpLocationNote'),summary=document.getElementById('wpCurrentSummaryDesc'),temp=document.getElementById('wpCurrentSummaryTemp');
+ function refresh(){
+ const text=locationLabel.textContent||'';
+ if(text.startsWith('📍 ')){note.textContent=text;summary.textContent='Weather from Open-Meteo for the selected location';temp.textContent=document.getElementById('wpHomeTemp').textContent;}
+ else{note.textContent='Choose any city above, or use local weather. No fixed default city.';summary.textContent='Select a city to show its current weather';temp.textContent='—';}
+ }
+ new MutationObserver(refresh).observe(locationLabel,{childList:true,characterData:true,subtree:true});
+ refresh();
 })();
 </script>
 </body>
