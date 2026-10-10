@@ -775,6 +775,28 @@ header{min-height:50px;padding:5px 10px;background:#102839}
  #tray .tileExtra:not(.tileShown),#fluidTray .tileExtra:not(.tileShown),.labTray .tileExtra:not(.tileShown){display:none}
  #rubeTray .rubeToolHeader,#rubeTray .rubePartsRow{flex-wrap:wrap;overflow:visible}
 }
+
+/* Desktop browsers at increased zoom may have CSS widths below 951px.
+   Keep compact square tiles on mouse/trackpad devices instead of old phone row rules. */
+@media (min-width:700px) and (max-width:950px) and (pointer:fine){
+ #tray,#fluidTray,.labTray{grid-auto-flow:row!important;grid-auto-columns:auto!important;grid-template-columns:repeat(auto-fill,minmax(64px,1fr))!important;
+   gap:6px!important;padding:6px 8px!important;overflow-x:hidden!important;overflow-y:hidden!important;align-content:start!important;align-items:stretch!important}
+ #tray{display:grid!important}
+ #fluidTray,.labTray{display:none!important}
+ #fluidTray.show,.labTray.show{display:grid!important}
+ #tray:not(.tileExpanded),#fluidTray:not(.tileExpanded),.labTray:not(.tileExpanded){grid-template-rows:64px!important;max-height:76px!important}
+ #tray.tileExpanded,#fluidTray.tileExpanded,.labTray.tileExpanded{max-height:43dvh!important;overflow-y:auto!important}
+ #tray button.partButton,#fluidTray button.fluidButton,.labTray button.labButton,.tileMoreButton{
+  box-sizing:border-box!important;width:100%!important;min-width:0!important;max-width:none!important;height:auto!important;min-height:64px!important;
+  flex:none!important;aspect-ratio:1!important;display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;
+  gap:2px!important;padding:4px 2px!important;white-space:normal!important;text-align:center!important;font-size:10px!important;
+  border-radius:11px!important;background:linear-gradient(180deg,#294462,#1f344c)!important}
+ #tray .icon,#fluidTray .icon,.labTray .icon,.tileMoreButton .icon{display:block!important;font-size:20px!important;line-height:1.1!important;margin:0!important}
+ #tray .tileCaption,#fluidTray .tileCaption,.labTray .tileCaption{display:block!important;font-size:9px!important;line-height:1.1!important;white-space:normal!important}
+ #tray .tileExtra:not(.tileShown),#fluidTray .tileExtra:not(.tileShown),.labTray .tileExtra:not(.tileShown){display:none!important}
+ .uiPhoneNav,.uiAddTool,.uiFullScreen,.uiCloseTools{display:none!important}
+ .modebar{display:flex!important}
+}
 </style>
 </head>
 <body>
