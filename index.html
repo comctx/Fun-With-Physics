@@ -804,6 +804,9 @@ header{
   <button class="labButton" data-air-part="parachute"><span class="icon">🪂</span>Parachute</button>
   <button class="labButton" data-air-part="airjet"><span class="icon">💨</span>Air Jet</button>
   <button class="labButton" data-air-part="wind"><span class="icon">🌬️</span>Wind Tunnel</button>
+  <button class="labButton" data-air-part="vortex"><span class="icon">🌪️</span>Vortex Generator</button>
+  <button class="labButton" data-air-part="deflector"><span class="icon">🔄</span>Air Deflector</button>
+  <button class="labButton" data-air-part="vent"><span class="icon">🚪</span>Air Vent</button>
   <button class="labButton" data-air-part="dragblock"><span class="icon">⬛</span>Drag Block</button>
   <button class="labButton" id="airRunBtn"><span class="icon">▶️</span>Start Air</button>
   <button class="labButton" id="airExplainBtn"><span class="icon">💡</span>What Happened?</button>
@@ -2936,6 +2939,9 @@ function makeLabPart(type,x=width*.5,y=height*.45){
   if(type==='balloon') return {...base,r:28};
   if(type==='parachute') return {...base,w:70,h:70};
   if(type==='airjet') return {...base,w:80,h:48};
+  if(type==='vortex') return {...base,r:48};
+  if(type==='deflector') return {...base,w:92,h:18,angle:-.65};
+  if(type==='vent') return {...base,w:84,h:32,angle:0};
   if(type==='wind') return {...base,w:220,h:120};
   if(type==='dragblock') return {...base,w:55,h:55};
   if(type==='battery') return {...base,w:90,h:50};
@@ -2961,7 +2967,7 @@ function makeLabPart(type,x=width*.5,y=height*.45){
 }
 
 function labName(type){
-  return ({balloon:'Balloon',parachute:'Parachute',airjet:'Air Jet',wind:'Wind Tunnel',
+  return ({balloon:'Balloon',parachute:'Parachute',airjet:'Air Jet',wind:'Wind Tunnel',vortex:'Vortex Generator',deflector:'Air Deflector',vent:'Air Vent',
     dragblock:'Drag Block',battery:'Battery',wire:'Wire',switch:'Switch',
     bulb:'Bulb',motor:'Motor',magnet:'Electromagnet',metalball:'Metal Ball',
     lever:'Lever',pulley1:'Single Pulley',pulley2:'Double Pulley',gearSmall:'Small Gear',
@@ -3453,6 +3459,47 @@ function updateLab(dt){
             o.vy+=Math.sin(a)*force*dt;
           }
         });
+        // Vortex: tangential swirl plus gentle suction toward the center.
+        labObjects.filter(j=>j.type==='vortex').forEach(j=>{
+          const dx=o.x-j.x,dy=o.y-j.y,d=Math.hypot(dx,dy);
+          const range=210*(j.scale||1);
+          if(d>5&&d<range){
+            const strength=(1-d/range)*(j.scale||1);
+            o.vx+=(-dy/d*480-dx/d*160)*strength*dt;
+            o.vy+=(dx/d*480-dy/d*160)*strength*dt;
+          }
+        });
+        // A vent sends a steady stream along its rotated facing direction.
+        labObjects.filter(j=>j.type==='vent').forEach(j=>{
+          const a=j.angle||0,dx=o.x-j.x,dy=o.y-j.y;
+          const ahead=dx*Math.cos(a)+dy*Math.sin(a);
+          const side=-dx*Math.sin(a)+dy*Math.cos(a);
+          const range=260*(j.scale||1);
+          if(ahead>0&&ahead<range&&Math.abs(side)<52*(j.scale||1)){
+            const force=430*(j.scale||1)*(1-ahead/range);
+            o.vx+=Math.cos(a)*force*dt;
+            o.vy+=Math.sin(a)*force*dt;
+          }
+        });
+        // Deflectors do not create wind; they redirect existing moving objects.
+        labObjects.filter(j=>j.type==='deflector').forEach(j=>{
+          const a=j.angle||0,dx=o.x-j.x,dy=o.y-j.y;
+          const lx=dx*Math.cos(a)+dy*Math.sin(a);
+          const ly=-dx*Math.sin(a)+dy*Math.cos(a);
+          const size=(o.r||Math.max(o.w||40,o.h||40)/3)*(o.scale||1);
+          if(Math.abs(lx)<46*(j.scale||1)+size&&Math.abs(ly)<9*(j.scale||1)+size){
+            const tangentX=Math.cos(a),tangentY=Math.sin(a);
+            const along=o.vx*tangentX+o.vy*tangentY;
+            const speed=Math.hypot(o.vx,o.vy);
+            if(speed>12){
+              const direction=along>=0?1:-1;
+              o.vx=tangentX*direction*speed*.92;
+              o.vy=tangentY*direction*speed*.92;
+              o.x+=-Math.sin(a)*Math.sign(ly||1)*3;
+              o.y+=Math.cos(a)*Math.sign(ly||1)*3;
+            }
+          }
+        });
         o.x+=o.vx*dt;o.y+=o.vy*dt;o.vx*=.985;
         if(o.y<25){o.y=25;o.vy=0}
         if(o.y>height-30){o.y=height-30;o.vy=0}
@@ -3636,6 +3683,9 @@ function drawLab(){
     if(o.type==='parachute'){ctx.fillStyle='#f5c94e';ctx.beginPath();ctx.arc(0,-12,32,Math.PI,0);ctx.fill();ctx.strokeStyle='#eee';ctx.beginPath();ctx.moveTo(-28,-10);ctx.lineTo(-12,28);ctx.moveTo(28,-10);ctx.lineTo(12,28);ctx.stroke();ctx.fillStyle='#8a5d3b';ctx.fillRect(-13,24,26,18);}
     if(o.type==='airjet'){ctx.fillStyle='#607d8b';ctx.fillRect(-40,-24,80,48);ctx.fillStyle='#a7ebff';ctx.font='bold 12px Arial';ctx.textAlign='center';ctx.fillText('AIR JET',0,4);ctx.fillText('➜',52,5);}
     if(o.type==='wind'){ctx.strokeStyle='#7fdcff';ctx.lineWidth=4;ctx.strokeRect(-110,-60,220,120);ctx.fillStyle='rgba(127,220,255,.12)';ctx.fillRect(-110,-60,220,120);ctx.fillStyle='#fff';ctx.font='bold 11px Arial';ctx.textAlign='center';ctx.fillText('WIND TUNNEL ➜',0,-42);}
+    if(o.type==='vortex'){ctx.strokeStyle='#68d9ff';ctx.lineWidth=4;for(let k=0;k<3;k++){ctx.beginPath();ctx.arc(0,0,13+k*13,(performance.now()/600+k)*1.2,(performance.now()/600+k)*1.2+Math.PI*1.4);ctx.stroke()}ctx.fillStyle='#fff';ctx.font='bold 10px Arial';ctx.textAlign='center';ctx.fillText('VORTEX',0,58);}
+    if(o.type==='deflector'){ctx.fillStyle='#e8bd6b';ctx.fillRect(-46,-9,92,18);ctx.fillStyle='#172633';ctx.font='bold 11px Arial';ctx.textAlign='center';ctx.fillText('DEFLECT',0,4);}
+    if(o.type==='vent'){ctx.fillStyle='#587584';ctx.fillRect(-42,-16,84,32);ctx.strokeStyle='#acebff';ctx.lineWidth=3;for(let k=-25;k<=25;k+=12){ctx.beginPath();ctx.moveTo(k,-12);ctx.lineTo(k,12);ctx.stroke()}ctx.fillStyle='#acebff';ctx.font='bold 19px Arial';ctx.fillText('➜',55,7);}
     if(o.type==='dragblock'){ctx.fillStyle='#9fa9b1';ctx.fillRect(-27,-27,54,54);ctx.fillStyle='#fff';ctx.font='10px Arial';ctx.textAlign='center';ctx.fillText('DRAG',0,4);}
     if(o.type==='battery'){ctx.fillStyle='#355f3f';ctx.fillRect(-45,-25,90,50);ctx.fillStyle='#fff';ctx.font='bold 13px Arial';ctx.textAlign='center';ctx.fillText('BATTERY',0,5);ctx.fillText('+',35,-32);ctx.fillText('−',-35,-32);}
     if(o.type==='wire'){
