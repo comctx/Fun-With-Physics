@@ -2584,7 +2584,23 @@ function winGame(){
   }
 
   if(!challengeRequirementsMet()){
-    document.getElementById('status').textContent='The bell rang, but the challenge goal was not completed yet.';
+    // A bell strike is real, but it isn't a challenge victory until the goal is met.
+    running=false;
+    updateMainRunButtons();
+    updateUndoRedoButtons();
+    updateTrayLocks();
+    playSound('bell');
+    document.getElementById('status').textContent='Bell rang! Challenge not complete: '+(activeChallenge?.text||'Check the goal.');
+    if(successDelayTimer)clearTimeout(successDelayTimer);
+    successDelayTimer=setTimeout(()=>{
+      successDelayTimer=null;
+      if(running||won||gameMode!=='challenge')return;
+      const overlay=document.getElementById('successOverlay');
+      document.getElementById('successTitle').textContent='🔔 Bell Rang!';
+      document.getElementById('successStars').textContent='☆☆☆';
+      document.getElementById('successMessage').textContent='Nice reaction! Challenge not complete. '+(activeChallenge?.text||'Review the challenge goal.')+' Current Absurdity Score: '+calculateAbsurdity()+'.';
+      overlay.classList.add('open');
+    },3000);
     return;
   }
 
@@ -2593,6 +2609,7 @@ function winGame(){
   updateMainRunButtons();
   playSound('bell');
 
+  document.getElementById('successTitle').textContent='🔔 DING!';
   const stars=calculateStars();
   // Let players see the completed chain reaction before showing the results.
   if(successDelayTimer)clearTimeout(successDelayTimer);
