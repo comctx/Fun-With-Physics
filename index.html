@@ -713,7 +713,6 @@ header{
   <button class="partButton" data-part="pendulum"><span class="icon">🕰️</span>Pendulum</button>
   <button class="partButton" data-part="blast"><span class="icon">💥</span>Blast</button>
   <button class="partButton" data-part="bell"><span class="icon">🔔</span>Bell</button>
-  <button class="partButton" id="mechanicsTestBtn"><span class="icon">▶️</span>Test Machine</button>
 </div>
 
 <div id="rubeTray">
@@ -1709,13 +1708,7 @@ function resetRunState(){
 
 function updateMainRunButtons(){
   const top=document.getElementById('runBtn');
-  const test=document.getElementById('mechanicsTestBtn');
   if(top) top.textContent=running?'■ STOP':'▶ RUN';
-  if(test){
-    const icon=test.querySelector('.icon');
-    if(icon) icon.textContent=running?'⏹️':'▶️';
-    test.lastChild.textContent=running?' Stop & Build':' Test Machine';
-  }
 }
 
 function startRun(){
@@ -1751,9 +1744,6 @@ function stopRun(){
 }
 
 document.getElementById('runBtn').addEventListener('click',()=>{
-  if(running) stopRun(); else startRun();
-});
-document.getElementById('mechanicsTestBtn').addEventListener('click',()=>{
   if(running) stopRun(); else startRun();
 });
 
