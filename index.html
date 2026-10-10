@@ -1882,21 +1882,67 @@ function updateBall(ball,dt){
       }
     }
 
-    if(o.type==='domino'){
-      const s=o.scale||1;
-      if(!o.falling&&Math.abs(ball.x-o.x)<28*s&&Math.abs(ball.y-o.y)<48*s){
-        o.falling=true;
-        o.angularVelocity=ball.x<o.x?.9:-.9;
-        ball.vx+=o.angularVelocity*70;
-        playSound('domino');
-        o.sounded=true;
-      }
-    }
   });
 
+  const previousX=ball.x,previousY=ball.y;
   ball.x+=ball.vx*dt;
   ball.y+=ball.vy*dt;
+  dominoBallCollision(ball,previousX,previousY);
   groundCollision(ball);
+}
+
+/* Resolve ball/domino contact as a solid collision, including fast-moving balls. */
+function dominoBallCollision(ball,previousX,previousY){
+  const endX=ball.x,endY=ball.y,dx=endX-previousX,dy=endY-previousY;
+  const radius=ball.radius*(ball.scale||1);
+  let best=null;
+  for(const d of objects){
+    if(d.type!=='domino')continue;
+    const scale=d.scale||1,halfW=d.width*scale/2,halfH=d.height*scale/2;
+    const ca=Math.cos(d.angle||0),sa=Math.sin(d.angle||0);
+    // Swept circle against the oriented domino rectangle: find first overlap.
+    const steps=Math.max(2,Math.min(80,Math.ceil(Math.hypot(dx,dy)/Math.max(2,radius*.35))));
+    for(let i=0;i<=steps;i++){
+      const t=i/steps,x=previousX+dx*t,y=previousY+dy*t;
+      const lx=(x-d.x)*ca+(y-d.y)*sa;
+      const ly=-(x-d.x)*sa+(y-d.y)*ca;
+      const cx=Math.max(-halfW,Math.min(halfW,lx));
+      const cy=Math.max(-halfH,Math.min(halfH,ly));
+      if((lx-cx)**2+(ly-cy)**2>=radius*radius)continue;
+      if(!best||t<best.t)best={d,t,lx,ly,cx,cy,ca,sa,halfW,halfH};
+      break;
+    }
+  }
+  if(!best)return;
+  const {d,t,lx,ly,cx,cy,ca,sa,halfW,halfH}=best;
+  let nx=lx-cx,ny=ly-cy;
+  if(Math.hypot(nx,ny)<1e-5){
+    // Ball center inside rectangle: choose closest face, favor approach direction.
+    const faces=[
+      {dist:halfW+lx,x:-1,y:0},{dist:halfW-lx,x:1,y:0},
+      {dist:halfH+ly,x:0,y:-1},{dist:halfH-ly,x:0,y:1}
+    ].sort((a,b)=>a.dist-b.dist);
+    nx=faces[0].x;ny=faces[0].y;
+  }else{const len=Math.hypot(nx,ny);nx/=len;ny/=len}
+  const worldNX=nx*ca-ny*sa,worldNY=nx*sa+ny*ca;
+  const penetration=radius-Math.hypot(lx-cx,ly-cy);
+  ball.x=previousX+dx*t+worldNX*Math.max(0,penetration+.6);
+  ball.y=previousY+dy*t+worldNY*Math.max(0,penetration+.6);
+  const normalSpeed=ball.vx*worldNX+ball.vy*worldNY;
+  if(normalSpeed<0){
+    const restitution=d.falling?.12:.22;
+    ball.vx-=(1+restitution)*normalSpeed*worldNX;
+    ball.vy-=(1+restitution)*normalSpeed*worldNY;
+    // Standing domino absorbs momentum rather than allowing the ball through.
+    if(!d.falling){ball.vx*=.55;ball.vy*=.75}
+  }
+  if(!d.falling){
+    d.falling=true;
+    const direction=ball.vx>=0?1:-1;
+    d.angularVelocity=direction*.9;
+    playSound('domino');
+    d.sounded=true;
+  }
 }
 
 function updateRubeIntegration(dt,ball){
