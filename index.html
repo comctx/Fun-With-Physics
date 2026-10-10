@@ -2130,7 +2130,9 @@ function startRun(){
   updateTrayLocks();
 }
 
+let successDelayTimer=null;
 function stopRun(){
+  if(successDelayTimer){clearTimeout(successDelayTimer);successDelayTimer=null;}
   if(!running&&!runSnapshot) return;
   running=false;
   if(runSnapshot) objects=cloneMachine(runSnapshot);
@@ -2585,7 +2587,12 @@ function winGame(){
   playSound('bell');
 
   const stars=calculateStars();
-  showSuccess(stars);
+  // Let players see the completed chain reaction before showing the results.
+  if(successDelayTimer)clearTimeout(successDelayTimer);
+  successDelayTimer=setTimeout(()=>{
+    successDelayTimer=null;
+    if(won)showSuccess(stars);
+  },3000);
   flash=1;
 
   updateUndoRedoButtons();
