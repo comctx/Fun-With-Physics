@@ -797,6 +797,37 @@ header{min-height:50px;padding:5px 10px;background:#102839}
  .uiPhoneNav,.uiAddTool,.uiFullScreen,.uiCloseTools{display:none!important}
  .modebar{display:flex!important}
 }
+
+/* Desktop tool picker floats over the simulation instead of consuming its height. */
+#desktopToolsToggle{display:none}
+@media(min-width:951px), (min-width:700px) and (max-width:950px) and (pointer:fine){
+ #app{position:relative}
+ #desktopToolsToggle{display:block;position:absolute;top:12px;left:12px;z-index:19;
+  min-height:38px;padding:7px 14px;border-radius:10px;background:#116c9d;
+  border:1px solid #58c9f8;color:#fff;box-shadow:0 3px 12px #0007;font-weight:700}
+ #tray,#fluidTray,.labTray{display:none!important}
+ #app.desktopToolsOpen #tray:not([style*="display: none"]),
+ #app.desktopToolsOpen #fluidTray.show,
+ #app.desktopToolsOpen .labTray.show{
+  display:grid!important;position:absolute!important;top:auto!important;bottom:10px!important;
+  left:12px!important;right:12px!important;width:auto!important;z-index:18!important;
+  max-height:min(52dvh,290px)!important;overflow-y:auto!important;overflow-x:hidden!important;
+  grid-template-columns:repeat(auto-fill,minmax(64px,1fr))!important;grid-auto-flow:row!important;
+  grid-template-rows:none!important;gap:6px!important;padding:10px!important;
+  border:1px solid #477184!important;border-radius:12px!important;
+  box-shadow:0 8px 26px #000a!important;background:#142b3b!important
+ }
+ #app.desktopToolsOpen #tray .tileExtra:not(.tileShown),
+ #app.desktopToolsOpen #fluidTray .tileExtra:not(.tileShown),
+ #app.desktopToolsOpen .labTray .tileExtra:not(.tileShown){display:none!important}
+ #app.desktopToolsOpen #tray button.partButton,
+ #app.desktopToolsOpen #fluidTray button.fluidButton,
+ #app.desktopToolsOpen .labTray button.labButton{
+  display:flex!important;flex-direction:column!important;width:100%!important;
+  min-width:0!important;min-height:64px!important;aspect-ratio:1!important;
+  white-space:normal!important;align-items:center!important;justify-content:center!important
+ }
+}
 </style>
 </head>
 <body>
@@ -1010,6 +1041,7 @@ header{min-height:50px;padding:5px 10px;background:#102839}
 </div>
 
 <div id="workspace">
+<button id="desktopToolsToggle" type="button" aria-expanded="false" aria-controls="tray" title="Show or hide tools">＋ Tools</button>
 <button class="uiAddTool" id="uiAddTool" type="button">＋ Add Tool</button><button class="uiCloseTools" id="uiCloseTools" type="button">✕ Close Tools</button><button class="uiFullScreen" id="uiFullScreen" type="button" title="Expand simulation">⛶</button>
 
 <div id="tsunamiLab" aria-label="Tsunami Generator">
@@ -5838,5 +5870,20 @@ setTimeout(()=>{
 })();
 </script>
 
+<script>
+(function(){
+ const app=document.getElementById('app'),toggle=document.getElementById('desktopToolsToggle');
+ const close=()=>{app.classList.remove('desktopToolsOpen');toggle.setAttribute('aria-expanded','false');toggle.textContent='＋ Tools'};
+ toggle.addEventListener('click',()=>{
+  const open=app.classList.toggle('desktopToolsOpen');
+  toggle.setAttribute('aria-expanded',String(open));toggle.textContent=open?'✕ Close Tools':'＋ Tools';
+ });
+ document.querySelectorAll('.modebar button').forEach(b=>b.addEventListener('click',close));
+ document.querySelectorAll('#tray button,#fluidTray button,.labTray button').forEach(b=>{
+  if(b.classList.contains('tileMoreButton'))return;
+  b.addEventListener('click',close);
+ });
+})();
+</script>
 </body>
 </html>
