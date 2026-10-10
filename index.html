@@ -663,6 +663,22 @@ header{
 
 @media(max-width:680px){.waveBody{flex-direction:column;overflow:auto}.waveControls{width:100%;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;padding:9px}.waveControls h2,.waveControls p{grid-column:1/-1}.waveControls label{font-size:11px;margin:0}.waveControls button{margin:0}.waveStage{min-height:240px;flex:1}.waveHeader{font-size:12px}}
 @media(max-height:450px) and (orientation:landscape){.waveBody{flex-direction:row;overflow:hidden}.waveControls{width:235px;display:block;overflow:auto}.waveStage{min-height:0}}
+
+#tsunamiLab{display:none;position:absolute;inset:0;z-index:13;background:#102b40;color:white;flex-direction:column;min-height:0}
+#tsunamiLab.open{display:flex}
+.tsHeader{background:#162b3e;padding:7px 10px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.tsBody{display:flex;flex:1;min-height:0;gap:8px;padding:8px}
+.tsControls{flex:0 0 260px;background:#1b354b;border-radius:10px;padding:12px;overflow:auto}
+.tsControls label{display:block;font-size:13px;font-weight:bold;margin:10px 0}
+.tsControls input{width:100%;accent-color:#60c6fc}
+.tsControls button{min-height:37px}
+.tsActions{display:flex;gap:6px;position:sticky;bottom:0;background:#1b354b;padding:7px 0;z-index:3}
+.tsActions button{flex:1}
+.tsParts{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:9px 0}
+.tsStage{flex:1;min-width:0;position:relative;border:3px solid #496c83;border-radius:10px;background:#154568;overflow:hidden}
+#tsunamiCanvas{width:100%;height:100%;display:block;touch-action:none}
+@media(max-width:680px){.tsBody{flex-direction:column;overflow:auto}.tsControls{flex:none;padding:8px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}.tsControls h3,.tsParts,.tsActions,.tsControls small{grid-column:1/-1}.tsControls label{font-size:11px;margin:3px}.tsStage{flex:1;min-height:240px}.tsHeader{font-size:12px}}
+@media(max-height:450px) and (orientation:landscape){.tsBody{flex-direction:row;overflow:hidden}.tsControls{display:block;flex:0 0 240px;overflow:auto}.tsStage{min-height:0}}
 </style>
 </head>
 <body>
@@ -790,6 +806,7 @@ header{
 </div>
 
 <div id="fluidTray">
+  <button class="fluidButton" id="tsunamiGeneratorBtn"><span class="icon">🌊</span>Tsunami Generator</button>
   <button class="fluidButton" id="waveGeneratorBtn"><span class="icon">🌊</span>Wave Generator</button>
   <button class="fluidButton" data-fluid-part="source"><span class="icon">💧</span>Water Source</button>
   <button class="fluidButton" data-fluid-part="pipe"><span class="icon">🚰</span>Pipe</button>
@@ -874,6 +891,23 @@ header{
 </div>
 
 <div id="workspace">
+
+<div id="tsunamiLab" aria-label="Tsunami Generator">
+ <div class="tsHeader"><strong>🌊 Tsunami Generator</strong><button type="button" id="tsClose">✕ Back to Fluid Physics</button></div>
+ <div class="tsBody">
+  <div class="tsControls">
+   <h3>Tsunami Generator</h3>
+   <label>Wave Height <output id="tsHeightOut">3.0 m</output><input id="tsHeight" type="range" min=".5" max="8" step=".5" value="3"></label>
+   <label>Wave Width <output id="tsWidthOut">5.0 m</output><input id="tsWidth" type="range" min="2" max="12" step=".5" value="5"></label>
+   <label>Wave Speed <output id="tsSpeedOut">2.0 m/s</output><input id="tsSpeed" type="range" min=".5" max="6" step=".5" value="2"></label>
+   <div class="tsActions"><button type="button" id="tsLaunch" style="background:#176fad">▶ Launch Tsunami</button><button type="button" id="tsReset">↺ Reset Wave</button></div>
+   <strong>Add test objects</strong>
+   <div class="tsParts"><button type="button" data-ts-add="duck">🦆 Duck</button><button type="button" data-ts-add="crate">📦 Crate</button><button type="button" data-ts-add="dock">🪵 Dock</button><button type="button" id="tsRemove">Remove Selected</button><button type="button" id="tsClear">Clear Objects</button></div>
+   <small>Tap to add. Drag objects in the water. Tap an object and choose Remove Selected.</small>
+  </div>
+  <div class="tsStage"><canvas id="tsunamiCanvas"></canvas></div>
+ </div>
+</div>
 
   <div id="waveLab" aria-label="Wave Generator Experiment">
     <div class="waveHeader"><strong>🌊 Wave Generator — Fluid Physics</strong><button id="waveCloseBtn">✕ Back to Fluid Physics</button></div>
@@ -5552,6 +5586,54 @@ setTimeout(()=>{
   cx.fillStyle='#153d53';cx.font='bold 12px Arial';cx.fillText('Moving paddle',40,Math.max(20,baseline-amp-38));cx.fillText('Reflected waves',Math.max(30,w-150),Math.max(20,baseline-amp-38));
  }
  requestAnimationFrame(draw);
+})();
+</script>
+<script>
+(function(){
+ const panel=document.getElementById('tsunamiLab'),canvas=document.getElementById('tsunamiCanvas'),ctx=canvas.getContext('2d');
+ const hEl=document.getElementById('tsHeight'),wEl=document.getElementById('tsWidth'),sEl=document.getElementById('tsSpeed');
+ const objects=[];let selected=null,dragging=null,active=false,travel=-250,last=0;
+ const value=(el)=>Number(el.value);
+ function labels(){document.getElementById('tsHeightOut').textContent=value(hEl).toFixed(1)+' m';document.getElementById('tsWidthOut').textContent=value(wEl).toFixed(1)+' m';document.getElementById('tsSpeedOut').textContent=value(sEl).toFixed(1)+' m/s'}
+ [hEl,wEl,sEl].forEach(el=>el.addEventListener('input',labels));
+ document.getElementById('tsunamiGeneratorBtn').addEventListener('click',()=>{document.getElementById('waveLab').classList.remove('open');panel.classList.add('open');labels()});
+ document.getElementById('tsClose').addEventListener('click',()=>{panel.classList.remove('open');active=false});
+ document.getElementById('tsLaunch').addEventListener('click',()=>{travel=-value(wEl)*20;active=true});
+ document.getElementById('tsReset').addEventListener('click',()=>{travel=-250;active=false;objects.forEach(o=>{o.offset=0;o.spin=0})});
+ document.querySelectorAll('[data-ts-add]').forEach(b=>b.addEventListener('click',()=>{const type=b.dataset.tsAdd;const x=Math.max(80,canvas.clientWidth*(.46+objects.length*.1));objects.push({type,x,yOffset:0,spin:0});selected=objects[objects.length-1]}));
+ document.getElementById('tsClear').addEventListener('click',()=>{objects.length=0;selected=null});
+ document.getElementById('tsRemove').addEventListener('click',()=>{if(!selected)return;const index=objects.indexOf(selected);if(index>=0)objects.splice(index,1);selected=null});
+ const pointer=e=>{const r=canvas.getBoundingClientRect();return{x:e.clientX-r.left,y:e.clientY-r.top}};
+ canvas.addEventListener('pointerdown',e=>{const p=pointer(e),base=canvas.clientHeight*.58;selected=[...objects].reverse().find(o=>Math.abs(o.x-p.x)<42&&Math.abs(base+(o.yOffset||0)-p.y)<70)||null;dragging=selected;if(dragging)canvas.setPointerCapture(e.pointerId)});
+ canvas.addEventListener('pointermove',e=>{if(dragging){const p=pointer(e);dragging.x=Math.max(30,Math.min(canvas.clientWidth-30,p.x))}});
+ canvas.addEventListener('pointerup',()=>{dragging=null});canvas.addEventListener('pointercancel',()=>{dragging=null});
+ function frame(now){
+  requestAnimationFrame(frame);if(!panel.classList.contains('open')){last=now;return}
+  const dt=Math.min(.05,(now-last)/1000||0);last=now;
+  const bounds=canvas.getBoundingClientRect(),W=Math.max(1,bounds.width),H=Math.max(1,bounds.height),dpr=Math.min(2,window.devicePixelRatio||1);
+  if(canvas.width!==Math.round(W*dpr)||canvas.height!==Math.round(H*dpr)){canvas.width=Math.round(W*dpr);canvas.height=Math.round(H*dpr)}
+  ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,W,H);
+  const base=H*.58,amplitude=value(hEl)*Math.min(14,H*.035),spread=value(wEl)*26;
+  if(active){travel+=dt*value(sEl)*65;if(travel>W+spread*3)active=false}
+  const surface=x=>base-(active?amplitude*Math.exp(-Math.pow((x-travel)/spread,2))*1.5:0);
+  const fill=ctx.createLinearGradient(0,base-100,0,H);fill.addColorStop(0,'#23a6dd');fill.addColorStop(1,'#065275');
+  ctx.beginPath();ctx.moveTo(0,surface(0));for(let x=3;x<=W;x+=3)ctx.lineTo(x,surface(x));ctx.lineTo(W,H);ctx.lineTo(0,H);ctx.closePath();ctx.fillStyle=fill;ctx.fill();
+  ctx.beginPath();for(let x=0;x<=W;x+=3){if(!x)ctx.moveTo(x,surface(x));else ctx.lineTo(x,surface(x))}ctx.strokeStyle='#b4f4ff';ctx.lineWidth=4;ctx.stroke();
+  ctx.fillStyle='#576b7e';ctx.fillRect(0,base-95,17,H-base+95);ctx.fillRect(W-17,base-95,17,H-base+95);
+  for(const o of objects){
+   const near=active?Math.exp(-Math.pow((o.x-travel)/spread,2)):0;
+   if(o.type!=='dock'&&active&&dragging!==o){o.x=Math.min(W-34,o.x+near*dt*value(sEl)*(o.type==='crate'?24:40));o.spin=(o.spin||0)+near*dt*(o.type==='crate'?1.8:1)}
+   const y=surface(o.x),slope=(surface(Math.min(W,o.x+5))-surface(Math.max(0,o.x-5)))/10;
+   ctx.save();ctx.translate(o.x,y);ctx.rotate(o.type==='dock'?0:Math.atan(slope)*.8+Math.sin(o.spin||0)*near*.3);
+   if(o.type==='duck'){ctx.fillStyle='#ffcf30';ctx.beginPath();ctx.ellipse(0,-13,19,12,0,0,Math.PI*2);ctx.fill();ctx.beginPath();ctx.arc(11,-24,10,0,Math.PI*2);ctx.fill();ctx.fillStyle='#f68b27';ctx.beginPath();ctx.moveTo(17,-22);ctx.lineTo(30,-19);ctx.lineTo(17,-16);ctx.fill();ctx.fillStyle='#222';ctx.beginPath();ctx.arc(14,-27,2,0,Math.PI*2);ctx.fill();}
+   else if(o.type==='crate'){ctx.fillStyle='#a97b42';ctx.fillRect(-17,-34,34,34);ctx.strokeStyle='#5e411f';ctx.lineWidth=3;ctx.strokeRect(-17,-34,34,34);ctx.beginPath();ctx.moveTo(-17,-34);ctx.lineTo(17,0);ctx.moveTo(17,-34);ctx.lineTo(-17,0);ctx.stroke()}
+   else{ctx.fillStyle='#9a6b3b';ctx.fillRect(-36,-42,72,10);ctx.fillStyle='#71502e';ctx.fillRect(-26,-32,8,32);ctx.fillRect(20,-32,8,32);ctx.fillStyle='#e94141';ctx.fillRect(8,-66,2,25);ctx.beginPath();ctx.moveTo(10,-66);ctx.lineTo(29,-57);ctx.lineTo(10,-51);ctx.fill()}
+   if(selected===o){ctx.strokeStyle='#ffe46c';ctx.lineWidth=2;ctx.strokeRect(-42,-72,84,80)}
+   ctx.restore();
+  }
+  ctx.fillStyle='#e1f7ff';ctx.font='bold 13px Arial';ctx.fillText(active?'Wave traveling →':'Ready to launch',27,25);
+ }
+ requestAnimationFrame(frame);
 })();
 </script>
 </body>
