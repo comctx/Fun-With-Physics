@@ -653,7 +653,14 @@ header{
 .waveControls input{width:100%;accent-color:#5dd8ff}
 .waveControls button{margin-top:10px;width:100%}
 .waveStage{min-width:0;flex:1;background:linear-gradient(#88c9fa,#bbdef5);border:4px solid #526d80;border-radius:12px;overflow:hidden;position:relative}
-#waveCanvas{width:100%;height:100%;display:block;min-height:220px}
+#waveCanvas{width:100%;height:100%;display:block;min-height:220px;touch-action:none}
+.waveActions{display:flex;gap:7px;position:sticky;bottom:0;background:#192d41;padding:6px 0;z-index:2}
+.waveControls .waveActions button{margin:0;min-width:0;flex:1;padding:8px 5px}
+.waveObjects{margin-top:10px;border-top:1px solid #486475;padding-top:10px}
+.waveObjects strong{font-size:13px}.waveObjects small{display:block;font-size:11px;color:#b7d3e4;margin-top:6px}
+.waveObjectButtons{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-top:7px}
+.waveControls .waveObjectButtons button{margin:0;padding:7px 4px;min-height:37px;font-size:11px}
+
 @media(max-width:680px){.waveBody{flex-direction:column;overflow:auto}.waveControls{width:100%;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;padding:9px}.waveControls h2,.waveControls p{grid-column:1/-1}.waveControls label{font-size:11px;margin:0}.waveControls button{margin:0}.waveStage{min-height:240px;flex:1}.waveHeader{font-size:12px}}
 @media(max-height:450px) and (orientation:landscape){.waveBody{flex-direction:row;overflow:hidden}.waveControls{width:235px;display:block;overflow:auto}.waveStage{min-height:0}}
 </style>
@@ -877,7 +884,8 @@ header{
         <label>Height <output id="waveHeightValue">0.5 m</output><input id="waveHeightInput" type="range" min="0.1" max="1.0" step="0.1" value="0.5"></label>
         <label>Frequency <output id="waveFrequencyValue">1.0 Hz</output><input id="waveFrequencyInput" type="range" min="0.2" max="3" step="0.1" value="1"></label>
         <label>Wave Speed <output id="waveSpeedValue">1.0×</output><input id="waveSpeedInput" type="range" min="0.3" max="3" step="0.1" value="1"></label>
-        <button id="waveStartBtn" style="background:#168c4a">▶ Start Waves</button><button id="waveStopBtn">■ Stop</button>
+        <div class="waveActions"><button id="waveStartBtn" style="background:#168c4a">▶ Start Waves</button><button id="waveStopBtn">■ Stop</button></div>
+        <div class="waveObjects"><strong>Objects to test</strong><div class="waveObjectButtons"><button type="button" data-wave-object="buoy">🔴 Buoy</button><button type="button" data-wave-object="boat">⛵ Boat</button><button type="button" data-wave-object="cork">🟠 Cork</button><button type="button" id="waveClearObjects">Clear Objects</button></div><small>Tap an object to add it. Drag it across the tank.</small></div>
       </div>
       <div class="waveStage"><canvas id="waveCanvas"></canvas></div>
     </div>
@@ -5476,6 +5484,7 @@ setTimeout(()=>{
 (function(){
  const panel=document.getElementById('waveLab'),canvas=document.getElementById('waveCanvas'),cx=canvas.getContext('2d');
  let running=false,phase=0,last=0;
+ const floatingObjects=[];let dragged=null;
  const heightInput=document.getElementById('waveHeightInput'),freq=document.getElementById('waveFrequencyInput'),speed=document.getElementById('waveSpeedInput');
  function refreshLabels(){
   document.getElementById('waveHeightValue').textContent=Number(heightInput.value).toFixed(1)+' m';
@@ -5487,6 +5496,23 @@ setTimeout(()=>{
  document.getElementById('waveCloseBtn').addEventListener('click',()=>{panel.classList.remove('open');running=false});
  document.getElementById('waveStartBtn').addEventListener('click',()=>{running=true});
  document.getElementById('waveStopBtn').addEventListener('click',()=>{running=false});
+ document.querySelectorAll('[data-wave-object]').forEach(btn=>btn.addEventListener('click',()=>{
+   const type=btn.dataset.waveObject;
+   const x=(.28+(floatingObjects.length%4)*.15)*Math.max(200,canvas.clientWidth);
+   floatingObjects.push({type,x,drift:0});
+ }));
+ document.getElementById('waveClearObjects').addEventListener('click',()=>{floatingObjects.length=0});
+ function wavePointer(e){const rect=canvas.getBoundingClientRect();return {x:e.clientX-rect.left,y:e.clientY-rect.top}}
+ canvas.addEventListener('pointerdown',e=>{
+   const p=wavePointer(e),baseline=canvas.clientHeight*.54,amplitude=Number(heightInput.value)*Math.min(65,canvas.clientHeight*.17);
+   const wavelength=190*Number(speed.value)/Math.max(.3,Number(freq.value));
+   const waterY=x=>baseline+amplitude*(Math.sin(2*Math.PI*x/wavelength-phase)+.23*Math.sin(2*Math.PI*(2*canvas.clientWidth-x)/wavelength-phase-1));
+   dragged=[...floatingObjects].reverse().find(o=>Math.hypot(o.x-p.x,waterY(o.x)-p.y)<48)||null;
+   if(dragged){canvas.setPointerCapture(e.pointerId);dragged.x=p.x}
+ });
+ canvas.addEventListener('pointermove',e=>{if(dragged)dragged.x=Math.max(35,Math.min(canvas.clientWidth-35,wavePointer(e).x))});
+ canvas.addEventListener('pointerup',()=>{dragged=null});
+ canvas.addEventListener('pointercancel',()=>{dragged=null});
  function draw(now){
   requestAnimationFrame(draw);
   if(!panel.classList.contains('open')){last=now;return}
@@ -5503,6 +5529,25 @@ setTimeout(()=>{
   cx.strokeStyle='#ffffffaa';cx.setLineDash([9,9]);cx.beginPath();cx.moveTo(0,baseline);cx.lineTo(w,baseline);cx.stroke();cx.setLineDash([]);
   const paddleX=23+(running?Math.sin(phase)*Math.min(16,amp*.28):0);
   cx.fillStyle='#456070';cx.fillRect(paddleX-10,baseline-62,20,124);cx.fillStyle='#d0e5ec';cx.fillRect(paddleX,baseline-55,8,110);
+  // Floating test objects bob and tilt with the local wave profile.
+  for(const o of floatingObjects){
+    o.x=Math.max(38,Math.min(w-38,o.x));
+    if(running&&dragged!==o)o.x+=dt*(o.type==='boat'?7:3)*Number(speed.value);
+    const x=o.x,y=yAt(x),slope=(yAt(Math.min(w,x+4))-yAt(Math.max(0,x-4)))/8;
+    cx.save();cx.translate(x,y);
+    if(o.type==='boat'){
+      cx.rotate(Math.atan(slope)*.75);
+      cx.fillStyle='#6f4436';cx.beginPath();cx.moveTo(-27,-6);cx.lineTo(27,-6);cx.lineTo(17,10);cx.lineTo(-17,10);cx.closePath();cx.fill();
+      cx.strokeStyle='#f2f2ec';cx.lineWidth=2;cx.beginPath();cx.moveTo(0,-7);cx.lineTo(0,-48);cx.stroke();
+      cx.fillStyle='#fff6d7';cx.beginPath();cx.moveTo(2,-46);cx.lineTo(2,-9);cx.lineTo(24,-9);cx.closePath();cx.fill();
+    }else if(o.type==='buoy'){
+      cx.fillStyle='#f04445';cx.beginPath();cx.arc(0,-12,15,0,Math.PI*2);cx.fill();
+      cx.fillStyle='#fff';cx.fillRect(-12,-16,24,6);cx.strokeStyle='#fff';cx.lineWidth=2;cx.beginPath();cx.moveTo(0,-26);cx.lineTo(0,-37);cx.stroke();
+    }else{
+      cx.rotate(Math.atan(slope));cx.fillStyle='#e9a75a';cx.beginPath();cx.ellipse(0,-5,15,8,0,0,Math.PI*2);cx.fill();
+    }
+    cx.restore();
+  }
   cx.fillStyle='#263f50';cx.fillRect(w-16,baseline-115,16,230);
   cx.fillStyle='#153d53';cx.font='bold 12px Arial';cx.fillText('Moving paddle',40,Math.max(20,baseline-amp-38));cx.fillText('Reflected waves',Math.max(30,w-150),Math.max(20,baseline-amp-38));
  }
