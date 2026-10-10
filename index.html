@@ -905,6 +905,7 @@ header{min-height:50px;padding:5px 10px;background:#102839}
     <button id="promptBuildBtn" type="button" title="Build a starter machine from text">✨ Build</button>
     <button id="achievementBtn" type="button" aria-expanded="false" title="Achievements">🏆</button>
     <button id="soundBtn">🔊 Sound</button>
+    <button id="testBellBtn" type="button" title="Test the bell sound">🔔 Test</button>
     <button id="tutorialBtn">?</button>
     <button id="clearBtn">Clear</button>
     <button id="runBtn" class="run">▶ RUN</button>
@@ -2289,6 +2290,7 @@ function updateBall(ball,dt){
       if(dist<46*(o.scale||1)&&!o.rung){
         o.rung=true;
         achEvent('bell',o);
+        playSound('bell');
         winGame();
       }
     }
@@ -2524,7 +2526,7 @@ function updateDominoes(dt){
     if(running&&!won){
       for(const bell of objects.filter(o=>o.type==='bell'&&!o.rung)){
         if(Math.abs(tipX-bell.x)<38*(bell.scale||1)&&Math.abs(tipY-bell.y)<50*(bell.scale||1)){
-          bell.rung=true;achEvent('bell',bell);winGame();break;
+          bell.rung=true;achEvent('bell',bell);playSound('bell');winGame();break;
         }
       }
     }
@@ -3245,7 +3247,11 @@ document.getElementById('machineSaveOverlay').addEventListener('click',e=>{
 document.getElementById('soundBtn').addEventListener('click',()=>{
   soundEnabled=!soundEnabled;
   document.getElementById('soundBtn').textContent=soundEnabled?'🔊 Sound':'🔇 Muted';
-  if(soundEnabled) ensureAudio();
+  if(soundEnabled){ensureAudio();playSound('bell');}
+});
+document.getElementById('testBellBtn').addEventListener('click',()=>{
+  if(!soundEnabled){soundEnabled=true;document.getElementById('soundBtn').textContent='🔊 Sound';}
+  ensureAudio();playSound('bell');
 });
 
 document.getElementById('tutorialBtn').addEventListener('click',openTutorial);
