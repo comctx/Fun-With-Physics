@@ -850,9 +850,22 @@ header{min-height:50px;padding:5px 10px;background:#102839}
  }
 }
 </style>
+<style>
+#achievementBtn{font-weight:700}
+#achievementPanel{display:none;position:absolute;right:12px;top:66px;z-index:45;width:min(370px,calc(100vw - 24px));max-height:65dvh;overflow:auto;background:#12293c;border:1px solid #4c8aa7;border-radius:14px;box-shadow:0 12px 34px #000b;padding:14px;color:#fff}
+#achievementPanel.open{display:block}
+.achievementItem{display:flex;gap:12px;align-items:center;padding:10px 4px;border-bottom:1px solid #375468}
+.achievementItem.locked{opacity:.65}
+.achievementItem strong{display:block;font-size:13px}
+.achievementItem small{display:block;color:#b7cbd9;font-size:11px;margin-top:3px}
+#achievementToast{display:none;position:absolute;top:80px;left:50%;transform:translateX(-50%);z-index:46;padding:12px 16px;background:#173c52;border:1px solid #66d5ff;border-radius:12px;box-shadow:0 8px 24px #0009;font-weight:bold;pointer-events:none}
+#achievementToast.visible{display:block}
+</style>
 </head>
 <body>
 <div id="app">
+<div id="achievementPanel" role="dialog" aria-label="Achievements"><div style="display:flex;justify-content:space-between;align-items:center"><strong>🏆 Achievements</strong><button id="achievementClose" type="button">✕</button></div><p style="font-size:12px;color:#b7cbd9">Earn awards by running real experiments. Progress is saved on this device.</p><div id="achievementList"></div></div>
+<div id="achievementToast" role="status" aria-live="polite"></div>
 
 <header>
   <div class="brand">
@@ -865,6 +878,7 @@ header{min-height:50px;padding:5px 10px;background:#102839}
     <button id="redoBtn">↷ Redo</button>
     <button id="saveBtn">💾 Saves</button>
     <button id="loadBtn">📂 Saved</button>
+    <button id="achievementBtn" type="button" aria-expanded="false" title="Achievements">🏆</button>
     <button id="soundBtn">🔊 Sound</button>
     <button id="tutorialBtn">?</button>
     <button id="clearBtn">Clear</button>
@@ -2025,6 +2039,57 @@ function updateMainRunButtons(){
   if(top) top.textContent=running?'■ STOP':'▶ RUN';
 }
 
+
+/* Achievement engine records simulation events, never mere part placement. */
+const achievementsDef=[
+ ['chain','🏆 First Chain Reaction','Trigger 5 different components in one run',5],
+ ['domino','🏆 Domino Master','Knock down 20 dominoes in one run',20],
+ ['chaos','💥 Chaos Creator','Trigger 3 blasts in one run',3],
+ ['bell','🔔 Bell Ringer','Strike the bell during a run',1]
+];
+const achKey='doncoPhysicsAchievementsV1';
+let achSaved={};try{achSaved=JSON.parse(localStorage.getItem(achKey)||'{}')||{}}catch(e){}
+let achRun={events:new Set(),domino:new Set(),blast:new Set(),bell:new Set()};
+function achBeginRun(){achRun={events:new Set(),domino:new Set(),blast:new Set(),bell:new Set()};achDraw()}
+function achEvent(type,obj){
+ if(!running)return;
+ const id=String(obj?.id??'unknown');
+ if(type==='domino')achRun.domino.add(id);
+ if(type==='blast')achRun.blast.add(id);
+ if(type==='bell')achRun.bell.add(id);
+ achRun.events.add(type+':'+id);
+ const values={chain:achRun.events.size,domino:achRun.domino.size,chaos:achRun.blast.size,bell:achRun.bell.size};
+ for(const [key,title,,need] of achievementsDef){
+  if(values[key]>=need&&!achSaved[key]){
+   achSaved[key]=Date.now();
+   try{localStorage.setItem(achKey,JSON.stringify(achSaved))}catch(e){}
+   const toast=document.getElementById('achievementToast');
+   toast.textContent='Achievement unlocked! '+title;toast.classList.add('visible');
+   clearTimeout(achToastTimer);achToastTimer=setTimeout(()=>toast.classList.remove('visible'),3500);
+  }
+ }
+ achDraw();
+}
+let achToastTimer;
+function achDraw(){
+ const list=document.getElementById('achievementList');if(!list)return;
+ const vals={chain:achRun.events.size,domino:achRun.domino.size,chaos:achRun.blast.size,bell:achRun.bell.size};
+ list.replaceChildren();
+ achievementsDef.forEach(([key,title,desc,need])=>{
+  const el=document.createElement('div');el.className='achievementItem'+(achSaved[key]?'':' locked');
+  const icon=document.createElement('span');icon.textContent=achSaved[key]?'✅':'🔒';
+  const label=document.createElement('div');const h=document.createElement('strong');h.textContent=title;const sub=document.createElement('small');
+  sub.textContent=desc+' • '+(achSaved[key]?'Unlocked':Math.min(need,vals[key])+'/'+need+' this run');
+  label.append(h,sub);el.append(icon,label);list.append(el);
+ });
+}
+document.getElementById('achievementBtn').addEventListener('click',()=>{
+ const panel=document.getElementById('achievementPanel');const open=panel.classList.toggle('open');
+ document.getElementById('achievementBtn').setAttribute('aria-expanded',String(open));achDraw();
+});
+document.getElementById('achievementClose').addEventListener('click',()=>{document.getElementById('achievementPanel').classList.remove('open');document.getElementById('achievementBtn').setAttribute('aria-expanded','false')});
+achDraw();
+
 function startRun(){
   if(running) return;
   ensureAudio();
@@ -2037,6 +2102,7 @@ function startRun(){
   runSnapshot=cloneMachine(objects);
   resetRunState();
   running=true;
+  achBeginRun();
   won=false;
   setSelected(null);
   updateMainRunButtons();
@@ -2170,6 +2236,7 @@ function updateBall(ball,dt){
         ball.vx+=-sin*launch;
         ball.vy+=-cos*launch;
         o.compressed=true;
+        achEvent('spring',o);
         o.cooldown=.35;
         playSound('spring');
         setTimeout(()=>{o.compressed=false},120);
@@ -2180,6 +2247,7 @@ function updateBall(ball,dt){
       const dist=Math.hypot(ball.x-o.x,ball.y-o.y);
       if(dist<50*(o.scale||1)&&!o.triggered){
         o.triggered=true;
+        achEvent('blast',o);
         const dx=ball.x-o.x,dy=ball.y-o.y;
         const len=Math.max(1,Math.hypot(dx,dy));
         ball.vx+=(dx/len)*600;
@@ -2192,6 +2260,7 @@ function updateBall(ball,dt){
       const dist=Math.hypot(ball.x-o.x,ball.y-o.y);
       if(dist<46*(o.scale||1)&&!o.rung){
         o.rung=true;
+        achEvent('bell',o);
         winGame();
       }
     }
@@ -2390,6 +2459,7 @@ function updateRubeIntegration(dt,ball){
 function startDominoFall(d,direction){
   if(d.falling)return;
   d.falling=true;
+  achEvent('domino',d);
   d.toppleDirection=direction>=0?1:-1;
   d.angularVelocity=d.toppleDirection*.9;
   const halfH=d.height*(d.scale||1)/2;
