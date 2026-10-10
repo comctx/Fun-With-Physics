@@ -5613,9 +5613,9 @@ setTimeout(()=>{
   const bounds=canvas.getBoundingClientRect(),W=Math.max(1,bounds.width),H=Math.max(1,bounds.height),dpr=Math.min(2,window.devicePixelRatio||1);
   if(canvas.width!==Math.round(W*dpr)||canvas.height!==Math.round(H*dpr)){canvas.width=Math.round(W*dpr);canvas.height=Math.round(H*dpr)}
   ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,W,H);
-  const base=H*.58,amplitude=value(hEl)*Math.min(14,H*.035),spread=value(wEl)*26;
+  const base=H*.64,amplitude=Math.min(H*.49,value(hEl)*Math.max(21,H*.072)),spread=value(wEl)*23;
   if(active){travel+=dt*value(sEl)*65;if(travel>W+spread*3)active=false}
-  const surface=x=>base-(active?amplitude*Math.exp(-Math.pow((x-travel)/spread,2))*1.5:0);
+  const surface=x=>base-(active?amplitude*Math.exp(-Math.pow((x-travel)/spread,2))*1.15:0);
   const fill=ctx.createLinearGradient(0,base-100,0,H);fill.addColorStop(0,'#23a6dd');fill.addColorStop(1,'#065275');
   ctx.beginPath();ctx.moveTo(0,surface(0));for(let x=3;x<=W;x+=3)ctx.lineTo(x,surface(x));ctx.lineTo(W,H);ctx.lineTo(0,H);ctx.closePath();ctx.fillStyle=fill;ctx.fill();
   ctx.beginPath();for(let x=0;x<=W;x+=3){if(!x)ctx.moveTo(x,surface(x));else ctx.lineTo(x,surface(x))}ctx.strokeStyle='#b4f4ff';ctx.lineWidth=4;ctx.stroke();
