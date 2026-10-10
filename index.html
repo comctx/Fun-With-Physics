@@ -679,6 +679,60 @@ header{
 #tsunamiCanvas{width:100%;height:100%;display:block;touch-action:none}
 @media(max-width:680px){.tsBody{flex-direction:column;overflow:auto}.tsControls{flex:none;padding:8px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}.tsControls h3,.tsParts,.tsActions,.tsControls small{grid-column:1/-1}.tsControls label{font-size:11px;margin:3px}.tsStage{flex:1;min-height:240px}.tsHeader{font-size:12px}}
 @media(max-height:450px) and (orientation:landscape){.tsBody{flex-direction:row;overflow:hidden}.tsControls{display:block;flex:0 0 240px;overflow:auto}.tsStage{min-height:0}}
+
+/* Unified responsive interface; simulation engines remain untouched. */
+header{min-height:50px;padding:5px 10px;background:#102839}
+.brand h1{font-size:19px}
+#status{display:none}
+.modebar{background:#142f42;min-height:43px;padding:4px 8px}
+.modebar>button{min-height:34px;padding:5px 9px}
+#tray,#fluidTray,.labTray{padding:5px 7px;gap:5px}
+#rubeTray .rubePartsRow{padding:5px 7px}
+#workspace{min-height:0}
+.uiPhoneNav,.uiAddTool,.uiFullScreen,.uiCloseTools{display:none}
+#tsunamiLab .tsBody{flex-direction:column}
+#tsunamiLab .tsStage{order:0;min-height:150px;flex:1}
+#tsunamiLab .tsControls{order:1;flex:0 0 auto;width:100%;display:grid;grid-template-columns:repeat(3,minmax(0,1fr)) auto;gap:7px;max-height:205px;overflow:auto;padding:9px}
+#tsunamiLab .tsControls h3,#tsunamiLab .tsControls>strong,#tsunamiLab .tsControls>small{display:none}
+#tsunamiLab .tsControls label{margin:0;min-width:0}
+#tsunamiLab .tsParts{grid-column:1/-1;margin:0;grid-template-columns:repeat(5,minmax(0,1fr))}
+#tsunamiLab .tsParts button{font-size:11px;min-height:34px}
+#tsunamiLab .tsActions{position:static;grid-column:4;grid-row:1;margin:0;padding:0;align-items:center}
+#tsunamiLab .tsActions button{font-size:11px;min-height:39px}
+#tsunamiLab .tsBody{padding:5px;gap:5px}
+#tsunamiLab .tsHeader{padding:4px 9px}
+@media(max-width:950px) and (pointer:coarse){
+ #app{position:relative}
+ header{min-height:43px}
+ .brand h1{font-size:15px}
+ .uiPhoneNav{display:block;min-height:35px;max-width:calc(100% - 16px);width:100%;margin:5px auto;padding:5px 10px;background:#23445a;color:#fff;border-radius:8px}
+ .modebar{display:none}
+ .uiAddTool{display:block;position:absolute;left:12px;bottom:calc(13px + env(safe-area-inset-bottom));z-index:15;background:#087ac4;box-shadow:0 3px 12px #0008;border:1px solid #55d9ff;border-radius:13px;min-height:47px;padding:8px 12px;font-size:14px}
+ .uiFullScreen{display:block;position:absolute;right:11px;top:11px;z-index:15;background:#22384a;padding:5px 8px;min-height:36px}
+ .uiCloseTools{display:none;position:absolute;bottom:calc(60px + env(safe-area-inset-bottom));right:12px;z-index:24}
+ #app.uiToolsOpen .uiCloseTools{display:block}
+ #tray,#fluidTray,.labTray,#rubeTray{display:none!important}
+ #app.uiToolsOpen #tray:not([style*="display: none"]),
+ #app.uiToolsOpen #fluidTray:not([style*="display: none"]),
+ #app.uiToolsOpen .labTray:not([style*="display: none"]),
+ #app.uiToolsOpen #rubeTray:not([style*="display: none"]){
+    display:flex!important;position:absolute;bottom:calc(60px + env(safe-area-inset-bottom));left:8px;right:8px;z-index:22;
+    width:auto;max-height:min(52dvh,340px);overflow:auto;flex-wrap:wrap;justify-content:flex-start;
+    background:#173247;border:1px solid #4f7c91;border-radius:12px;box-shadow:0 8px 28px #000a;padding:10px
+ }
+ #app.uiToolsOpen #rubeTray:not([style*="display: none"]){display:block!important}
+ #app.uiToolsOpen #rubeTray .rubeToolHeader,#app.uiToolsOpen #rubeTray .rubePartsRow{flex-wrap:wrap}
+ #app.uiToolsOpen .partButton,#app.uiToolsOpen .fluidButton,#app.uiToolsOpen .labButton{min-height:42px}
+ #workspace{flex:1;min-height:0}
+ #tsunamiLab .tsBody{flex-direction:column;overflow:hidden}
+ #tsunamiLab .tsControls{width:100%;flex:0 0 auto;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));max-height:38dvh;overflow:auto}
+ #tsunamiLab .tsControls label{font-size:11px}
+ #tsunamiLab .tsActions{grid-column:1/-1;grid-row:auto}
+ #tsunamiLab .tsParts{grid-template-columns:repeat(3,minmax(0,1fr));gap:4px}
+ #tsunamiLab .tsStage{flex:1;min-height:100px}
+ #tsunamiLab .tsHeader{min-height:40px}
+ #tsunamiLab.open~.uiAddTool,#waveLab.open~.uiAddTool{display:none}
+}
 </style>
 </head>
 <body>
@@ -702,6 +756,7 @@ header{
   </div>
 </header>
 
+<select id="uiPhoneNav" class="uiPhoneNav" aria-label="Choose physics lab"><option value="sandbox">⚙ Mechanics</option><option value="puzzle">🧩 Puzzles</option><option value="challenge">🏆 Challenge</option><option value="fluid">🌊 Fluid Physics</option><option value="air">💨 Air Physics</option><option value="electric">⚡ Electricity</option><option value="simple">🛠 Simple Machines</option><option value="rube">🎭 Rube Goldberg</option></select>
 <div class="modebar">
   <button id="sandboxModeBtn" class="active">⚙️ Mechanics</button>
   <button id="mechanicsExplainBtn" class="modeActionBtn">💡 What Happened?</button>
@@ -891,6 +946,7 @@ header{
 </div>
 
 <div id="workspace">
+<button class="uiAddTool" id="uiAddTool" type="button">＋ Add Tool</button><button class="uiCloseTools" id="uiCloseTools" type="button">✕ Close Tools</button><button class="uiFullScreen" id="uiFullScreen" type="button" title="Expand simulation">⛶</button>
 
 <div id="tsunamiLab" aria-label="Tsunami Generator">
  <div class="tsHeader"><strong>🌊 Tsunami Generator</strong><button type="button" id="tsClose">✕ Back to Fluid Physics</button></div>
@@ -5674,6 +5730,25 @@ setTimeout(()=>{
   ctx.fillStyle='#e1f7ff';ctx.font='bold 13px Arial';ctx.fillText(active?'Wave traveling →':'Ready to launch',27,25);
  }
  requestAnimationFrame(frame);
+})();
+</script>
+<script>
+(function(){
+ const app=document.getElementById('app'),nav=document.getElementById('uiPhoneNav');
+ const map={sandbox:'sandboxModeBtn',puzzle:'puzzleModeBtn',challenge:'challengeModeBtn',fluid:'fluidModeBtn',air:'airModeBtn',electric:'electricModeBtn',simple:'simpleModeBtn',rube:'rubeModeBtn'};
+ nav.addEventListener('change',()=>{app.classList.remove('uiToolsOpen');document.getElementById(map[nav.value])?.click()});
+ Object.entries(map).forEach(([name,id])=>document.getElementById(id)?.addEventListener('click',()=>{nav.value=name;app.classList.remove('uiToolsOpen')}));
+ document.getElementById('uiAddTool').addEventListener('click',()=>app.classList.toggle('uiToolsOpen'));
+ document.getElementById('uiCloseTools').addEventListener('click',()=>app.classList.remove('uiToolsOpen'));
+ document.getElementById('uiFullScreen').addEventListener('click',()=>{
+   const el=document.getElementById('workspace');
+   if(document.fullscreenElement)document.exitFullscreen?.();
+   else el.requestFullscreen?.().catch(()=>{});
+ });
+ // Closing the tool picker after adding a part leaves maximum room for editing.
+ document.querySelectorAll('#tray [data-part],#fluidTray [data-fluid-part],.labTray [data-air-part],.labTray [data-electric-part],.labTray [data-simple-part],#rubeTray [data-part]').forEach(b=>{
+   b.addEventListener('click',()=>app.classList.remove('uiToolsOpen'));
+ });
 })();
 </script>
 </body>
