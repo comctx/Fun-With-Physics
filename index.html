@@ -806,6 +806,40 @@ header{min-height:50px;padding:5px 10px;background:#102839}
 }
 .tileCaption{display:block;text-align:center;line-height:1.12;font-size:10px;max-width:100%;overflow-wrap:anywhere}
 @media(min-width:951px){#tray .icon,#fluidTray .icon,.labTray .icon{font-size:23px!important}#tray,#fluidTray,.labTray{scrollbar-width:none}#tray::-webkit-scrollbar,#fluidTray::-webkit-scrollbar,.labTray::-webkit-scrollbar{display:none}}
+
+/* Final tile layout: explicitly structured HTML, not browser input-device detection. */
+@media screen and (min-width:951px){
+ #tray,#fluidTray,#airTray,#electricTray,#simpleTray{
+   display:flex!important;flex-direction:row!important;flex-wrap:nowrap!important;
+   gap:6px!important;padding:7px 9px!important;
+   overflow-x:hidden!important;overflow-y:visible!important;
+   min-height:84px!important;align-items:center!important;
+   scrollbar-width:none!important
+ }
+ #tray button.partButton,#fluidTray button.fluidButton,#airTray button.labButton,#electricTray button.labButton,#simpleTray button.labButton{
+   display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;
+   flex-grow:0!important;flex-shrink:0!important;flex-basis:72px!important;
+   width:72px!important;min-width:72px!important;max-width:72px!important;
+   height:72px!important;min-height:72px!important;max-height:72px!important;
+   padding:5px 2px!important;gap:4px!important;
+   white-space:normal!important;text-align:center!important;
+   border-radius:10px!important
+ }
+ #tray button .icon,#fluidTray button .icon,#airTray button .icon,#electricTray button .icon,#simpleTray button .icon{
+   display:block!important;font-size:24px!important;line-height:1!important;flex:none!important
+ }
+ #tray button .tileCaption,#fluidTray button .tileCaption,#airTray button .tileCaption,#electricTray button .tileCaption,#simpleTray button .tileCaption{
+   display:block!important;font-size:10px!important;line-height:1.08!important;
+   font-weight:700!important;text-align:center!important;white-space:normal!important;
+   width:100%!important;max-width:100%!important;overflow-wrap:break-word!important
+ }
+ #tray .tileExtra:not(.tileShown),#fluidTray .tileExtra:not(.tileShown),.labTray .tileExtra:not(.tileShown){display:none!important}
+ #tray.tileExpanded,#fluidTray.tileExpanded,.labTray.tileExpanded{flex-wrap:wrap!important}
+ #tray .tileMoreButton,#fluidTray .tileMoreButton,.labTray .tileMoreButton{
+   flex:0 0 72px!important;display:flex!important;flex-direction:column!important;
+   width:72px!important;min-width:72px!important;height:72px!important;align-items:center!important;justify-content:center!important
+ }
+}
 </style>
 </head>
 <body>
@@ -871,15 +905,15 @@ header{min-height:50px;padding:5px 10px;background:#102839}
 </div>
 
 <div id="tray">
-  <button class="partButton" data-part="ball"><span class="icon">🔴</span>Ball</button>
-  <button class="partButton" data-part="ramp"><span class="icon">📐</span>Ramp</button>
-  <button class="partButton" data-part="domino"><span class="icon">▮</span>Domino</button>
-  <button class="partButton" data-part="spring"><span class="icon">🌀</span>Spring</button>
-  <button class="partButton" data-part="fan"><span class="icon">🌀</span>Fan</button>
-  <button class="partButton" data-part="magnet"><span class="icon">🧲</span>Magnet</button>
-  <button class="partButton" data-part="pendulum"><span class="icon">🕰️</span>Pendulum</button>
-  <button class="partButton" data-part="blast"><span class="icon">💥</span>Blast</button>
-  <button class="partButton" data-part="bell"><span class="icon">🔔</span>Bell</button>
+  <button class="partButton" data-part="ball"><span class="icon">🔴</span><span class="tileCaption">Ball</span></button>
+  <button class="partButton" data-part="ramp"><span class="icon">📐</span><span class="tileCaption">Ramp</span></button>
+  <button class="partButton" data-part="domino"><span class="icon">▮</span><span class="tileCaption">Domino</span></button>
+  <button class="partButton" data-part="spring"><span class="icon">🌀</span><span class="tileCaption">Spring</span></button>
+  <button class="partButton" data-part="fan"><span class="icon">🌀</span><span class="tileCaption">Fan</span></button>
+  <button class="partButton" data-part="magnet"><span class="icon">🧲</span><span class="tileCaption">Magnet</span></button>
+  <button class="partButton" data-part="pendulum"><span class="icon">🕰️</span><span class="tileCaption">Pendulum</span></button>
+  <button class="partButton" data-part="blast"><span class="icon">💥</span><span class="tileCaption">Blast</span></button>
+  <button class="partButton" data-part="bell"><span class="icon">🔔</span><span class="tileCaption">Bell</span></button>
 </div>
 
 <div id="rubeTray">
@@ -934,88 +968,88 @@ header{min-height:50px;padding:5px 10px;background:#102839}
 </div>
 
 <div id="fluidTray">
-  <button class="fluidButton" id="tsunamiGeneratorBtn"><span class="icon">🌊</span>Tsunami Generator</button>
-  <button class="fluidButton" id="waveGeneratorBtn"><span class="icon">🌊</span>Wave Generator</button>
-  <button class="fluidButton" data-fluid-part="source"><span class="icon">💧</span>Water Source</button>
-  <button class="fluidButton" data-fluid-part="pipe"><span class="icon">🚰</span>Pipe</button>
-  <button class="fluidButton" data-fluid-part="elbow"><span class="icon">↪️</span>Pipe Elbow</button>
-  <button class="fluidButton" data-fluid-part="pump"><span class="icon">⚙️</span>Pump</button>
-  <button class="fluidButton" data-fluid-part="tank"><span class="icon">🛢️</span>Tank</button>
-  <button class="fluidButton" data-fluid-part="heater"><span class="icon">♨️</span>Water Heater</button>
-  <button class="fluidButton" data-fluid-part="dam"><span class="icon">🧱</span>Dam</button>
-  <button class="fluidButton" data-fluid-part="gate"><span class="icon">🚪</span>Gate</button>
-  <button class="fluidButton" data-fluid-part="canal"><span class="icon">🟦</span>Canal</button>
-  <button class="fluidButton" data-fluid-part="wheel"><span class="icon">🛞</span>Water Wheel</button>
-  <button class="fluidButton" data-fluid-part="wood"><span class="icon">🪵</span>Wood</button>
-  <button class="fluidButton" data-fluid-part="metal"><span class="icon">🔩</span>Metal</button>
-  <button class="fluidButton" data-fluid-part="drain"><span class="icon">🕳️</span>Drain</button>
-  <button class="fluidButton" data-fluid-part="valve"><span class="icon">🔧</span>Valve</button>
-  <button class="fluidButton" data-fluid-part="funnel"><span class="icon">🔻</span>Funnel</button>
-  <button class="fluidButton" data-fluid-part="hose"><span class="icon">〰️</span>Hose</button>
-  <button class="fluidButton" data-fluid-part="tee"><span class="icon">🔀</span>T-Junction</button>
-  <button class="fluidButton" data-fluid-part="check"><span class="icon">➡️</span>Check Valve</button>
-  <button class="fluidButton" data-fluid-part="reservoir"><span class="icon">🛢️</span>Reservoir</button>
-  <button class="fluidButton" data-fluid-part="piston"><span class="icon">↕️</span>Piston</button>
-  <button class="fluidButton" data-fluid-part="ice"><span class="icon">🧊</span>Ice</button>
-  <button class="fluidButton" data-fluid-part="thermometer"><span class="icon">🌡️</span>Thermometer</button>
-  <button class="fluidButton" id="fluidActionBtn"><span class="icon">▶️</span>Start Water</button>
-  <button class="fluidButton" id="slowMoBtn"><span class="icon">🐢</span>Slow Motion</button>
-  <button class="fluidButton" id="measureBtn"><span class="icon">📏</span>Measure</button>
-  <button class="fluidButton" id="presetBtn"><span class="icon">🧪</span>Presets</button>
-  <button class="fluidButton" id="resetFluidBtn"><span class="icon">↺</span>Reset Run</button>
-  <button class="fluidButton" id="fluidSaveBtn"><span class="icon">💾</span>Save Labs</button>
-  <button class="fluidButton" id="explainBtn"><span class="icon">💡</span>What Happened?</button>
-  <button class="fluidButton" id="fluidClearBtn"><span class="icon">🗑️</span>Clear</button>
+  <button class="fluidButton" id="tsunamiGeneratorBtn"><span class="icon">🌊</span><span class="tileCaption">Tsunami Generator</span></button>
+  <button class="fluidButton" id="waveGeneratorBtn"><span class="icon">🌊</span><span class="tileCaption">Wave Generator</span></button>
+  <button class="fluidButton" data-fluid-part="source"><span class="icon">💧</span><span class="tileCaption">Water Source</span></button>
+  <button class="fluidButton" data-fluid-part="pipe"><span class="icon">🚰</span><span class="tileCaption">Pipe</span></button>
+  <button class="fluidButton" data-fluid-part="elbow"><span class="icon">↪️</span><span class="tileCaption">Pipe Elbow</span></button>
+  <button class="fluidButton" data-fluid-part="pump"><span class="icon">⚙️</span><span class="tileCaption">Pump</span></button>
+  <button class="fluidButton" data-fluid-part="tank"><span class="icon">🛢️</span><span class="tileCaption">Tank</span></button>
+  <button class="fluidButton" data-fluid-part="heater"><span class="icon">♨️</span><span class="tileCaption">Water Heater</span></button>
+  <button class="fluidButton" data-fluid-part="dam"><span class="icon">🧱</span><span class="tileCaption">Dam</span></button>
+  <button class="fluidButton" data-fluid-part="gate"><span class="icon">🚪</span><span class="tileCaption">Gate</span></button>
+  <button class="fluidButton" data-fluid-part="canal"><span class="icon">🟦</span><span class="tileCaption">Canal</span></button>
+  <button class="fluidButton" data-fluid-part="wheel"><span class="icon">🛞</span><span class="tileCaption">Water Wheel</span></button>
+  <button class="fluidButton" data-fluid-part="wood"><span class="icon">🪵</span><span class="tileCaption">Wood</span></button>
+  <button class="fluidButton" data-fluid-part="metal"><span class="icon">🔩</span><span class="tileCaption">Metal</span></button>
+  <button class="fluidButton" data-fluid-part="drain"><span class="icon">🕳️</span><span class="tileCaption">Drain</span></button>
+  <button class="fluidButton" data-fluid-part="valve"><span class="icon">🔧</span><span class="tileCaption">Valve</span></button>
+  <button class="fluidButton" data-fluid-part="funnel"><span class="icon">🔻</span><span class="tileCaption">Funnel</span></button>
+  <button class="fluidButton" data-fluid-part="hose"><span class="icon">〰️</span><span class="tileCaption">Hose</span></button>
+  <button class="fluidButton" data-fluid-part="tee"><span class="icon">🔀</span><span class="tileCaption">T-Junction</span></button>
+  <button class="fluidButton" data-fluid-part="check"><span class="icon">➡️</span><span class="tileCaption">Check Valve</span></button>
+  <button class="fluidButton" data-fluid-part="reservoir"><span class="icon">🛢️</span><span class="tileCaption">Reservoir</span></button>
+  <button class="fluidButton" data-fluid-part="piston"><span class="icon">↕️</span><span class="tileCaption">Piston</span></button>
+  <button class="fluidButton" data-fluid-part="ice"><span class="icon">🧊</span><span class="tileCaption">Ice</span></button>
+  <button class="fluidButton" data-fluid-part="thermometer"><span class="icon">🌡️</span><span class="tileCaption">Thermometer</span></button>
+  <button class="fluidButton" id="fluidActionBtn"><span class="icon">▶️</span><span class="tileCaption">Start Water</span></button>
+  <button class="fluidButton" id="slowMoBtn"><span class="icon">🐢</span><span class="tileCaption">Slow Motion</span></button>
+  <button class="fluidButton" id="measureBtn"><span class="icon">📏</span><span class="tileCaption">Measure</span></button>
+  <button class="fluidButton" id="presetBtn"><span class="icon">🧪</span><span class="tileCaption">Presets</span></button>
+  <button class="fluidButton" id="resetFluidBtn"><span class="icon">↺</span><span class="tileCaption">Reset Run</span></button>
+  <button class="fluidButton" id="fluidSaveBtn"><span class="icon">💾</span><span class="tileCaption">Save Labs</span></button>
+  <button class="fluidButton" id="explainBtn"><span class="icon">💡</span><span class="tileCaption">What Happened?</span></button>
+  <button class="fluidButton" id="fluidClearBtn"><span class="icon">🗑️</span><span class="tileCaption">Clear</span></button>
 </div>
 
 <div id="airTray" class="labTray">
-  <button class="labButton" data-air-part="balloon"><span class="icon">🎈</span>Balloon</button>
-  <button class="labButton" data-air-part="parachute"><span class="icon">🪂</span>Parachute</button>
-  <button class="labButton" data-air-part="airjet"><span class="icon">💨</span>Air Jet</button>
-  <button class="labButton" data-air-part="wind"><span class="icon">🌬️</span>Wind Tunnel</button>
-  <button class="labButton" data-air-part="vortex"><span class="icon">🌪️</span>Vortex Generator</button>
+  <button class="labButton" data-air-part="balloon"><span class="icon">🎈</span><span class="tileCaption">Balloon</span></button>
+  <button class="labButton" data-air-part="parachute"><span class="icon">🪂</span><span class="tileCaption">Parachute</span></button>
+  <button class="labButton" data-air-part="airjet"><span class="icon">💨</span><span class="tileCaption">Air Jet</span></button>
+  <button class="labButton" data-air-part="wind"><span class="icon">🌬️</span><span class="tileCaption">Wind Tunnel</span></button>
+  <button class="labButton" data-air-part="vortex"><span class="icon">🌪️</span><span class="tileCaption">Vortex Generator</span></button>
   <button class="labButton" id="vortexSpeedBtn" type="button">🌪️ Vortex Speed: Normal</button>
-  <button class="labButton" data-air-part="deflector"><span class="icon">🔄</span>Air Deflector</button>
-  <button class="labButton" data-air-part="vent"><span class="icon">🚪</span>Air Vent</button>
-  <button class="labButton" data-air-part="dragblock"><span class="icon">⬛</span>Drag Block</button>
-  <button class="labButton" id="airRunBtn"><span class="icon">▶️</span>Start Air</button>
-  <button class="labButton" id="airExplainBtn"><span class="icon">💡</span>What Happened?</button>
-  <button class="labButton" id="airClearBtn"><span class="icon">🗑️</span>Clear</button>
+  <button class="labButton" data-air-part="deflector"><span class="icon">🔄</span><span class="tileCaption">Air Deflector</span></button>
+  <button class="labButton" data-air-part="vent"><span class="icon">🚪</span><span class="tileCaption">Air Vent</span></button>
+  <button class="labButton" data-air-part="dragblock"><span class="icon">⬛</span><span class="tileCaption">Drag Block</span></button>
+  <button class="labButton" id="airRunBtn"><span class="icon">▶️</span><span class="tileCaption">Start Air</span></button>
+  <button class="labButton" id="airExplainBtn"><span class="icon">💡</span><span class="tileCaption">What Happened?</span></button>
+  <button class="labButton" id="airClearBtn"><span class="icon">🗑️</span><span class="tileCaption">Clear</span></button>
 </div>
 
 <div id="electricTray" class="labTray">
-  <button class="labButton" data-electric-part="battery"><span class="icon">🔋</span>Battery</button>
-  <button class="labButton" data-electric-part="wire"><span class="icon">➖</span>Wire</button>
-  <button class="labButton" data-electric-part="switch"><span class="icon">🎚️</span>Switch</button>
-  <button class="labButton" data-electric-part="bulb"><span class="icon">💡</span>Bulb</button>
-  <button class="labButton" data-electric-part="motor"><span class="icon">⚙️</span>Motor</button>
-  <button class="labButton" data-electric-part="magnet"><span class="icon">🧲</span>Electromagnet</button>
-  <button class="labButton" data-electric-part="metalball"><span class="icon">⚪</span>Metal Ball</button>
-  <button class="labButton" id="electricRunBtn"><span class="icon">▶️</span>Run Circuit</button>
-  <button class="labButton" id="electricExplainBtn"><span class="icon">💡</span>What Happened?</button>
-  <button class="labButton" id="electricClearBtn"><span class="icon">🗑️</span>Clear</button>
+  <button class="labButton" data-electric-part="battery"><span class="icon">🔋</span><span class="tileCaption">Battery</span></button>
+  <button class="labButton" data-electric-part="wire"><span class="icon">➖</span><span class="tileCaption">Wire</span></button>
+  <button class="labButton" data-electric-part="switch"><span class="icon">🎚️</span><span class="tileCaption">Switch</span></button>
+  <button class="labButton" data-electric-part="bulb"><span class="icon">💡</span><span class="tileCaption">Bulb</span></button>
+  <button class="labButton" data-electric-part="motor"><span class="icon">⚙️</span><span class="tileCaption">Motor</span></button>
+  <button class="labButton" data-electric-part="magnet"><span class="icon">🧲</span><span class="tileCaption">Electromagnet</span></button>
+  <button class="labButton" data-electric-part="metalball"><span class="icon">⚪</span><span class="tileCaption">Metal Ball</span></button>
+  <button class="labButton" id="electricRunBtn"><span class="icon">▶️</span><span class="tileCaption">Run Circuit</span></button>
+  <button class="labButton" id="electricExplainBtn"><span class="icon">💡</span><span class="tileCaption">What Happened?</span></button>
+  <button class="labButton" id="electricClearBtn"><span class="icon">🗑️</span><span class="tileCaption">Clear</span></button>
 </div>
 
 <div id="simpleTray" class="labTray">
-  <button class="labButton" data-simple-part="lever"><span class="icon">⚖️</span>Lever</button>
-  <button class="labButton" data-simple-part="pulley1"><span class="icon">🪢</span>Single Pulley</button>
-  <button class="labButton" data-simple-part="pulley2"><span class="icon">🪢</span>Double Pulley</button>
-  <button class="labButton" data-simple-part="gearSmall"><span class="icon">⚙️</span>Small Gear</button>
-  <button class="labButton" data-simple-part="gearLarge"><span class="icon">⚙️</span>Large Gear</button>
-  <button class="labButton" data-simple-part="wheelaxle"><span class="icon">🛞</span>Wheel & Axle</button>
-  <button class="labButton" id="wheelSpeedBtn"><span class="icon">⚡</span>Wheel Speed: Normal</button>
-  <button class="labButton" data-simple-part="incline"><span class="icon">📐</span>Inclined Plane</button>
-  <button class="labButton" data-simple-part="wedge"><span class="icon">🔺</span>Wedge</button>
-  <button class="labButton" data-simple-part="crate"><span class="icon">📦</span>Crate</button>
-  <button class="labButton" data-simple-part="boulder"><span class="icon">🪨</span>Boulder</button>
-  <button class="labButton" data-simple-part="simpleBall"><span class="icon">🔴</span>Ball</button>
-  <button class="labButton" data-simple-part="simpleBell"><span class="icon">🔔</span>Bell</button>
-  <button class="labButton" id="fulcrumLeftBtn"><span class="icon">◀️</span>Fulcrum Left</button>
-  <button class="labButton" id="fulcrumRightBtn"><span class="icon">▶️</span>Fulcrum Right</button>
-  <button class="labButton" id="simpleRunBtn"><span class="icon">▶️</span>Run Lab</button>
-  <button class="labButton" id="simpleChallengeBtn"><span class="icon">🏆</span>Challenges</button>
-  <button class="labButton" id="simpleExplainBtn"><span class="icon">💡</span>What Happened?</button>
-  <button class="labButton" id="simpleClearBtn"><span class="icon">🗑️</span>Clear</button>
+  <button class="labButton" data-simple-part="lever"><span class="icon">⚖️</span><span class="tileCaption">Lever</span></button>
+  <button class="labButton" data-simple-part="pulley1"><span class="icon">🪢</span><span class="tileCaption">Single Pulley</span></button>
+  <button class="labButton" data-simple-part="pulley2"><span class="icon">🪢</span><span class="tileCaption">Double Pulley</span></button>
+  <button class="labButton" data-simple-part="gearSmall"><span class="icon">⚙️</span><span class="tileCaption">Small Gear</span></button>
+  <button class="labButton" data-simple-part="gearLarge"><span class="icon">⚙️</span><span class="tileCaption">Large Gear</span></button>
+  <button class="labButton" data-simple-part="wheelaxle"><span class="icon">🛞</span><span class="tileCaption">Wheel & Axle</span></button>
+  <button class="labButton" id="wheelSpeedBtn"><span class="icon">⚡</span><span class="tileCaption">Wheel Speed: Normal</span></button>
+  <button class="labButton" data-simple-part="incline"><span class="icon">📐</span><span class="tileCaption">Inclined Plane</span></button>
+  <button class="labButton" data-simple-part="wedge"><span class="icon">🔺</span><span class="tileCaption">Wedge</span></button>
+  <button class="labButton" data-simple-part="crate"><span class="icon">📦</span><span class="tileCaption">Crate</span></button>
+  <button class="labButton" data-simple-part="boulder"><span class="icon">🪨</span><span class="tileCaption">Boulder</span></button>
+  <button class="labButton" data-simple-part="simpleBall"><span class="icon">🔴</span><span class="tileCaption">Ball</span></button>
+  <button class="labButton" data-simple-part="simpleBell"><span class="icon">🔔</span><span class="tileCaption">Bell</span></button>
+  <button class="labButton" id="fulcrumLeftBtn"><span class="icon">◀️</span><span class="tileCaption">Fulcrum Left</span></button>
+  <button class="labButton" id="fulcrumRightBtn"><span class="icon">▶️</span><span class="tileCaption">Fulcrum Right</span></button>
+  <button class="labButton" id="simpleRunBtn"><span class="icon">▶️</span><span class="tileCaption">Run Lab</span></button>
+  <button class="labButton" id="simpleChallengeBtn"><span class="icon">🏆</span><span class="tileCaption">Challenges</span></button>
+  <button class="labButton" id="simpleExplainBtn"><span class="icon">💡</span><span class="tileCaption">What Happened?</span></button>
+  <button class="labButton" id="simpleClearBtn"><span class="icon">🗑️</span><span class="tileCaption">Clear</span></button>
 </div>
 
 <div id="workspace">
