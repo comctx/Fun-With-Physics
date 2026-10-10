@@ -1518,6 +1518,26 @@ function snapConstructionPart(part){
     }
     if(closest){part.x+=closest.dx;part.y+=closest.dy;return true}
   }
+  if(part.type==='domino'){
+    // Place dominoes upright in a row, with a small gap for toppling.
+    let best=null;
+    for(const other of objects){
+      if(other===part||other.type!=='domino')continue;
+      const spacing=(part.width*(part.scale||1)+other.width*(other.scale||1))/2+10;
+      for(const direction of [-1,1]){
+        const targetX=other.x+direction*spacing;
+        const targetY=other.y;
+        const distance=Math.hypot(part.x-targetX,part.y-targetY);
+        if(distance<26&&(!best||distance<best.distance)){
+          best={distance,x:targetX,y:targetY};
+        }
+      }
+    }
+    if(best){
+      part.x=best.x;part.y=best.y;part.angle=0;
+      return true;
+    }
+  }
   if(rotors.includes(part.type)){
     let best=null;
     for(const other of objects){
