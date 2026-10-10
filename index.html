@@ -1444,6 +1444,19 @@ function playSound(kind){
   }
 }
 
+// Material-specific ball impacts; strength controls loudness, cooldown prevents rattling.
+const impactLast=new Map();
+function ballImpact(kind,speed,key){
+ if(!soundEnabled||speed<38)return;
+ const now=performance.now(),prev=impactLast.get(key)||0;
+ if(now-prev<150)return;
+ impactLast.set(key,now);
+ const v=Math.max(.015,Math.min(.12,speed/1500*.12));
+ if(kind==='metal'){tone(650,.065,'triangle',v);tone(1020,.045,'sine',v*.38,.015)}
+ else if(kind==='wood'){tone(240,.055,'triangle',v*.75);tone(130,.035,'sine',v*.34)}
+ else if(kind==='floor'){tone(100,.085,'triangle',v*.9)}
+ else if(kind==='spring'){playSound('spring')}
+}
 function cloneMachine(machine=objects){
   return JSON.parse(JSON.stringify(machine));
 }
@@ -2160,7 +2173,7 @@ function groundCollision(ball){
   const r=ball.radius*(ball.scale||1);
 
   if(ball.y+r>height-5){
-    if(ball.vy>65) playSound('impact');
+    if(ball.vy>65) ballImpact('floor',ball.vy,'floor');
     ball.y=height-5-r;
     if(ball.vy>0) ball.vy*=-.42;
     ball.vx*=.985;
@@ -2169,11 +2182,11 @@ function groundCollision(ball){
   }
 
   if(ball.x-r<0){
-    playSound('impact');
+    ballImpact('floor',Math.abs(ball.vx),'wall-left');
     ball.x=r;ball.vx=Math.abs(ball.vx)*.55;
   }
   if(ball.x+r>width){
-    playSound('impact');
+    ballImpact('floor',Math.abs(ball.vx),'wall-right');
     ball.x=width-r;ball.vx=-Math.abs(ball.vx)*.55;
   }
   if(ball.y-r<0){
@@ -2199,6 +2212,8 @@ function rampCollision(ball,ramp){
 
   const target=-radius-thickness;
   if(localY>target&&ball.vy>=-180){
+    const approach=Math.max(0,ball.vy*cos-ball.vx*sin);
+    if(approach>40)ballImpact('metal',approach,'ramp-'+ramp.id);
     const correction=localY-target;
     const nx=-sin,ny=cos;
     ball.x-=nx*correction;
@@ -2267,7 +2282,7 @@ function updateBall(ball,dt){
         o.compressed=true;
         achEvent('spring',o);
         o.cooldown=.35;
-        playSound('spring');
+        ballImpact('spring',Math.hypot(ball.vx,ball.vy),'spring-'+o.id);
         setTimeout(()=>{o.compressed=false},120);
       }
     }
@@ -2350,6 +2365,7 @@ function dominoBallCollision(ball,previousX,previousY){
     if(!d.falling){ball.vx*=.55;ball.vy*=.75}
   }
   if(!d.falling){
+    ballImpact('wood',Math.hypot(ball.vx,ball.vy),'domino-'+d.id);
     startDominoFall(d,dx>=0?1:-1);
   }
 }
