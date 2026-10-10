@@ -743,10 +743,14 @@ header{min-height:50px;padding:5px 10px;background:#102839}
  .modebar .goal,#hud{display:none}
  #tray,#fluidTray,.labTray{
    grid-template-columns:repeat(auto-fill,minmax(88px,1fr));
-   display:grid;gap:12px;padding:10px 12px;
+   gap:12px;padding:10px 12px;
    overflow-x:hidden;overflow-y:visible;
    align-content:start;align-items:stretch;background:#142b3b
  }
+ /* Preserve lab visibility: only the active lab has a tool grid. */
+ #tray{display:grid}
+ #fluidTray,.labTray{display:none}
+ #fluidTray.show,.labTray.show{display:grid}
  #tray:not(.tileExpanded),#fluidTray:not(.tileExpanded),.labTray:not(.tileExpanded){
    grid-template-rows:88px;max-height:110px;overflow-y:hidden
  }
