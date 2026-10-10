@@ -805,7 +805,7 @@ header{min-height:50px;padding:5px 10px;background:#102839}
  #desktopToolsToggle{display:block;position:absolute;top:12px;left:12px;z-index:19;
   min-height:38px;padding:7px 14px;border-radius:10px;background:#116c9d;
   border:1px solid #58c9f8;color:#fff;box-shadow:0 3px 12px #0007;font-weight:700}
- #tray,#fluidTray,.labTray{display:none!important}
+ #tray,#fluidTray,.labTray,#rubeTray{display:none!important}
  #app.desktopToolsOpen #tray:not([style*="display: none"]),
  #app.desktopToolsOpen #fluidTray.show,
  #app.desktopToolsOpen .labTray.show{
@@ -817,6 +817,27 @@ header{min-height:50px;padding:5px 10px;background:#102839}
   border:1px solid #477184!important;border-radius:12px!important;
   box-shadow:0 8px 26px #000a!important;background:#142b3b!important
  }
+ #app.desktopToolsOpen #rubeTray.show{
+  display:block!important;position:absolute!important;top:auto!important;bottom:10px!important;
+  left:12px!important;right:12px!important;width:auto!important;z-index:18!important;
+  max-height:min(52dvh,330px)!important;overflow-y:auto!important;overflow-x:hidden!important;
+  border:1px solid #477184!important;border-radius:12px!important;
+  box-shadow:0 8px 26px #000a!important;background:#142b3b!important;
+ }
+ #app.desktopToolsOpen #rubeTray .rubePartsRow.show{
+  display:grid!important;grid-template-columns:repeat(auto-fill,minmax(64px,1fr))!important;
+  gap:6px!important;padding:10px!important;overflow:visible!important
+ }
+ #app.desktopToolsOpen #rubeTray .rubePartsRow:not(.show){display:none!important}
+ #app.desktopToolsOpen #rubeTray .rubePartsRow button.partButton{
+  width:100%!important;min-width:0!important;max-width:none!important;
+  min-height:64px!important;height:auto!important;aspect-ratio:1!important;
+  display:flex!important;flex-direction:column!important;align-items:center!important;
+  justify-content:center!important;gap:3px!important;padding:4px 2px!important;
+  white-space:normal!important;text-align:center!important;font-size:10px!important;
+  border-radius:11px!important
+ }
+ #app.desktopToolsOpen #rubeTray .rubePartsRow button .icon{display:block!important;font-size:20px!important;margin:0!important}
  #app.desktopToolsOpen #tray .tileExtra:not(.tileShown),
  #app.desktopToolsOpen #fluidTray .tileExtra:not(.tileShown),
  #app.desktopToolsOpen .labTray .tileExtra:not(.tileShown){display:none!important}
@@ -5875,7 +5896,7 @@ setTimeout(()=>{
 (function(){
  const app=document.getElementById('app');
  const toggle=document.getElementById('desktopToolsToggle');
- const trays=['tray','fluidTray','airTray','electricTray','simpleTray'].map(id=>document.getElementById(id));
+ const trays=['tray','fluidTray','airTray','electricTray','simpleTray','rubeTray'].map(id=>document.getElementById(id));
  const desktop=()=>window.matchMedia('(min-width:951px), (min-width:700px) and (max-width:950px) and (pointer:fine)').matches;
  let open=false;
  const activeTray=()=>trays.find(t=>t.id==='tray'?!['rubeModeBtn','fluidModeBtn','airModeBtn','electricModeBtn','simpleModeBtn'].some(id=>document.getElementById(id)?.classList.contains('active')):t.classList.contains('show'));
@@ -5888,7 +5909,7 @@ setTimeout(()=>{
    }
    const selected=activeTray();
    for(const t of trays){
-     t.style.setProperty('display',open&&selected===t?'grid':'none','important');
+     t.style.setProperty('display',open&&selected===t?(t.id==='rubeTray'?'block':'grid'):'none','important');
      if(open&&selected===t){
        [['position','absolute'],['bottom','10px'],['top','auto'],['left','12px'],['right','12px'],['z-index','18']].forEach(([k,v])=>t.style.setProperty(k,v,'important'));
      }
@@ -5900,7 +5921,7 @@ setTimeout(()=>{
  function close(){open=false;sync()}
  toggle.addEventListener('click',()=>{open=!open;sync()});
  document.querySelectorAll('.modebar button').forEach(b=>b.addEventListener('click',()=>{open=false;requestAnimationFrame(sync)}));
- document.querySelectorAll('#tray button,#fluidTray button,.labTray button').forEach(b=>{
+ document.querySelectorAll('#tray button,#fluidTray button,.labTray button,#rubeTray .rubePartsRow button').forEach(b=>{
    if(!b.classList.contains('tileMoreButton'))b.addEventListener('click',close);
  });
  window.addEventListener('resize',()=>{open=false;sync()});
