@@ -921,6 +921,12 @@ header{min-height:50px;padding:5px 10px;background:#102839}
 @media(max-width:900px){.wpHero{grid-template-columns:1fr}.wpDashboardCards{grid-template-columns:repeat(2,minmax(0,1fr))}.wpOtherLayout{grid-template-columns:1fr}.wpSky{min-height:230px}}
 </style>
 <style>.wpConditions{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;padding:14px;border:1px solid #437fb1;border-radius:13px;background:linear-gradient(115deg,#134e86,#0d2c4d)}.wpConditions>div{display:flex;flex-direction:column;gap:4px;font-size:12px}.wpConditions>div:first-child{display:grid;grid-template-columns:auto auto;gap:2px 12px;align-items:center}.wpConditions>div:first-child span{font-size:36px;grid-row:span 2}.wpConditions strong{font-size:19px}.wpConditions small{font-size:12px}.wpConditions button{border:1px solid #69b3e3;border-radius:9px;padding:8px;background:#1a70bd}@media(max-width:700px){.wpConditions{gap:9px}.wpConditions strong{font-size:15px}}</style>
+<style>
+.wpCitySearch{display:flex;flex-wrap:wrap;align-items:center;gap:9px;margin:9px 0 12px;padding:9px 12px;background:#102d4c;border:1px solid #4a88bc;border-radius:10px}
+.wpCitySearch label{font-size:12px;font-weight:700}.wpCitySearch input{flex:1 1 200px;min-width:150px;padding:10px;border:1px solid #5a9ac6;border-radius:9px;background:#eaf7ff;color:#0f2944}
+.wpCitySearch button{background:#156bbb;border:1px solid #74c8f9;border-radius:9px;padding:9px 12px}
+#wpCityChosen{font-size:12px;color:#bde4fc}
+</style>
 </head>
 <body>
 <div id="app">
@@ -1148,7 +1154,8 @@ header{min-height:50px;padding:5px 10px;background:#102839}
 
 <div id="workspace">
 <section id="weatherLabPage" aria-label="Weather Physics Lab" hidden>
- <div class="wpHead"><strong>🌤️ Weather Physics Lab</strong><span id="wpDataState">Experiment with your own weather conditions</span></div>
+ <div class="wpHead"><strong>🌤️ Weather Physics Lab</strong><span id="wpDataState">Choose a city or use your location</span></div>
+ <div class="wpCitySearch"><label for="wpCityInput">Weather location</label><input id="wpCityInput" type="search" placeholder="Enter a city (e.g., Bay City, Michigan)" autocomplete="off"><button id="wpCitySearchBtn" type="button">🔎 Find Weather</button><span id="wpCityChosen">No city selected — manual experiment settings</span></div>
  <div id="wpDashboard"><div class="wpConditions"><div><span>☀️</span><strong id="wpHomeTemp">72°F</strong><small>Current conditions</small></div><div>💨 Wind <strong id="wpHomeWind">10 m/s</strong></div><div>💧 Humidity <strong id="wpHomeHum">55%</strong></div><div>◉ Pressure <strong id="wpHomePress">1013 hPa</strong></div><button id="wpHomeLive" type="button">📍 Refresh local weather</button></div><div class="wpHero"><div class="wpSky"><div class="wpSun">☀️</div><div class="wpClouds">☁️ ☁️</div><div class="wpAtmos"><span>☀️ Solar radiation heats the surface</span><span>☁️ Rising air cools and forms clouds</span><span>💨 Pressure differences create wind</span></div></div><aside class="wpFocus"><h3>Today’s Physics Focus</h3><div class="wpFocusTabs"><button data-focus="temperature">Temperature</button><button data-focus="wind">Wind</button><button data-focus="humidity">Humidity</button><button data-focus="clouds">Clouds</button><button data-focus="pressure">Pressure</button></div><h4 id="wpFocusTitle"></h4><p id="wpFocusText"></p><button data-weather-open="projectile">🎯 Start Today’s Challenge →</button></aside></div><h3 class="wpExpHeading">Hands-On Experiments</h3><div class="wpDashboardCards"><button data-weather-open="projectile">🎯<strong>Projectile Simulator</strong><small>Test how wind affects a water balloon.</small><span>Try It →</span></button><button data-weather-open="parachute">🪂<strong>Parachute Lab</strong><small>Explore falling speed and air resistance.</small><span>Try It →</span></button><button data-weather-open="clouds">☁️<strong>Cloud Formation</strong><small>Cool moist air to create a cloud.</small><span>Try It →</span></button><button data-weather-open="drag">💨<strong>Drag Force Explorer</strong><small>Compare different shapes in wind.</small><span>Try It →</span></button><button data-weather-open="machine">🌦️<strong>Weather Machine Builder</strong><small>Connect sunlight, evaporation and rain.</small><span>Open Builder →</span></button></div></div><div class="wpExperimentView" id="wpProjectileView" hidden><button class="wpBack" data-weather-home>← Weather Home</button><h3>🎯 Wind-Affected Projectile Simulator</h3><div class="wpLayout">
   <div class="wpControls">
    <label>Temperature <output id="wpTempOut">72°F</output><input id="wpTemp" type="range" min="-20" max="115" value="72"></label>
@@ -6377,6 +6384,38 @@ setTimeout(()=>{
  document.querySelectorAll('[data-weather-home]').forEach(b=>b.addEventListener('click',()=>{home.hidden=false;projectile.hidden=true;other.hidden=true;document.getElementById('weatherLabPage').scrollTop=0}));
  slider.addEventListener('input',render);
  document.getElementById('wpSimulate').addEventListener('click',()=>{render();document.getElementById('wpOtherExplanation').textContent=specs[selected][6]+' Experiment updated with the selected setting.'});
+})();
+</script>
+<script>
+(function(){
+ const input=document.getElementById('wpCityInput'),button=document.getElementById('wpCitySearchBtn');
+ const label=document.getElementById('wpCityChosen'),state=document.getElementById('wpDataState');
+ async function cityWeather(){
+   const query=input.value.trim();if(!query){label.textContent='Enter a city name to search.';return}
+   button.disabled=true;label.textContent='Searching for '+query+'…';
+   try{
+     const geocode=await fetch('https://geocoding-api.open-meteo.com/v1/search?name='+encodeURIComponent(query)+'&count=5&language=en&format=json');
+     if(!geocode.ok)throw new Error('City search failed');
+     const places=(await geocode.json()).results||[];
+     if(!places.length){label.textContent='No matching city found. Try adding the state or country.';return}
+     const q=query.toLowerCase();const place=places.find(p=>[p.name,p.admin1,p.country].filter(Boolean).join(' ').toLowerCase().includes(q))||places[0];
+     const url='https://api.open-meteo.com/v1/forecast?latitude='+place.latitude+'&longitude='+place.longitude+'&current=temperature_2m,relative_humidity_2m,pressure_msl,wind_speed_10m,wind_direction_10m&wind_speed_unit=ms';
+     const weather=await fetch(url);if(!weather.ok)throw new Error('Weather unavailable');
+     const c=(await weather.json()).current;if(!c)throw new Error('No current conditions');
+     const set=(id,x)=>document.getElementById(id).value=x;
+     set('wpTemp',Math.round(c.temperature_2m*9/5+32));set('wpWind',Math.round(c.wind_speed_10m));
+     set('wpHum',Math.round(c.relative_humidity_2m));set('wpPress',Math.round(c.pressure_msl));
+     set('wpDir',c.wind_direction_10m>=180?'-1':'1');
+     document.getElementById('wpTemp').dispatchEvent(new Event('input',{bubbles:true}));
+     const name=[place.name,place.admin1,place.country].filter(Boolean).join(', ');
+     label.textContent='📍 '+name;state.textContent='Current weather for '+name+' • Open-Meteo';
+     try{localStorage.setItem('weatherLabChosenCity',query)}catch(e){}
+   }catch(e){label.textContent='Could not load that city’s weather. Manual controls remain available.'}
+   finally{button.disabled=false}
+ }
+ button.addEventListener('click',cityWeather);
+ input.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();cityWeather()}});
+ try{const saved=localStorage.getItem('weatherLabChosenCity');if(saved){input.value=saved;label.textContent='Previously searched: '+saved+' — press Find Weather to refresh'}}catch(e){}
 })();
 </script>
 </body>
