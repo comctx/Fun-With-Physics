@@ -963,6 +963,7 @@ header{min-height:50px;padding:5px 10px;background:#102839}
 @media(max-width:980px){.wpFeatureDeck,.wpLowerDeck{grid-template-columns:1fr 1fr}.wpExtremeCard{grid-column:1/-1}}
 @media(max-width:680px){.wpFeatureDeck,.wpLowerDeck{grid-template-columns:1fr}.wpExtremeCard{grid-column:auto}#weatherLabPage .wpSky{min-height:260px}.wpAtmos span{font-size:10px}.wpFeatureImage{height:125px}}
 </style>
+<style>#wpScienceView{padding:16px;max-width:1000px;margin:auto}#wpScienceView p{font-size:16px;line-height:1.7}#wpScienceView h2{font-size:26px}.wpScienceVisual{min-height:250px;display:grid;place-items:center;border-radius:15px;border:1px solid #83bcdf;background:linear-gradient(145deg,#13629a,#07182e);font-size:125px;text-shadow:0 8px 25px #0017}@media(max-width:650px){.wpScienceVisual{min-height:170px;font-size:85px}}</style>
 </head>
 <body>
 <div id="app">
@@ -1218,7 +1219,7 @@ header{min-height:50px;padding:5px 10px;background:#102839}
   </div>
  </div>
  <div class="wpLessons"><details><summary>⚡ Lightning</summary>Charge separation inside storms can create electric fields strong enough to break down air.</details><details><summary>🌪️ Tornadoes</summary>Rising air, wind shear, and angular momentum help rotating updrafts develop.</details><details><summary>🌈 Rainbows</summary>Water droplets refract, internally reflect, and disperse sunlight into colors.</details><details><summary>❄️ Snow crystals</summary>Water vapor deposits onto ice; temperature and humidity affect branching shapes.</details></div></div><div id="wpOtherView" class="wpExperimentView" hidden><button class="wpBack" data-weather-home>← Weather Home</button><h3 id="wpOtherTitle"></h3><div class="wpOtherLayout"><div><label id="wpVariableLabel" for="wpVariable"></label><input id="wpVariable" type="range" min="0" max="100" value="50"><p id="wpVariableValue"></p><button id="wpSimulate" type="button">▶ Run Experiment</button><p id="wpOtherExplanation"></p></div><canvas id="wpOtherCanvas" width="800" height="420"></canvas></div></div>
-</section>
+<div id="wpScienceView" class="wpExperimentView" hidden><button type="button" id="wpScienceBack" class="wpBack">← Weather Home</button><h2 id="wpScienceTitle"></h2><div class="wpScienceVisual" id="wpScienceVisual" aria-hidden="true"></div><h3>What's happening?</h3><p id="wpScienceExplanation"></p><h3>Try this thought experiment</h3><p id="wpScienceQuestion"></p></div></section>
 <button id="desktopLabRun" type="button" style="display:none" aria-label="Start or stop lab">▶ Start Air</button>
 <button id="desktopToolsToggle" type="button" aria-expanded="false" aria-controls="tray" title="Show or hide tools">＋ Tools</button>
 <button class="uiAddTool" id="uiAddTool" type="button">＋ Add Tool</button><button class="uiCloseTools" id="uiCloseTools" type="button">✕ Close Tools</button><button class="uiFullScreen" id="uiFullScreen" type="button" title="Expand simulation">⛶</button>
@@ -6473,7 +6474,25 @@ setTimeout(()=>{
  rainbows:'Raindrops refract and reflect sunlight. Different wavelengths bend by different amounts, separating the colors.',
  snowflakes:'Ice crystals grow as water vapor deposits on their surfaces. Temperature and humidity affect their sixfold patterns.'
  };
- document.querySelectorAll('[data-weather-topic]').forEach(b=>b.addEventListener('click',()=>document.getElementById('wpTopicDetail').textContent=topics[b.dataset.weatherTopic]));
+ const science=document.getElementById('wpScienceView'),dashboard=document.getElementById('wpDashboard'),projectile=document.getElementById('wpProjectileView'),other=document.getElementById('wpOtherView');
+ const detail={
+ lightning:['⚡ Lightning','In storm clouds, ice particles transfer electric charge. When the electric field becomes strong enough, air becomes conductive and a discharge follows.','Why might you see lightning before you hear thunder?'],
+ tornadoes:['🌪️ Tornadoes','Wind shear and powerful updrafts can create rotating air. As the rotating column narrows, angular velocity can increase through conservation of angular momentum.','What happens to the rotation of a spinning skater when they pull their arms inward?'],
+ hurricanes:['🌀 Hurricanes','Warm ocean water supplies moisture and energy. Condensation releases latent heat, and Earth’s rotation helps organize a large rotating circulation.','Why do tropical cyclones weaken over cold water or land?'],
+ rainbows:['🌈 Rainbows','Sunlight refracts entering a raindrop, reflects internally and refracts again when leaving. Different colors bend by different amounts.','Why must the Sun usually be behind you to see a primary rainbow?'],
+ snowflakes:['❄️ Snowflakes','Water vapor deposits on ice crystals. Their sixfold molecular symmetry and changing temperature and humidity create diverse branching patterns.','How might a colder, drier cloud change crystal growth?']
+ };
+ document.querySelectorAll('[data-weather-topic]').forEach(b=>b.addEventListener('click',()=>{
+ const k=b.dataset.weatherTopic,item=detail[k];if(!item)return;
+ dashboard.hidden=true;projectile.hidden=true;other.hidden=true;science.hidden=false;
+ document.getElementById('wpScienceTitle').textContent=item[0];
+ document.getElementById('wpScienceVisual').textContent=item[0].split(' ')[0];
+ document.getElementById('wpScienceExplanation').textContent=item[1];
+ document.getElementById('wpScienceQuestion').textContent=item[2];
+ document.getElementById('weatherLabPage').scrollTop=0;
+ }));
+ document.getElementById('wpScienceBack').addEventListener('click',()=>{science.hidden=true;dashboard.hidden=false;document.getElementById('weatherLabPage').scrollTop=0});
+ document.querySelectorAll('[data-weather-open]').forEach(b=>b.addEventListener('click',()=>{science.hidden=true}));
  ['wpMapChoose','wpLocationChange'].forEach(id=>document.getElementById(id).addEventListener('click',()=>{
  document.getElementById('wpCityInput').focus();document.getElementById('weatherLabPage').scrollTo({top:0,behavior:'smooth'});
  }));
