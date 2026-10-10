@@ -5871,18 +5871,40 @@ setTimeout(()=>{
 </script>
 
 <script>
+/* Desktop tool panels are removed from document flow until explicitly opened. */
 (function(){
- const app=document.getElementById('app'),toggle=document.getElementById('desktopToolsToggle');
- const close=()=>{app.classList.remove('desktopToolsOpen');toggle.setAttribute('aria-expanded','false');toggle.textContent='＋ Tools'};
- toggle.addEventListener('click',()=>{
-  const open=app.classList.toggle('desktopToolsOpen');
-  toggle.setAttribute('aria-expanded',String(open));toggle.textContent=open?'✕ Close Tools':'＋ Tools';
- });
- document.querySelectorAll('.modebar button').forEach(b=>b.addEventListener('click',close));
+ const app=document.getElementById('app');
+ const toggle=document.getElementById('desktopToolsToggle');
+ const trays=['tray','fluidTray','airTray','electricTray','simpleTray'].map(id=>document.getElementById(id));
+ const desktop=()=>window.matchMedia('(min-width:951px), (min-width:700px) and (max-width:950px) and (pointer:fine)').matches;
+ let open=false;
+ const activeTray=()=>trays.find(t=>t.id==='tray'?!['rubeModeBtn','fluidModeBtn','airModeBtn','electricModeBtn','simpleModeBtn'].some(id=>document.getElementById(id)?.classList.contains('active')):t.classList.contains('show'));
+ function sync(){
+   if(!desktop()){
+     trays.forEach(t=>{t.style.removeProperty('position');t.style.removeProperty('top');t.style.removeProperty('bottom');t.style.removeProperty('left');t.style.removeProperty('right');t.style.removeProperty('z-index');t.style.removeProperty('display')});
+     // Restore the Mechanics tray's original mode-controlled visibility.
+     document.getElementById('tray').style.display=activeTray()?.id==='tray'?'grid':'none';
+     return;
+   }
+   const selected=activeTray();
+   for(const t of trays){
+     t.style.setProperty('display',open&&selected===t?'grid':'none','important');
+     if(open&&selected===t){
+       [['position','absolute'],['bottom','10px'],['top','auto'],['left','12px'],['right','12px'],['z-index','18']].forEach(([k,v])=>t.style.setProperty(k,v,'important'));
+     }
+   }
+   app.classList.toggle('desktopToolsOpen',open);
+   toggle.textContent=open?'✕ Close Tools':'＋ Tools';
+   toggle.setAttribute('aria-expanded',String(open));
+ }
+ function close(){open=false;sync()}
+ toggle.addEventListener('click',()=>{open=!open;sync()});
+ document.querySelectorAll('.modebar button').forEach(b=>b.addEventListener('click',()=>{open=false;requestAnimationFrame(sync)}));
  document.querySelectorAll('#tray button,#fluidTray button,.labTray button').forEach(b=>{
-  if(b.classList.contains('tileMoreButton'))return;
-  b.addEventListener('click',close);
+   if(!b.classList.contains('tileMoreButton'))b.addEventListener('click',close);
  });
+ window.addEventListener('resize',()=>{open=false;sync()});
+ sync();
 })();
 </script>
 </body>
