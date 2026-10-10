@@ -1457,6 +1457,30 @@ function ballImpact(kind,speed,key){
  else if(kind==='floor'){tone(100,.085,'triangle',v*.9)}
  else if(kind==='spring'){playSound('spring')}
 }
+// Continuous filtered-noise wind for active fans, air jets and wind tunnels.
+let windSource=null,windGain=null,windFilter=null;
+function stopWindAudio(){
+ if(windSource){try{windSource.stop()}catch(e){}try{windSource.disconnect()}catch(e){}windSource=null}
+ if(windGain){try{windGain.disconnect()}catch(e){}windGain=null}
+ if(windFilter){try{windFilter.disconnect()}catch(e){}windFilter=null}
+}
+function updateWindAudio(){
+ const mechanicsActive=running&&objects.some(o=>o.type==='fan'||(o.type==='airJetUnit'&&o.powered));
+ const airActive=gameMode==='air'&&labRunning&&labObjects.some(o=>['airjet','wind','vortex'].includes(o.type));
+ const active=soundEnabled&&(mechanicsActive||airActive);
+ if(!active){stopWindAudio();return}
+ const ac=ensureAudio();if(!ac)return;
+ if(!windSource){
+  const seconds=2,buffer=ac.createBuffer(1,ac.sampleRate*seconds,ac.sampleRate),data=buffer.getChannelData(0);
+  for(let i=0;i<data.length;i++)data[i]=Math.random()*2-1;
+  windSource=ac.createBufferSource();windSource.buffer=buffer;windSource.loop=true;
+  windFilter=ac.createBiquadFilter();windFilter.type='lowpass';windFilter.frequency.value=550;
+  windGain=ac.createGain();windGain.gain.value=0;
+  windSource.connect(windFilter);windFilter.connect(windGain);windGain.connect(ac.destination);windSource.start();
+ }
+ const count=mechanicsActive?objects.filter(o=>o.type==='fan'||(o.type==='airJetUnit'&&o.powered)).length:labObjects.filter(o=>['airjet','wind','vortex'].includes(o.type)).length;
+ windGain.gain.setTargetAtTime(Math.min(.065,.025+count*.01),ac.currentTime,.12);
+}
 function cloneMachine(machine=objects){
   return JSON.parse(JSON.stringify(machine));
 }
@@ -2896,6 +2920,7 @@ function draw(){
 }
 
 function update(dt){
+  updateWindAudio();
   if(gameMode==='fluid'){
     updateFluid(dt);
     return;
