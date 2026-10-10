@@ -6244,26 +6244,41 @@ setTimeout(()=>{
   document.getElementById('wpExplain').textContent='At '+val('wpTemp')+'°F, the average translational kinetic energy per air molecule is about '+energy.toExponential(2)+' joules. Pressure gradients drive wind; wind then changes the flight of objects.';
   document.getElementById('wpCloud').textContent='Relative humidity: '+val('wpHum')+'%. As moist air cools toward its dew point, water vapor may condense into cloud droplets. Pressure: '+val('wpPress')+' hPa.';
  }
- function trajectory(t){const wx=val('wpWind')*val('wpDir');return{x:10+(18+wx*.14)*t,y:17+11*t-4.905*t*t}}
+ // Flight starts at the launcher (10 m) with a 17 m elevation.
+ // Wind causes a small horizontal acceleration; this is a teaching model, not a forecast.
+ function flightTime(){return (11+Math.sqrt(11*11+4*4.905*17))/(2*4.905)}
+ function trajectory(t){const wx=val('wpWind')*val('wpDir');return{x:10+18*t+.11*wx*t*t,y:17+11*t-4.905*t*t}}
+ function landing(){return trajectory(flightTime()).x}
  function draw(){
-  const w=cvs.width,h=cvs.height;ctx.clearRect(0,0,w,h);
-  const ground=h-30;ctx.fillStyle='#567e62';ctx.fillRect(0,ground,w,30);
+  const w=cvs.width,h=cvs.height,ground=h-30,meter=w/70,base=ground;
+  ctx.clearRect(0,0,w,h);
+  ctx.fillStyle='#567e62';ctx.fillRect(0,ground,w,30);
   ctx.strokeStyle='#ffffff20';for(let i=0;i<=10;i++){const x=i*w/10;ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,ground);ctx.stroke()}
   ctx.fillStyle='#d9f5ff';ctx.font='15px sans-serif';ctx.fillText('Wind '+val('wpWind')+' m/s '+(val('wpDir')>0?'→':'←'),16,25);
-  const meter=w/70,base=ground;
   ctx.fillStyle='#e4bf66';ctx.fillRect(10*meter-12,base-10,24,10);
   ctx.fillStyle='#ffd65a';ctx.fillRect(50*meter-7,base-60,14,60);
   ctx.fillStyle='white';ctx.fillText('50 m target',50*meter-45,base-68);
   ctx.strokeStyle='#95dffa';ctx.setLineDash([4,6]);ctx.beginPath();
-  let lastPoint=null,hit=null;for(let t=0;t<6;t+=.035){const p=trajectory(t);if(p.y<0){hit=p;break}const x=p.x*meter,y=base-p.y*meter;if(!lastPoint)ctx.moveTo(x,y);else ctx.lineTo(x,y);lastPoint=p}ctx.stroke();ctx.setLineDash([]);
-  const t=active&&raf?elapsed:0,p=trajectory(t),x=p.x*meter,y=base-Math.max(0,p.y)*meter;
+  const end=flightTime();
+  for(let i=0;i<=100;i++){const p=trajectory(end*i/100);const x=p.x*meter,y=base-p.y*meter;if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y)}
+  ctx.stroke();ctx.setLineDash([]);
+  const t=raf?Math.min(elapsed,end):0,p=trajectory(t),x=p.x*meter,y=base-Math.max(0,p.y)*meter;
   ctx.fillStyle='#fd6464';ctx.beginPath();ctx.arc(Math.max(8,Math.min(w-8,x)),Math.max(10,Math.min(ground-8,y)),10,0,Math.PI*2);ctx.fill();
-  return hit;
  }
- function tick(ts){if(!active||!raf)return;const dt=last?Math.min(.045,(ts-last)/1000):0;last=ts;elapsed+=dt;const hit=draw();if(hit||elapsed>5.7){raf=0;document.getElementById('wpResult').textContent='Balloon landed approximately '+(hit?hit.x.toFixed(1):trajectory(elapsed).x.toFixed(1))+' m away (simplified wind model). Adjust the conditions and try again.';return}raf=requestAnimationFrame(tick)}
- document.getElementById('wpLaunch').addEventListener('click',()=>{cancelAnimationFrame(raf);elapsed=0;last=0;document.getElementById('wpResult').textContent='Launching…';raf=requestAnimationFrame(tick)});
+ function tick(ts){
+  if(!active||!raf)return;
+  const dt=last?Math.min(.045,(ts-last)/1000):0;last=ts;elapsed+=dt;draw();
+  if(elapsed>=flightTime()){
+   raf=0;const where=landing(),miss=Math.abs(where-50),hit=miss<=3;
+   document.getElementById('wpResult').textContent=(hit?'🎯 Target reached! ':'💨 Target missed. ')+
+    'Balloon landed at '+where.toFixed(1)+' m — '+miss.toFixed(1)+' m from the 50 m target. Change wind speed or direction and launch again.';
+   return;
+  }
+  raf=requestAnimationFrame(tick);
+ }
+ document.getElementById('wpLaunch').addEventListener('click',()=>{cancelAnimationFrame(raf);elapsed=0;last=0;document.getElementById('wpResult').textContent='Launching toward the 50 m target…';raf=requestAnimationFrame(tick)});
  document.getElementById('wpReset').addEventListener('click',()=>{cancelAnimationFrame(raf);raf=0;elapsed=0;document.getElementById('wpResult').textContent='Adjust the weather and launch a balloon toward the 50 m target.';draw()});
- ['wpTemp','wpWind','wpHum','wpPress','wpDir'].forEach(id=>document.getElementById(id).addEventListener('input',()=>{updateLabels();if(!raf)draw()}));
+ ['wpTemp','wpWind','wpHum','wpPress','wpDir'].forEach(id=>document.getElementById(id).addEventListener('input',()=>{updateLabels();if(!raf){draw();document.getElementById('wpResult').textContent='Predicted landing: '+landing().toFixed(1)+' m. Target: 50 m. Press Launch to test.'}}));
  document.getElementById('wpLive').addEventListener('click',()=>{
   if(!navigator.geolocation){document.getElementById('wpDataState').textContent='Location unavailable; manual settings still work';return}
   document.getElementById('wpDataState').textContent='Requesting location permission…';
