@@ -733,6 +733,25 @@ header{min-height:50px;padding:5px 10px;background:#102839}
  #tsunamiLab .tsHeader{min-height:40px}
  #tsunamiLab.open~.uiAddTool,#waveLab.open~.uiAddTool{display:none}
 }
+
+/* Compact desktop lab navigation and tool buttons (no clipped buttons or visible scrollbars). */
+@media (min-width:951px) and (pointer:fine){
+ .modebar{flex-wrap:wrap;overflow:visible;gap:4px;padding:5px 8px;min-height:0}
+ .modebar>button{font-size:clamp(10px,.85vw,12px);padding:5px 8px;min-height:34px;flex:0 0 auto}
+ .modebar .goal{margin-left:auto;min-width:0;max-width:230px}
+ #hud{margin-left:4px}
+ .hudCard{min-width:0;padding:4px 6px}
+ #tray,#fluidTray,.labTray{
+   display:flex;flex-wrap:wrap;overflow:visible;
+   gap:5px;padding:6px 8px;min-height:0
+ }
+ #tray .partButton,#fluidTray .fluidButton,.labTray .labButton{
+   flex:0 1 auto;min-width:0;min-height:35px;
+   padding:6px 9px;font-size:11px;white-space:nowrap
+ }
+ #rubeTray .rubeToolHeader,#rubeTray .rubePartsRow{flex-wrap:wrap;overflow:visible}
+ #rubeTray .partButton{flex:0 1 auto;min-width:78px}
+}
 </style>
 </head>
 <body>
