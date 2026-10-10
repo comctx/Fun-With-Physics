@@ -734,152 +734,42 @@ header{min-height:50px;padding:5px 10px;background:#102839}
  #tsunamiLab.open~.uiAddTool,#waveLab.open~.uiAddTool{display:none}
 }
 
-/* Compact desktop lab navigation and tool buttons (no clipped buttons or visible scrollbars). */
-@media (min-width:951px) and (pointer:fine){
- .modebar{flex-wrap:wrap;overflow:visible;gap:4px;padding:5px 8px;min-height:0}
- .modebar>button{font-size:clamp(10px,.85vw,12px);padding:5px 8px;min-height:34px;flex:0 0 auto}
- .modebar .goal{margin-left:auto;min-width:0;max-width:230px}
- #hud{margin-left:4px}
- .hudCard{min-width:0;padding:4px 6px}
- #tray,#fluidTray,.labTray{
-   display:flex;flex-wrap:wrap;overflow:visible;
-   gap:5px;padding:6px 8px;min-height:0
- }
- #tray .partButton,#fluidTray .fluidButton,.labTray .labButton{
-   flex:0 1 auto;min-width:0;min-height:35px;
-   padding:6px 9px;font-size:11px;white-space:nowrap
- }
- #rubeTray .rubeToolHeader,#rubeTray .rubePartsRow{flex-wrap:wrap;overflow:visible}
- #rubeTray .partButton{flex:0 1 auto;min-width:78px}
-}
-
-/* Compact icon-tile navigation inspired by the approved reference. */
-@media(min-width:951px){
- .modebar{flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;scrollbar-width:none;min-height:45px;gap:3px}
- .modebar::-webkit-scrollbar{display:none}
- .modebar>button{font-size:11px;flex:0 0 auto;min-height:35px;padding:5px 10px;border-radius:8px}
- .modebar .goal,#hud{display:none}
- #tray,#fluidTray,.labTray{display:flex;flex-wrap:nowrap;overflow:visible;align-items:stretch;gap:5px;padding:7px 9px;background:#142b3b}
- #tray .partButton,#fluidTray .fluidButton,.labTray .labButton{
-   width:69px;min-width:69px;max-width:69px;height:69px;min-height:69px;
-   flex:0 0 69px;display:flex;flex-direction:column;gap:3px;
-   align-items:center;justify-content:center;padding:5px 2px;
-   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-   font-size:10px;font-weight:700;border-radius:10px;
-   background:#223647;border:1px solid #344e60
- }
- #tray .partButton .icon,#fluidTray .fluidButton .icon,.labTray .labButton .icon{
-   font-size:23px;line-height:1.15;display:block
- }
- #tray .partButton:hover,#fluidTray .fluidButton:hover,.labTray .labButton:hover,
- .tileMoreButton:hover{border-color:#60dbff}
- #tray .tileExtra:not(.tileShown),#fluidTray .tileExtra:not(.tileShown),.labTray .tileExtra:not(.tileShown){display:none!important}
- #tray.tileExpanded,#fluidTray.tileExpanded,.labTray.tileExpanded{flex-wrap:wrap}
- .tileMoreButton{width:69px;min-width:69px;height:69px;flex:0 0 69px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;background:#25394a;border-radius:10px;font-size:10px}
- .tileMoreButton .icon{font-size:24px}
-}
-@media(max-width:950px) and (pointer:coarse){
- #app.uiToolsOpen #tray .partButton,#app.uiToolsOpen #fluidTray .fluidButton,#app.uiToolsOpen .labTray .labButton{
-   min-width:75px;width:75px;min-height:72px;display:flex;flex-direction:column;gap:4px;font-size:10px;justify-content:center;white-space:normal;text-align:center
- }
- #app.uiToolsOpen #tray .icon,#app.uiToolsOpen #fluidTray .icon,#app.uiToolsOpen .labTray .icon{font-size:23px}
- .tileMoreButton{display:none!important}
-}
-
-/* Device-independent desktop tiles: works on touch-enabled Windows PCs too. */
-@media(min-width:951px){
- #fluidTray,#tray,.labTray{grid-template-columns:none!important;grid-auto-flow:unset!important;display:flex!important;flex-flow:row nowrap!important;overflow:visible!important;align-items:stretch!important}
- #fluidTray .fluidButton,#tray .partButton,.labTray .labButton{
-   box-sizing:border-box!important;display:flex!important;flex-flow:column nowrap!important;
-   width:73px!important;min-width:73px!important;max-width:73px!important;
-   height:73px!important;min-height:73px!important;flex:0 0 73px!important;
-   padding:5px 3px!important;gap:4px!important;justify-content:center!important;align-items:center!important;
-   white-space:normal!important;line-height:1.1!important;text-align:center!important;font-size:10px!important;
-   border-radius:10px!important;overflow:hidden!important;overflow-wrap:anywhere;
- }
- #fluidTray .fluidButton .icon,#tray .partButton .icon,.labTray .labButton .icon{
-   font-size:24px!important;display:block!important;line-height:1.15!important;margin:0!important
- }
- #fluidTray .tileExtra:not(.tileShown),#tray .tileExtra:not(.tileShown),.labTray .tileExtra:not(.tileShown){display:none!important}
- #fluidTray.tileExpanded,#tray.tileExpanded,.labTray.tileExpanded{flex-wrap:wrap!important}
- .tileMoreButton{display:flex!important;flex-direction:column!important;justify-content:center;align-items:center;flex:0 0 73px!important;width:73px!important;height:73px!important}
-}
-.tileCaption{display:block;text-align:center;line-height:1.12;font-size:10px;max-width:100%;overflow-wrap:anywhere}
-@media(min-width:951px){#tray .icon,#fluidTray .icon,.labTray .icon{font-size:23px!important}#tray,#fluidTray,.labTray{scrollbar-width:none}#tray::-webkit-scrollbar,#fluidTray::-webkit-scrollbar,.labTray::-webkit-scrollbar{display:none}}
-
-/* Final tile layout: explicitly structured HTML, not browser input-device detection. */
-@media screen and (min-width:951px){
- #tray,#fluidTray,#airTray,#electricTray,#simpleTray{
-   display:flex!important;flex-direction:row!important;flex-wrap:nowrap!important;
-   gap:6px!important;padding:7px 9px!important;
-   overflow-x:hidden!important;overflow-y:visible!important;
-   min-height:84px!important;align-items:center!important;
-   scrollbar-width:none!important
- }
- #tray button.partButton,#fluidTray button.fluidButton,#airTray button.labButton,#electricTray button.labButton,#simpleTray button.labButton{
-   display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;
-   flex-grow:0!important;flex-shrink:0!important;flex-basis:72px!important;
-   width:72px!important;min-width:72px!important;max-width:72px!important;
-   height:72px!important;min-height:72px!important;max-height:72px!important;
-   padding:5px 2px!important;gap:4px!important;
-   white-space:normal!important;text-align:center!important;
-   border-radius:10px!important
- }
- #tray button .icon,#fluidTray button .icon,#airTray button .icon,#electricTray button .icon,#simpleTray button .icon{
-   display:block!important;font-size:24px!important;line-height:1!important;flex:none!important
- }
- #tray button .tileCaption,#fluidTray button .tileCaption,#airTray button .tileCaption,#electricTray button .tileCaption,#simpleTray button .tileCaption{
-   display:block!important;font-size:10px!important;line-height:1.08!important;
-   font-weight:700!important;text-align:center!important;white-space:normal!important;
-   width:100%!important;max-width:100%!important;overflow-wrap:break-word!important
- }
- #tray .tileExtra:not(.tileShown),#fluidTray .tileExtra:not(.tileShown),.labTray .tileExtra:not(.tileShown){display:none!important}
- #tray.tileExpanded,#fluidTray.tileExpanded,.labTray.tileExpanded{flex-wrap:wrap!important}
- #tray .tileMoreButton,#fluidTray .tileMoreButton,.labTray .tileMoreButton{
-   flex:0 0 72px!important;display:flex!important;flex-direction:column!important;
-   width:72px!important;min-width:72px!important;height:72px!important;align-items:center!important;justify-content:center!important
- }
-}
-
-/* Reference-inspired tool tiles: gradient, square, icon above text. */
+/* One authoritative desktop tile layout — replaces conflicting revisions. */
+.tileCaption{display:block;line-height:1.15;text-align:center;overflow-wrap:break-word}
 @media (min-width:951px){
- #tray,#fluidTray,#airTray,#electricTray,#simpleTray{
-   display:grid!important;
-   grid-template-columns:repeat(auto-fill,minmax(88px,1fr))!important;
-   gap:12px!important;padding:12px!important;
-   align-content:start!important;align-items:stretch!important;
-   height:auto!important;max-height:240px!important;
-   overflow-y:auto!important;overflow-x:hidden!important;
+ .modebar{display:flex;align-items:center;flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;gap:5px;padding:5px 9px;min-height:45px;scrollbar-width:none}
+ .modebar::-webkit-scrollbar{display:none}
+ .modebar>button{flex:0 0 auto;min-height:34px;padding:6px 10px;font-size:11px;border-radius:8px;white-space:nowrap}
+ .modebar .goal,#hud{display:none}
+ #tray,#fluidTray,.labTray{
+   grid-template-columns:repeat(auto-fill,minmax(88px,1fr));
+   display:grid;gap:12px;padding:10px 12px;
+   overflow-x:hidden;overflow-y:visible;
+   align-content:start;align-items:stretch;background:#142b3b
  }
- #tray button.partButton,#fluidTray button.fluidButton,
- #airTray button.labButton,#electricTray button.labButton,#simpleTray button.labButton,
- #tray button.tileMoreButton,#fluidTray button.tileMoreButton,.labTray button.tileMoreButton{
-   box-sizing:border-box!important;aspect-ratio:1!important;
-   width:100%!important;min-width:0!important;max-width:none!important;
-   height:auto!important;min-height:88px!important;max-height:none!important;
-   flex:none!important;display:flex!important;flex-direction:column!important;
-   align-items:center!important;justify-content:center!important;
-   gap:0!important;padding:8px 5px!important;
-   border:1px solid #3d5772!important;border-radius:16px!important;
-   background:linear-gradient(180deg,#294462 0%,#1f344c 100%)!important;
-   color:#fff!important;cursor:pointer!important;
-   transition:transform .2s ease,border-color .2s ease,box-shadow .2s ease!important;
+ #tray:not(.tileExpanded),#fluidTray:not(.tileExpanded),.labTray:not(.tileExpanded){
+   grid-template-rows:88px;max-height:110px;overflow-y:hidden
  }
- #tray button.partButton:hover,#fluidTray button.fluidButton:hover,.labTray button.labButton:hover,
- #tray button.tileMoreButton:hover,#fluidTray button.tileMoreButton:hover,.labTray button.tileMoreButton:hover{
-   transform:translateY(-2px)!important;border-color:#4fc3ff!important;
-   box-shadow:0 6px 16px rgba(79,195,255,.25)!important
+ #tray.tileExpanded,#fluidTray.tileExpanded,.labTray.tileExpanded{max-height:min(43dvh,400px);overflow-y:auto}
+ #tray button.partButton,#fluidTray button.fluidButton,.labTray button.labButton,.tileMoreButton{
+   aspect-ratio:1;min-width:0;max-width:none;width:100%;height:auto;min-height:88px;
+   display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;padding:7px 4px;
+   border:1px solid #3d5772;border-radius:16px;
+   background:linear-gradient(180deg,#294462 0%,#1f344c 100%);
+   color:#fff;white-space:normal;line-height:1.13;text-align:center;font-size:12px;font-weight:600;
+   transition:transform .2s ease,border-color .2s ease,box-shadow .2s ease;
  }
- #tray button .icon,#fluidTray button .icon,.labTray button .icon{
-   display:block!important;font-size:28px!important;margin:0 0 8px!important;
-   line-height:1.1!important
+ #tray button.partButton:hover,#fluidTray button.fluidButton:hover,.labTray button.labButton:hover,.tileMoreButton:hover{
+   transform:translateY(-2px);border-color:#4fc3ff;box-shadow:0 6px 16px rgba(79,195,255,.25)
  }
- #tray button .tileCaption,#fluidTray button .tileCaption,.labTray button .tileCaption{
-   font-size:12px!important;font-weight:600!important;text-align:center!important;
-   line-height:1.14!important;white-space:normal!important;
+ #tray .icon,#fluidTray .icon,.labTray .icon,.tileMoreButton .icon{
+   display:block;font-size:28px;line-height:1.1;margin:0;flex:none
  }
- #tray .tileExtra:not(.tileShown),#fluidTray .tileExtra:not(.tileShown),.labTray .tileExtra:not(.tileShown){display:none!important}
- #tray:not(.tileExpanded),#fluidTray:not(.tileExpanded),.labTray:not(.tileExpanded){max-height:126px!important;overflow-y:hidden!important}
+ #tray .tileCaption,#fluidTray .tileCaption,.labTray .tileCaption{
+   display:block;font-size:12px;font-weight:600;line-height:1.1
+ }
+ #tray .tileExtra:not(.tileShown),#fluidTray .tileExtra:not(.tileShown),.labTray .tileExtra:not(.tileShown){display:none}
+ #rubeTray .rubeToolHeader,#rubeTray .rubePartsRow{flex-wrap:wrap;overflow:visible}
 }
 </style>
 </head>
@@ -5921,37 +5811,6 @@ setTimeout(()=>{
  });
 })();
 </script>
-<script>
-/* Enforce the approved compact tile layout after the existing app initializes. */
-(function(){
- const trays=[document.getElementById('tray'),document.getElementById('fluidTray'),...document.querySelectorAll('.labTray')];
- const set=(el,k,v)=>el.style.setProperty(k,v,'important');
- function layout(){
-   const desktop=window.innerWidth>=951;
-   for(const tray of trays){
-     if(!tray)continue;
-     const buttons=[...tray.children].filter(el=>el.matches('button:not(.tileMoreButton)'));
-     for(const btn of buttons){
-       if(!btn.querySelector('.tileCaption')){
-         const caption=document.createElement('span');
-         caption.className='tileCaption';
-         for(const node of [...btn.childNodes]){
-           if(node.nodeType===Node.TEXT_NODE&&node.textContent.trim()){caption.appendChild(node)}
-         }
-         btn.appendChild(caption);
-       }
-       if(desktop){
-         [['width','72px'],['min-width','72px'],['max-width','72px'],['height','72px'],['min-height','72px'],['flex','0 0 72px'],['display','flex'],['flex-direction','column'],['align-items','center'],['justify-content','center'],['gap','4px'],['padding','5px 3px'],['white-space','normal'],['text-align','center']].forEach(([k,v])=>set(btn,k,v));
-       }else{
-         ['width','min-width','max-width','height','min-height','flex','display','flex-direction','align-items','justify-content','gap','padding','white-space','text-align'].forEach(k=>btn.style.removeProperty(k));
-       }
-     }
-     if(desktop){set(tray,'display','flex');set(tray,'flex-wrap',tray.classList.contains('tileExpanded')?'wrap':'nowrap');set(tray,'overflow','visible')}
-     else{['display','flex-wrap','overflow'].forEach(k=>tray.style.removeProperty(k))}
-   }
- }
- layout();window.addEventListener('resize',layout);
-})();
-</script>
+
 </body>
 </html>
