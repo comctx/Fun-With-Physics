@@ -861,9 +861,27 @@ header{min-height:50px;padding:5px 10px;background:#102839}
 #achievementToast{display:none;position:absolute;top:80px;left:50%;transform:translateX(-50%);z-index:46;padding:12px 16px;background:#173c52;border:1px solid #66d5ff;border-radius:12px;box-shadow:0 8px 24px #0009;font-weight:bold;pointer-events:none}
 #achievementToast.visible{display:block}
 </style>
+<style>
+#promptBuildPanel{position:absolute;z-index:48;right:12px;top:65px;width:min(420px,calc(100vw - 24px));max-height:80dvh;overflow:auto;background:#102c40;border:1px solid #57a3c4;border-radius:14px;box-shadow:0 10px 38px #000b;padding:15px;color:white}
+#promptBuildPanel[hidden]{display:none!important}
+.promptBuildHead{display:flex;justify-content:space-between;align-items:center}
+#promptBuildPanel p{font-size:12px;color:#c2d8e5}
+#promptBuildText{box-sizing:border-box;width:100%;min-height:75px;background:#203d51;color:white;border:1px solid #648298;border-radius:9px;padding:9px}
+.promptBuildExamples{display:flex;flex-wrap:wrap;gap:5px;margin:10px 0}
+.promptBuildExamples button{font-size:11px;padding:7px}
+#promptBuildGenerate{background:#087ab0;border:1px solid #66d4ff;font-weight:bold;padding:9px;border-radius:9px}
+</style>
 </head>
 <body>
 <div id="app">
+<div id="promptBuildPanel" role="dialog" aria-modal="false" aria-label="Build From Prompt" hidden>
+ <div class="promptBuildHead"><strong>✨ Build From Prompt</strong><button type="button" id="promptBuildClose" aria-label="Close">✕</button></div>
+ <p>Describe a chain reaction. I'll create editable starter parts that you can test and improve.</p>
+ <textarea id="promptBuildText" rows="3" maxlength="500" placeholder="Build a machine using dominoes, a fan, and a magnet to ring a bell."></textarea>
+ <div class="promptBuildExamples"><button type="button" data-example="Make a domino chain that rings a bell">Domino chain</button><button type="button" data-example="Use a ramp, fan and magnet to send a ball to a bell">Fan + magnet</button><button type="button" data-example="Build a machine that launches a rocket using dominoes, a fan, and a magnet">Rocket idea</button></div>
+ <button type="button" id="promptBuildGenerate">✨ Generate Starter Machine</button>
+ <p id="promptBuildFeedback" role="status"></p>
+</div>
 <div id="achievementPanel" role="dialog" aria-label="Achievements"><div style="display:flex;justify-content:space-between;align-items:center"><strong>🏆 Achievements</strong><button id="achievementClose" type="button">✕</button></div><p style="font-size:12px;color:#b7cbd9">Earn awards by running real experiments. Progress is saved on this device.</p><div id="achievementList"></div></div>
 <div id="achievementToast" role="status" aria-live="polite"></div>
 
@@ -878,6 +896,7 @@ header{min-height:50px;padding:5px 10px;background:#102839}
     <button id="redoBtn">↷ Redo</button>
     <button id="saveBtn">💾 Saves</button>
     <button id="loadBtn">📂 Saved</button>
+    <button id="promptBuildBtn" type="button" title="Build a starter machine from text">✨ Build</button>
     <button id="achievementBtn" type="button" aria-expanded="false" title="Achievements">🏆</button>
     <button id="soundBtn">🔊 Sound</button>
     <button id="tutorialBtn">?</button>
@@ -5996,6 +6015,48 @@ setTimeout(()=>{
  });
  window.addEventListener('resize',()=>{open=false;sync()});
  sync();
+})();
+</script>
+<script>
+/* Deterministic prompt-to-starter builder; no network or AI claims. */
+(function(){
+ const panel=document.getElementById('promptBuildPanel'),input=document.getElementById('promptBuildText');
+ const feedback=document.getElementById('promptBuildFeedback');
+ document.getElementById('promptBuildBtn').addEventListener('click',()=>{panel.hidden=!panel.hidden;if(!panel.hidden)input.focus()});
+ document.getElementById('promptBuildClose').addEventListener('click',()=>panel.hidden=true);
+ panel.querySelectorAll('[data-example]').forEach(b=>b.addEventListener('click',()=>input.value=b.dataset.example));
+ document.getElementById('promptBuildGenerate').addEventListener('click',()=>{
+  const p=input.value.toLowerCase().trim();
+  if(!p){feedback.textContent='Please describe your machine first.';return}
+  // All placed objects are real editable objects in the existing physics engine.
+  if(running)stopRun();
+  setMode('sandbox');
+  const W=Math.max(360,width),H=Math.max(290,height);
+  const x=n=>Math.max(35,Math.min(W-35,W*n)),y=n=>Math.max(40,Math.min(H-40,H*n));
+  const next=[];
+  const add=(type,xp,yp)=>{const o=makeObject(type,x(xp),y(yp));next.push(o);return o};
+  add('ball',.12,.17);
+  const ramp=add('ramp',.28,.35);ramp.angle=.20;
+  const requestedDomino=/domino|chain reaction|chain of|knock/.test(p);
+  if(requestedDomino){
+    const count=/20 domino|twenty domino/.test(p)?12:5;
+    for(let i=0;i<count;i++)add('domino',.43+i*.035,.66);
+  }
+  if(/spring|launch|rocket|catapult/.test(p))add('spring',.62,.82);
+  if(/fan|wind|air|blow/.test(p))add('fan',.48,.32);
+  if(/magnet|magnetic/.test(p))add('magnet',.70,.37);
+  if(/pendulum|swing/.test(p))add('pendulum',.72,.20);
+  if(/explosion|blast/.test(p))add('blast',.77,.70);
+  add('bell',.87,.81);
+  pushHistory();
+  objects=next;runSnapshot=null;running=false;won=false;
+  setSelected(null);updateScore();updateUndoRedoButtons();updateTrayLocks();
+  panel.hidden=true;
+  let notice='Created '+next.length+' editable parts. Press RUN to test, then adjust positions for the reaction.';
+  if(/rocket/.test(p))notice+=' Rocket launching is not yet simulated; the bell is the temporary finish target.';
+  document.getElementById('status').textContent=notice;
+  feedback.textContent=notice;
+ });
 })();
 </script>
 </body>
