@@ -840,6 +840,47 @@ header{min-height:50px;padding:5px 10px;background:#102839}
    width:72px!important;min-width:72px!important;height:72px!important;align-items:center!important;justify-content:center!important
  }
 }
+
+/* Reference-inspired tool tiles: gradient, square, icon above text. */
+@media (min-width:951px){
+ #tray,#fluidTray,#airTray,#electricTray,#simpleTray{
+   display:grid!important;
+   grid-template-columns:repeat(auto-fill,minmax(88px,1fr))!important;
+   gap:12px!important;padding:12px!important;
+   align-content:start!important;align-items:stretch!important;
+   height:auto!important;max-height:240px!important;
+   overflow-y:auto!important;overflow-x:hidden!important;
+ }
+ #tray button.partButton,#fluidTray button.fluidButton,
+ #airTray button.labButton,#electricTray button.labButton,#simpleTray button.labButton,
+ #tray button.tileMoreButton,#fluidTray button.tileMoreButton,.labTray button.tileMoreButton{
+   box-sizing:border-box!important;aspect-ratio:1!important;
+   width:100%!important;min-width:0!important;max-width:none!important;
+   height:auto!important;min-height:88px!important;max-height:none!important;
+   flex:none!important;display:flex!important;flex-direction:column!important;
+   align-items:center!important;justify-content:center!important;
+   gap:0!important;padding:8px 5px!important;
+   border:1px solid #3d5772!important;border-radius:16px!important;
+   background:linear-gradient(180deg,#294462 0%,#1f344c 100%)!important;
+   color:#fff!important;cursor:pointer!important;
+   transition:transform .2s ease,border-color .2s ease,box-shadow .2s ease!important;
+ }
+ #tray button.partButton:hover,#fluidTray button.fluidButton:hover,.labTray button.labButton:hover,
+ #tray button.tileMoreButton:hover,#fluidTray button.tileMoreButton:hover,.labTray button.tileMoreButton:hover{
+   transform:translateY(-2px)!important;border-color:#4fc3ff!important;
+   box-shadow:0 6px 16px rgba(79,195,255,.25)!important
+ }
+ #tray button .icon,#fluidTray button .icon,.labTray button .icon{
+   display:block!important;font-size:28px!important;margin:0 0 8px!important;
+   line-height:1.1!important
+ }
+ #tray button .tileCaption,#fluidTray button .tileCaption,.labTray button .tileCaption{
+   font-size:12px!important;font-weight:600!important;text-align:center!important;
+   line-height:1.14!important;white-space:normal!important;
+ }
+ #tray .tileExtra:not(.tileShown),#fluidTray .tileExtra:not(.tileShown),.labTray .tileExtra:not(.tileShown){display:none!important}
+ #tray:not(.tileExpanded),#fluidTray:not(.tileExpanded),.labTray:not(.tileExpanded){max-height:126px!important;overflow-y:hidden!important}
+}
 </style>
 </head>
 <body>
