@@ -754,7 +754,7 @@ header{min-height:50px;padding:5px 10px;background:#102839}
 }
 
 /* Compact icon-tile navigation inspired by the approved reference. */
-@media(min-width:951px) and (pointer:fine){
+@media(min-width:951px){
  .modebar{flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;scrollbar-width:none;min-height:45px;gap:3px}
  .modebar::-webkit-scrollbar{display:none}
  .modebar>button{font-size:11px;flex:0 0 auto;min-height:35px;padding:5px 10px;border-radius:8px}
@@ -784,6 +784,25 @@ header{min-height:50px;padding:5px 10px;background:#102839}
  }
  #app.uiToolsOpen #tray .icon,#app.uiToolsOpen #fluidTray .icon,#app.uiToolsOpen .labTray .icon{font-size:23px}
  .tileMoreButton{display:none!important}
+}
+
+/* Device-independent desktop tiles: works on touch-enabled Windows PCs too. */
+@media(min-width:951px){
+ #fluidTray,#tray,.labTray{grid-template-columns:none!important;grid-auto-flow:unset!important;display:flex!important;flex-flow:row nowrap!important;overflow:visible!important;align-items:stretch!important}
+ #fluidTray .fluidButton,#tray .partButton,.labTray .labButton{
+   box-sizing:border-box!important;display:flex!important;flex-flow:column nowrap!important;
+   width:73px!important;min-width:73px!important;max-width:73px!important;
+   height:73px!important;min-height:73px!important;flex:0 0 73px!important;
+   padding:5px 3px!important;gap:4px!important;justify-content:center!important;align-items:center!important;
+   white-space:normal!important;line-height:1.1!important;text-align:center!important;font-size:10px!important;
+   border-radius:10px!important;overflow:hidden!important;overflow-wrap:anywhere;
+ }
+ #fluidTray .fluidButton .icon,#tray .partButton .icon,.labTray .labButton .icon{
+   font-size:24px!important;display:block!important;line-height:1.15!important;margin:0!important
+ }
+ #fluidTray .tileExtra:not(.tileShown),#tray .tileExtra:not(.tileShown),.labTray .tileExtra:not(.tileShown){display:none!important}
+ #fluidTray.tileExpanded,#tray.tileExpanded,.labTray.tileExpanded{flex-wrap:wrap!important}
+ .tileMoreButton{display:flex!important;flex-direction:column!important;justify-content:center;align-items:center;flex:0 0 73px!important;width:73px!important;height:73px!important}
 }
 </style>
 </head>
