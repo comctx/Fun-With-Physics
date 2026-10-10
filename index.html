@@ -752,6 +752,39 @@ header{min-height:50px;padding:5px 10px;background:#102839}
  #rubeTray .rubeToolHeader,#rubeTray .rubePartsRow{flex-wrap:wrap;overflow:visible}
  #rubeTray .partButton{flex:0 1 auto;min-width:78px}
 }
+
+/* Compact icon-tile navigation inspired by the approved reference. */
+@media(min-width:951px) and (pointer:fine){
+ .modebar{flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;scrollbar-width:none;min-height:45px;gap:3px}
+ .modebar::-webkit-scrollbar{display:none}
+ .modebar>button{font-size:11px;flex:0 0 auto;min-height:35px;padding:5px 10px;border-radius:8px}
+ .modebar .goal,#hud{display:none}
+ #tray,#fluidTray,.labTray{display:flex;flex-wrap:nowrap;overflow:visible;align-items:stretch;gap:5px;padding:7px 9px;background:#142b3b}
+ #tray .partButton,#fluidTray .fluidButton,.labTray .labButton{
+   width:69px;min-width:69px;max-width:69px;height:69px;min-height:69px;
+   flex:0 0 69px;display:flex;flex-direction:column;gap:3px;
+   align-items:center;justify-content:center;padding:5px 2px;
+   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+   font-size:10px;font-weight:700;border-radius:10px;
+   background:#223647;border:1px solid #344e60
+ }
+ #tray .partButton .icon,#fluidTray .fluidButton .icon,.labTray .labButton .icon{
+   font-size:23px;line-height:1.15;display:block
+ }
+ #tray .partButton:hover,#fluidTray .fluidButton:hover,.labTray .labButton:hover,
+ .tileMoreButton:hover{border-color:#60dbff}
+ #tray .tileExtra:not(.tileShown),#fluidTray .tileExtra:not(.tileShown),.labTray .tileExtra:not(.tileShown){display:none!important}
+ #tray.tileExpanded,#fluidTray.tileExpanded,.labTray.tileExpanded{flex-wrap:wrap}
+ .tileMoreButton{width:69px;min-width:69px;height:69px;flex:0 0 69px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;background:#25394a;border-radius:10px;font-size:10px}
+ .tileMoreButton .icon{font-size:24px}
+}
+@media(max-width:950px) and (pointer:coarse){
+ #app.uiToolsOpen #tray .partButton,#app.uiToolsOpen #fluidTray .fluidButton,#app.uiToolsOpen .labTray .labButton{
+   min-width:75px;width:75px;min-height:72px;display:flex;flex-direction:column;gap:4px;font-size:10px;justify-content:center;white-space:normal;text-align:center
+ }
+ #app.uiToolsOpen #tray .icon,#app.uiToolsOpen #fluidTray .icon,#app.uiToolsOpen .labTray .icon{font-size:23px}
+ .tileMoreButton{display:none!important}
+}
 </style>
 </head>
 <body>
@@ -5767,6 +5800,28 @@ setTimeout(()=>{
  // Closing the tool picker after adding a part leaves maximum room for editing.
  document.querySelectorAll('#tray [data-part],#fluidTray [data-fluid-part],.labTray [data-air-part],.labTray [data-electric-part],.labTray [data-simple-part],#rubeTray [data-part]').forEach(b=>{
    b.addEventListener('click',()=>app.classList.remove('uiToolsOpen'));
+ });
+})();
+</script>
+<script>
+(function(){
+ const trays=[document.getElementById('tray'),document.getElementById('fluidTray'),...document.querySelectorAll('.labTray')];
+ trays.forEach(tray=>{
+   if(!tray||tray.querySelector('.tileMoreButton'))return;
+   const buttons=[...tray.children].filter(el=>el.tagName==='BUTTON');
+   if(buttons.length<=8)return;
+   buttons.slice(8).forEach(btn=>btn.classList.add('tileExtra'));
+   const more=document.createElement('button');
+   more.type='button';more.className='tileMoreButton';
+   more.innerHTML='<span class="icon">•••</span><span>More</span>';
+   more.setAttribute('aria-expanded','false');
+   more.addEventListener('click',()=>{
+     const expanded=tray.classList.toggle('tileExpanded');
+     tray.querySelectorAll('.tileExtra').forEach(b=>b.classList.toggle('tileShown',expanded));
+     more.setAttribute('aria-expanded',String(expanded));
+     more.lastElementChild.textContent=expanded?'Less':'More';
+   });
+   tray.appendChild(more);
  });
 })();
 </script>
