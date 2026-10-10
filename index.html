@@ -742,8 +742,8 @@ header{min-height:50px;padding:5px 10px;background:#102839}
  .modebar>button{flex:0 0 auto;min-height:34px;padding:6px 10px;font-size:11px;border-radius:8px;white-space:nowrap}
  .modebar .goal,#hud{display:none}
  #tray,#fluidTray,.labTray{
-   grid-template-columns:repeat(auto-fill,minmax(72px,1fr));
-   gap:7px;padding:7px 9px;
+   grid-template-columns:repeat(auto-fill,minmax(64px,1fr));
+   gap:6px;padding:6px 8px;
    overflow-x:hidden;overflow-y:visible;
    align-content:start;align-items:stretch;background:#142b3b
  }
@@ -752,13 +752,13 @@ header{min-height:50px;padding:5px 10px;background:#102839}
  #fluidTray,.labTray{display:none}
  #fluidTray.show,.labTray.show{display:grid}
  #tray:not(.tileExpanded),#fluidTray:not(.tileExpanded),.labTray:not(.tileExpanded){
-   grid-template-rows:72px;max-height:86px;overflow-y:hidden
+   grid-template-rows:64px;max-height:76px;overflow-y:hidden
  }
  #tray.tileExpanded,#fluidTray.tileExpanded,.labTray.tileExpanded{max-height:min(43dvh,400px);overflow-y:auto}
  #tray button.partButton,#fluidTray button.fluidButton,.labTray button.labButton,.tileMoreButton{
-   aspect-ratio:1;min-width:0;max-width:none;width:100%;height:auto;min-height:72px;
-   display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:5px 3px;
-   border:1px solid #3d5772;border-radius:12px;
+   aspect-ratio:1;min-width:0;max-width:none;width:100%;height:auto;min-height:64px;
+   display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:4px 2px;
+   border:1px solid #3d5772;border-radius:11px;
    background:linear-gradient(180deg,#294462 0%,#1f344c 100%);
    color:#fff;white-space:normal;line-height:1.13;text-align:center;font-size:10px;font-weight:600;
    transition:transform .2s ease,border-color .2s ease,box-shadow .2s ease;
@@ -767,10 +767,10 @@ header{min-height:50px;padding:5px 10px;background:#102839}
    transform:translateY(-2px);border-color:#4fc3ff;box-shadow:0 6px 16px rgba(79,195,255,.25)
  }
  #tray .icon,#fluidTray .icon,.labTray .icon,.tileMoreButton .icon{
-   display:block;font-size:22px;line-height:1.1;margin:0;flex:none
+   display:block;font-size:20px;line-height:1.1;margin:0;flex:none
  }
  #tray .tileCaption,#fluidTray .tileCaption,.labTray .tileCaption{
-   display:block;font-size:10px;font-weight:600;line-height:1.1
+   display:block;font-size:9px;font-weight:600;line-height:1.1
  }
  #tray .tileExtra:not(.tileShown),#fluidTray .tileExtra:not(.tileShown),.labTray .tileExtra:not(.tileShown){display:none}
  #rubeTray .rubeToolHeader,#rubeTray .rubePartsRow{flex-wrap:wrap;overflow:visible}
