@@ -1687,7 +1687,7 @@ document.getElementById('deleteBtn').addEventListener('click',()=>{
 function resetRunState(){
   objects.forEach(o=>{
     o.vx=0;o.vy=0;
-    if(o.type==='domino'){o.falling=false;o.angularVelocity=0;o.sounded=false}
+    if(o.type==='domino'){o.falling=false;o.angularVelocity=0;o.sounded=false;o.settled=false;delete o.pivotX;delete o.pivotY;delete o.toppleDirection;delete o.startToppleAngle}
     if(o.type==='spring'){o.compressed=false;o.cooldown=0}
     if(o.type==='blast') o.triggered=false;
     if(o.type==='bell') o.rung=false;
@@ -1937,11 +1937,7 @@ function dominoBallCollision(ball,previousX,previousY){
     if(!d.falling){ball.vx*=.55;ball.vy*=.75}
   }
   if(!d.falling){
-    d.falling=true;
-    const direction=ball.vx>=0?1:-1;
-    d.angularVelocity=direction*.9;
-    playSound('domino');
-    d.sounded=true;
+    startDominoFall(d,dx>=0?1:-1);
   }
 }
 
@@ -2077,31 +2073,50 @@ function updateRubeIntegration(dt,ball){
   objects.filter(p=>p.type==='pistonUnit').forEach(p=>p.lift=Math.max(0,(p.lift||0)-10*dt));
 }
 
+function startDominoFall(d,direction){
+  if(d.falling)return;
+  d.falling=true;
+  d.toppleDirection=direction>=0?1:-1;
+  d.angularVelocity=d.toppleDirection*.9;
+  const halfH=d.height*(d.scale||1)/2;
+  const angle=d.angle||0;
+  // Keep the bottom-center anchored to its original resting surface.
+  d.pivotX=d.x-Math.sin(angle)*halfH;
+  d.pivotY=d.y+Math.cos(angle)*halfH;
+  playSound('domino');
+  d.sounded=true;
+}
 function updateDominoes(dt){
   const dominoes=objects.filter(o=>o.type==='domino');
-
   dominoes.forEach(d=>{
-    if(!d.falling) return;
-
-    const sign=Math.sign(d.angularVelocity||1);
-    d.angularVelocity+=sign*3.2*dt;
-    d.angle+=d.angularVelocity*dt;
-
-    if(Math.abs(d.angle)>Math.PI/2){
-      d.angle=sign*Math.PI/2;
-      d.angularVelocity=0;
-    }
-
-    const reach=54*(d.scale||1);
-    dominoes.forEach(other=>{
-      if(other===d||other.falling) return;
-      if(Math.hypot(other.x-d.x,other.y-d.y)<reach&&Math.abs(d.angle)>.45){
-        other.falling=true;
-        other.angularVelocity=sign*.85;
-        playSound('domino');
-        other.sounded=true;
+    if(!d.falling)return;
+    const sign=d.toppleDirection||Math.sign(d.angularVelocity)||1;
+    const initialAngle=d.startToppleAngle===undefined?(d.startToppleAngle=d.angle||0):d.startToppleAngle;
+    const endAngle=initialAngle+sign*Math.PI/2;
+    if(!d.settled){
+      // Gravity accelerates the tip; no reversing or oscillating.
+      d.angularVelocity+=sign*(3.2+3*Math.abs(Math.sin(d.angle-initialAngle)))*dt;
+      let next=d.angle+d.angularVelocity*dt;
+      if(sign*(next-endAngle)>=0){
+        next=endAngle;d.angularVelocity=0;d.settled=true;
       }
-    });
+      d.angle=next;
+    }
+    const halfH=d.height*(d.scale||1)/2;
+    d.x=d.pivotX+Math.sin(d.angle)*halfH;
+    d.y=d.pivotY-Math.cos(d.angle)*halfH;
+    if(d.settled)return;
+    // Only trigger a neighboring domino when the actual falling tip reaches it.
+    const tipX=d.pivotX+Math.sin(d.angle)*2*halfH;
+    const tipY=d.pivotY-Math.cos(d.angle)*2*halfH;
+    for(const other of dominoes){
+      if(other===d||other.falling)continue;
+      const halfW=other.width*(other.scale||1)/2;
+      const otherHalfH=other.height*(other.scale||1)/2;
+      if(Math.abs(tipX-other.x)<halfW+12&&Math.abs(tipY-other.y)<otherHalfH+12){
+        startDominoFall(other,sign);
+      }
+    }
   });
 }
 
