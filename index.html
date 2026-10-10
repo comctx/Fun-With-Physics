@@ -2512,6 +2512,13 @@ function updateDominoes(dt){
     // Only trigger a neighboring domino when the actual falling tip reaches it.
     const tipX=d.pivotX+Math.sin(d.angle)*2*halfH;
     const tipY=d.pivotY-Math.cos(d.angle)*2*halfH;
+    if(running&&!won){
+      for(const bell of objects.filter(o=>o.type==='bell'&&!o.rung)){
+        if(Math.abs(tipX-bell.x)<38*(bell.scale||1)&&Math.abs(tipY-bell.y)<50*(bell.scale||1)){
+          bell.rung=true;achEvent('bell',bell);winGame();break;
+        }
+      }
+    }
     for(const other of dominoes){
       if(other===d||other.falling)continue;
       const halfW=other.width*(other.scale||1)/2;
@@ -6035,19 +6042,35 @@ setTimeout(()=>{
   const x=n=>Math.max(35,Math.min(W-35,W*n)),y=n=>Math.max(40,Math.min(H-40,H*n));
   const next=[];
   const add=(type,xp,yp)=>{const o=makeObject(type,x(xp),y(yp));next.push(o);return o};
-  add('ball',.12,.17);
-  const ramp=add('ramp',.28,.35);ramp.angle=.20;
   const requestedDomino=/domino|chain reaction|chain of|knock/.test(p);
-  if(requestedDomino){
-    const count=/20 domino|twenty domino/.test(p)?12:5;
-    for(let i=0;i<count;i++)add('domino',.43+i*.035,.66);
+  const isDominoBell=requestedDomino&&/bell|ring|chime/.test(p);
+  if(isDominoBell){
+    // Build one geometrically connected starter path, scaled to the real canvas.
+    const count=5;
+    const spacing=Math.max(24,Math.min(38,(W-270)/count));
+    const firstX=Math.max(235,Math.min(W-100-count*spacing,Math.round(W*.43)));
+    const baseY=Math.min(H-75,Math.max(185,H*.74));
+    const ramp=makeObject('ramp',firstX-102,baseY-92);
+    ramp.angle=.31;
+    const ball=makeObject('ball',ramp.x-36,ramp.y-105);
+    next.push(ball,ramp);
+    for(let i=0;i<count;i++)next.push(makeObject('domino',firstX+i*spacing,baseY));
+    const bell=makeObject('bell',firstX+(count-1)*spacing+60,baseY-10);
+    next.push(bell);
+  }else{
+    add('ball',.12,.17);
+    const ramp=add('ramp',.26,.38);ramp.angle=.24;
+    if(requestedDomino){
+      const count=/20 domino|twenty domino/.test(p)?12:5;
+      for(let i=0;i<count;i++)add('domino',.43+i*.035,.68);
+    }
+    if(/spring|launch|rocket|catapult/.test(p))add('spring',.62,.82);
+    if(/fan|wind|air|blow/.test(p))add('fan',.48,.32);
+    if(/magnet|magnetic/.test(p))add('magnet',.70,.37);
+    if(/pendulum|swing/.test(p))add('pendulum',.72,.20);
+    if(/explosion|blast/.test(p))add('blast',.77,.70);
+    add('bell',.87,.81);
   }
-  if(/spring|launch|rocket|catapult/.test(p))add('spring',.62,.82);
-  if(/fan|wind|air|blow/.test(p))add('fan',.48,.32);
-  if(/magnet|magnetic/.test(p))add('magnet',.70,.37);
-  if(/pendulum|swing/.test(p))add('pendulum',.72,.20);
-  if(/explosion|blast/.test(p))add('blast',.77,.70);
-  add('bell',.87,.81);
   pushHistory();
   objects=next;runSnapshot=null;running=false;won=false;
   setSelected(null);updateScore();updateUndoRedoButtons();updateTrayLocks();
