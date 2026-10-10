@@ -1494,6 +1494,45 @@ function pointerMove(e){
   selected.y=Math.max(15,Math.min(height-15,p.y-dragOffsetY));
 }
 
+
+// Snap matching construction parts together when dragging ends.
+// Loose physics objects (ball, domino, bell) remain independent.
+function snapConstructionPart(part){
+  const slopes=['ramp','simpleInclineUnit'];
+  const rotors=['simpleGearUnit','simpleWheelUnit'];
+  const snapRange=24;
+  if(slopes.includes(part.type)){
+    const ends=o=>{
+      const half=o.width*(o.scale||1)/2,a=o.angle||0;
+      return [-1,1].map(sign=>({x:o.x+sign*half*Math.cos(a),y:o.y+sign*half*Math.sin(a)}));
+    };
+    let closest=null;
+    for(const other of objects){
+      if(other===part||!slopes.includes(other.type))continue;
+      for(const endpoint of ends(part)){
+        for(const target of ends(other)){
+          const d=Math.hypot(endpoint.x-target.x,endpoint.y-target.y);
+          if(d<snapRange&&(!closest||d<closest.d))closest={d,dx:target.x-endpoint.x,dy:target.y-endpoint.y};
+        }
+      }
+    }
+    if(closest){part.x+=closest.dx;part.y+=closest.dy;return true}
+  }
+  if(rotors.includes(part.type)){
+    let best=null;
+    for(const other of objects){
+      if(other===part||!rotors.includes(other.type))continue;
+      const desired=(part.radius*(part.scale||1))+(other.radius*(other.scale||1));
+      const dx=part.x-other.x,dy=part.y-other.y,dist=Math.hypot(dx,dy);
+      if(dist>1&&Math.abs(dist-desired)<snapRange&&(!best||Math.abs(dist-desired)<best.error)){
+        best={error:Math.abs(dist-desired),x:other.x+dx/dist*desired,y:other.y+dy/dist*desired};
+      }
+    }
+    if(best){part.x=best.x;part.y=best.y;return true}
+  }
+  return false;
+}
+
 function pointerUp(){
   if(gameMode==='fluid') fluidPointerEnd();
   if(gameMode==='air'||gameMode==='electric'||gameMode==='simple') labPointerEnd();
@@ -1507,6 +1546,10 @@ function pointerUp(){
     if(gameMode==='rube'&&selected.type==='switchUnit'&&moved<8){
       selected.closed=!selected.closed;
       document.getElementById('status').textContent='Rube circuit switch '+(selected.closed?'closed.':'opened.');
+    }
+
+    if(moved>=8&&snapConstructionPart(selected)){
+      document.getElementById('status').textContent='Parts snapped into alignment.';
     }
 
     const showControls=moved<8&&selected._showControlsOnTap===true;
