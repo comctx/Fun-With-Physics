@@ -964,6 +964,25 @@ header{min-height:50px;padding:5px 10px;background:#102839}
 @media(max-width:680px){.wpFeatureDeck,.wpLowerDeck{grid-template-columns:1fr}.wpExtremeCard{grid-column:auto}#weatherLabPage .wpSky{min-height:260px}.wpAtmos span{font-size:10px}.wpFeatureImage{height:125px}}
 </style>
 <style>#wpScienceView{padding:16px;max-width:1000px;margin:auto}#wpScienceView p{font-size:16px;line-height:1.7}#wpScienceView h2{font-size:26px}.wpScienceVisual{min-height:250px;display:grid;place-items:center;border-radius:15px;border:1px solid #83bcdf;background:linear-gradient(145deg,#13629a,#07182e);font-size:125px;text-shadow:0 8px 25px #0017}@media(max-width:650px){.wpScienceVisual{min-height:170px;font-size:85px}}</style>
+<style>
+#weatherLabPage .wpSky{position:relative;overflow:hidden;isolation:isolate;min-height:340px;background:#102a48}
+#weatherLabPage .wpSky:after{display:none}
+.wpSkyPhoto{position:absolute;inset:0;background:linear-gradient(#0b24465e,#071c31ad),url('https://images.unsplash.com/photo-1534088568595-a066f410bcda?auto=format&fit=crop&w=1500&q=85') center/cover;transform:scale(1.03)}
+.wpHeatOverlay{position:absolute;inset:0;background:radial-gradient(ellipse at 30% 78%,#ff9c4559,transparent 66%);mix-blend-mode:screen;pointer-events:none}
+.wpPressureContours{position:absolute;inset:0;opacity:.3;background:repeating-radial-gradient(ellipse at 62% 48%,transparent 0 24px,#d3f4ff8a 25px 26px,transparent 27px 49px);pointer-events:none}
+.wpCloudLayer{position:absolute;left:-25%;width:150%;height:48%;background-repeat:repeat-x;background-size:440px 175px;pointer-events:none}
+.wpCloudFar{top:4%;opacity:.4;filter:blur(8px);background-image:radial-gradient(ellipse at 80px 90px,#ffffffb8 0 47px,transparent 83px),radial-gradient(ellipse at 290px 90px,#cce2f6a8 0 65px,transparent 104px);animation:wpCloudDrift 95s linear infinite}
+.wpCloudMid{top:18%;opacity:.55;filter:blur(5px);background-image:radial-gradient(ellipse at 120px 90px,#f0f6ffbf 0 58px,transparent 92px),radial-gradient(ellipse at 325px 75px,#dce8f5c7 0 57px,transparent 98px);animation:wpCloudDrift 65s linear infinite reverse}
+.wpCloudNear{top:35%;opacity:.5;filter:blur(4px);background-image:radial-gradient(ellipse at 135px 94px,#e0eaf6d4 0 73px,transparent 110px),radial-gradient(ellipse at 350px 95px,#d7e2f2d4 0 70px,transparent 116px);animation:wpCloudDrift 48s linear infinite}
+@keyframes wpCloudDrift{to{transform:translateX(260px)}}
+.wpWindCanvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:2}
+.wpLightningLayer{position:absolute;inset:0;opacity:0;pointer-events:none;z-index:3}
+.wpLightningLayer svg{width:100%;height:100%;filter:drop-shadow(0 0 12px #d6e8ff)}
+.wpLightningLayer.active{animation:wpStormFlash 5s infinite}
+@keyframes wpStormFlash{0%,25%,28%,30%,100%{opacity:0}26%,29%{opacity:1}}
+#weatherLabPage .wpSky .wpAtmos{z-index:4}#weatherLabPage .wpPhotoCredit{z-index:4}
+@media(prefers-reduced-motion:reduce){.wpCloudLayer,.wpLightningLayer.active{animation:none!important}.wpLightningLayer{opacity:0!important}}
+</style>
 </head>
 <body>
 <div id="app">
@@ -1193,7 +1212,7 @@ header{min-height:50px;padding:5px 10px;background:#102839}
 <section id="weatherLabPage" aria-label="Weather Physics Lab" hidden>
  <div class="wpHead"><strong>🌤️ Weather Physics Lab</strong><span id="wpDataState">Choose a city or use your location</span></div>
  <div class="wpCitySearch"><label for="wpCityInput">Weather location</label><input id="wpCityInput" type="search" placeholder="Enter a city (e.g., Bay City, Michigan)" autocomplete="off"><button id="wpCitySearchBtn" type="button">🔎 Find Weather</button><span id="wpCityChosen">No city selected — manual experiment settings</span></div>
- <div id="wpDashboard"><div class="wpConditions"><div><span>☀️</span><strong id="wpHomeTemp">72°F</strong><small>Current conditions</small></div><div>💨 Wind <strong id="wpHomeWind">10 m/s</strong></div><div>💧 Humidity <strong id="wpHomeHum">55%</strong></div><div>◉ Pressure <strong id="wpHomePress">1013 hPa</strong></div><button id="wpHomeLive" type="button">📍 Refresh local weather</button></div><div class="wpHero"><div class="wpSky"><div class="wpSun">☀️</div><div class="wpClouds">☁️ ☁️</div><div class="wpAtmos"><span>☀️ Solar energy warms the ground</span><span>☁️ Rising moist air forms clouds</span><span>💨 Pressure differences drive wind</span></div><div class="wpPhotoCredit">Illustrative weather photograph • not a live city view</div></div><aside class="wpFocus"><h3>Today’s Physics Focus</h3><div class="wpFocusTabs"><button data-focus="temperature">Temperature</button><button data-focus="wind">Wind</button><button data-focus="humidity">Humidity</button><button data-focus="clouds">Clouds</button><button data-focus="pressure">Pressure</button></div><h4 id="wpFocusTitle"></h4><p id="wpFocusText"></p><button data-weather-open="projectile">🎯 Start Today’s Challenge →</button></aside></div><div class="wpFeatureDeck">
+ <div id="wpDashboard"><div class="wpConditions"><div><span>☀️</span><strong id="wpHomeTemp">72°F</strong><small>Current conditions</small></div><div>💨 Wind <strong id="wpHomeWind">10 m/s</strong></div><div>💧 Humidity <strong id="wpHomeHum">55%</strong></div><div>◉ Pressure <strong id="wpHomePress">1013 hPa</strong></div><button id="wpHomeLive" type="button">📍 Refresh local weather</button></div><div class="wpHero"><div class="wpSky" id="wpSkyScene"><div class="wpSkyPhoto"></div><div class="wpHeatOverlay" id="wpHeatOverlay"></div><div class="wpPressureContours" id="wpPressureContours"></div><div class="wpCloudLayer wpCloudFar" id="wpCloudFar"></div><div class="wpCloudLayer wpCloudMid" id="wpCloudMid"></div><div class="wpCloudLayer wpCloudNear" id="wpCloudNear"></div><canvas id="wpWindCanvas" class="wpWindCanvas"></canvas><div id="wpLightningLayer" class="wpLightningLayer"><svg viewBox="0 0 600 350" preserveAspectRatio="none" aria-hidden="true"><path d="M341 0 L315 100 L363 112 L295 205 L325 214 L266 345 M309 174 L250 197 L215 260" stroke="#96cfff" stroke-width="13" fill="none"/><path d="M341 0 L315 100 L363 112 L295 205 L325 214 L266 345 M309 174 L250 197 L215 260" stroke="white" stroke-width="4" fill="none"/></svg></div><div class="wpAtmos"><span>Temperature: 72°F</span><span>Humidity: 55%</span><span>Wind: 10 m/s</span></div><div class="wpPhotoCredit">Illustrative atmosphere • weather-responsive overlays</div></div><aside class="wpFocus"><h3>Today’s Physics Focus</h3><div class="wpFocusTabs"><button data-focus="temperature">Temperature</button><button data-focus="wind">Wind</button><button data-focus="humidity">Humidity</button><button data-focus="clouds">Clouds</button><button data-focus="pressure">Pressure</button></div><h4 id="wpFocusTitle"></h4><p id="wpFocusText"></p><button data-weather-open="projectile">🎯 Start Today’s Challenge →</button></aside></div><div class="wpFeatureDeck">
  <article class="wpFeatureCard wpChallengeCard"><h3>🎯 Today's Physics Challenge</h3><p>Can you adjust the wind and land a water balloon within 3 meters of the target 50 meters away?</p><div class="wpFeatureImage wpTargetPhoto" aria-hidden="true"></div><button type="button" data-weather-open="projectile">Try the challenge →</button></article>
  <article class="wpFeatureCard wpLiveCard"><h3>🔬 Live Weather Simulator</h3><p>Test today's conditions in the projectile simulator. Try zero wind, then use the weather you've selected.</p><div class="wpFeatureImage wpFlightPhoto" aria-hidden="true"></div><button type="button" data-weather-open="projectile">Run simulation →</button></article>
  <article class="wpFeatureCard wpExtremeCard"><h3>⚡ Extreme Weather Science</h3><button type="button" data-weather-topic="lightning">⚡ Lightning <small>Electrical breakdown in air</small></button><button type="button" data-weather-topic="tornadoes">🌪️ Tornadoes <small>Rotation and rising air</small></button><button type="button" data-weather-topic="hurricanes">🌀 Hurricanes <small>Heat and angular momentum</small></button><button type="button" data-weather-topic="rainbows">🌈 Rainbows <small>Refraction and dispersion</small></button><button type="button" data-weather-topic="snowflakes">❄️ Snowflakes <small>Crystallization and symmetry</small></button><p id="wpTopicDetail" role="status">Select a topic to learn about the physics behind it.</p></article>
@@ -6504,6 +6523,44 @@ setTimeout(()=>{
  }
  new MutationObserver(refresh).observe(locationLabel,{childList:true,characterData:true,subtree:true});
  refresh();
+})();
+</script>
+<script>
+(function(){
+ const sky=document.getElementById('wpSkyScene'),canvas=document.getElementById('wpWindCanvas');
+ if(!sky||!canvas)return;
+ const ctx=canvas.getContext('2d'),ids=['wpTemp','wpWind','wpHum','wpPress','wpDir'];
+ const get=(id,def)=>Number(document.getElementById(id)?.value??def);
+ let particles=[],last=0;
+ function resize(){
+  const dpr=Math.min(2,window.devicePixelRatio||1),rect=sky.getBoundingClientRect();
+  canvas.width=Math.max(1,Math.round(rect.width*dpr));canvas.height=Math.max(1,Math.round(rect.height*dpr));
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  particles=Array.from({length:75},()=>({x:Math.random()*rect.width,y:Math.random()*rect.height,s:0.5+Math.random(),a:0.13+Math.random()*.3}));
+ }
+ function values(){
+  const t=get('wpTemp',72),h=get('wpHum',55),p=get('wpPress',1013),wind=get('wpWind',10);
+  document.getElementById('wpHeatOverlay').style.opacity=String(Math.max(.08,Math.min(.85,(t+20)/150)));
+  document.getElementById('wpPressureContours').style.opacity=String(Math.max(.13,Math.min(.55,Math.abs(1013-p)/160+.17)));
+  ['wpCloudFar','wpCloudMid','wpCloudNear'].forEach((id,i)=>document.getElementById(id).style.opacity=String(Math.max(.12,Math.min(.9,h/130+i*.07))));
+  // These thresholds illustrate storm conditions; they are not a lightning forecast.
+  document.getElementById('wpLightningLayer').classList.toggle('active',h>=80&&p<=995);
+  const spans=sky.querySelectorAll('.wpAtmos span');
+  [`Temperature: ${t}°F`,`Humidity: ${h}%`,`Wind: ${wind} m/s • ${p} hPa`].forEach((v,i)=>{if(spans[i])spans[i].textContent=v});
+ }
+ function frame(ms){
+  if(!sky.isConnected)return;
+  if(ms-last>=32){
+   last=ms;const box=sky.getBoundingClientRect(),w=box.width,h=box.height,speed=get('wpWind',10),dir=get('wpDir',1);
+   ctx.clearRect(0,0,w,h);if(speed>0){
+    for(const o of particles){ctx.strokeStyle=`rgba(215,239,255,${o.a})`;ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(o.x,o.y);ctx.lineTo(o.x+dir*(5+speed*.7),o.y);ctx.stroke();o.x+=dir*(.4+speed*.12)*o.s;if(o.x>w+35)o.x=-35;if(o.x< -35)o.x=w+35}
+   }
+  }
+  requestAnimationFrame(frame);
+ }
+ ids.forEach(id=>document.getElementById(id)?.addEventListener('input',values));
+ window.addEventListener('resize',resize);
+ resize();values();requestAnimationFrame(frame);
 })();
 </script>
 </body>
