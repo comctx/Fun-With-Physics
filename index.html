@@ -640,6 +640,22 @@ header{
   #rubeTray{max-height:82px}
   #selectionPanel{grid-template-columns:repeat(7,minmax(0,1fr))}
 }
+
+/* Self-contained Fluid Physics wave experiment */
+#waveLab{display:none;position:absolute;inset:0;z-index:12;background:linear-gradient(#76bff5,#d1eaf9 65%,#425765);color:#eef7ff;overflow:auto}
+#waveLab.open{display:flex;flex-direction:column}
+.waveHeader{flex:0 0 auto;background:#172b3c;padding:8px 12px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.waveBody{display:flex;min-height:0;flex:1;gap:10px;padding:10px}
+.waveControls{width:min(290px,38%);flex:0 0 auto;background:#192d41ed;border-radius:12px;padding:15px;overflow:auto}
+.waveControls h2{font-size:18px;margin:0 0 8px}
+.waveControls p{font-size:12px;color:#caddeb}
+.waveControls label{display:block;margin-top:14px;font-weight:bold;font-size:13px}
+.waveControls input{width:100%;accent-color:#5dd8ff}
+.waveControls button{margin-top:10px;width:100%}
+.waveStage{min-width:0;flex:1;background:linear-gradient(#88c9fa,#bbdef5);border:4px solid #526d80;border-radius:12px;overflow:hidden;position:relative}
+#waveCanvas{width:100%;height:100%;display:block;min-height:220px}
+@media(max-width:680px){.waveBody{flex-direction:column;overflow:auto}.waveControls{width:100%;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;padding:9px}.waveControls h2,.waveControls p{grid-column:1/-1}.waveControls label{font-size:11px;margin:0}.waveControls button{margin:0}.waveStage{min-height:240px;flex:1}.waveHeader{font-size:12px}}
+@media(max-height:450px) and (orientation:landscape){.waveBody{flex-direction:row;overflow:hidden}.waveControls{width:235px;display:block;overflow:auto}.waveStage{min-height:0}}
 </style>
 </head>
 <body>
@@ -767,6 +783,7 @@ header{
 </div>
 
 <div id="fluidTray">
+  <button class="fluidButton" id="waveGeneratorBtn"><span class="icon">🌊</span>Wave Generator</button>
   <button class="fluidButton" data-fluid-part="source"><span class="icon">💧</span>Water Source</button>
   <button class="fluidButton" data-fluid-part="pipe"><span class="icon">🚰</span>Pipe</button>
   <button class="fluidButton" data-fluid-part="elbow"><span class="icon">↪️</span>Pipe Elbow</button>
@@ -850,6 +867,21 @@ header{
 </div>
 
 <div id="workspace">
+
+  <div id="waveLab" aria-label="Wave Generator Experiment">
+    <div class="waveHeader"><strong>🌊 Wave Generator — Fluid Physics</strong><button id="waveCloseBtn">✕ Back to Fluid Physics</button></div>
+    <div class="waveBody">
+      <div class="waveControls">
+        <h2>Basic Wave Generator</h2>
+        <p>Watch a moving paddle generate waves and reflect from the walls.</p>
+        <label>Height <output id="waveHeightValue">0.5 m</output><input id="waveHeightInput" type="range" min="0.1" max="1.0" step="0.1" value="0.5"></label>
+        <label>Frequency <output id="waveFrequencyValue">1.0 Hz</output><input id="waveFrequencyInput" type="range" min="0.2" max="3" step="0.1" value="1"></label>
+        <label>Wave Speed <output id="waveSpeedValue">1.0×</output><input id="waveSpeedInput" type="range" min="0.3" max="3" step="0.1" value="1"></label>
+        <button id="waveStartBtn" style="background:#168c4a">▶ Start Waves</button><button id="waveStopBtn">■ Stop</button>
+      </div>
+      <div class="waveStage"><canvas id="waveCanvas"></canvas></div>
+    </div>
+  </div>
   <canvas id="game"></canvas>
 
   <div id="selectionPanel">
@@ -5438,6 +5470,43 @@ setTimeout(()=>{
       toggle.textContent='☰ Menu';
     }
   });
+})();
+</script>
+<script>
+(function(){
+ const panel=document.getElementById('waveLab'),canvas=document.getElementById('waveCanvas'),cx=canvas.getContext('2d');
+ let running=false,phase=0,last=0;
+ const heightInput=document.getElementById('waveHeightInput'),freq=document.getElementById('waveFrequencyInput'),speed=document.getElementById('waveSpeedInput');
+ function refreshLabels(){
+  document.getElementById('waveHeightValue').textContent=Number(heightInput.value).toFixed(1)+' m';
+  document.getElementById('waveFrequencyValue').textContent=Number(freq.value).toFixed(1)+' Hz';
+  document.getElementById('waveSpeedValue').textContent=Number(speed.value).toFixed(1)+'×';
+ }
+ [heightInput,freq,speed].forEach(x=>x.addEventListener('input',refreshLabels));
+ document.getElementById('waveGeneratorBtn').addEventListener('click',()=>{panel.classList.add('open');refreshLabels()});
+ document.getElementById('waveCloseBtn').addEventListener('click',()=>{panel.classList.remove('open');running=false});
+ document.getElementById('waveStartBtn').addEventListener('click',()=>{running=true});
+ document.getElementById('waveStopBtn').addEventListener('click',()=>{running=false});
+ function draw(now){
+  requestAnimationFrame(draw);
+  if(!panel.classList.contains('open')){last=now;return}
+  const dt=Math.min(.05,(now-last)/1000||0);last=now;
+  if(running)phase+=dt*2*Math.PI*Number(freq.value);
+  const r=canvas.getBoundingClientRect(),dpr=Math.min(2,devicePixelRatio||1),w=Math.max(1,r.width),h=Math.max(1,r.height);
+  if(canvas.width!==Math.round(w*dpr)||canvas.height!==Math.round(h*dpr)){canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr)}
+  cx.setTransform(dpr,0,0,dpr,0,0);cx.clearRect(0,0,w,h);
+  const baseline=h*.54,amp=Number(heightInput.value)*Math.min(65,h*.17),wavelength=190*Number(speed.value)/Math.max(.3,Number(freq.value));
+  const water=cx.createLinearGradient(0,baseline-amp,0,h);water.addColorStop(0,'#36b8e9');water.addColorStop(1,'#07517b');
+  function yAt(x){const travel=2*Math.PI*x/wavelength;const reflected=.23*Math.sin(2*Math.PI*(2*w-x)/wavelength-phase-1);return baseline+amp*(Math.sin(travel-phase)+reflected)}
+  cx.beginPath();cx.moveTo(0,yAt(0));for(let x=1;x<=w;x+=3)cx.lineTo(x,yAt(x));cx.lineTo(w,h);cx.lineTo(0,h);cx.closePath();cx.fillStyle=water;cx.fill();
+  cx.beginPath();for(let x=0;x<=w;x+=3){const y=yAt(x);if(x===0)cx.moveTo(x,y);else cx.lineTo(x,y)}cx.strokeStyle='#b0f5ff';cx.lineWidth=3;cx.stroke();
+  cx.strokeStyle='#ffffffaa';cx.setLineDash([9,9]);cx.beginPath();cx.moveTo(0,baseline);cx.lineTo(w,baseline);cx.stroke();cx.setLineDash([]);
+  const paddleX=23+(running?Math.sin(phase)*Math.min(16,amp*.28):0);
+  cx.fillStyle='#456070';cx.fillRect(paddleX-10,baseline-62,20,124);cx.fillStyle='#d0e5ec';cx.fillRect(paddleX,baseline-55,8,110);
+  cx.fillStyle='#263f50';cx.fillRect(w-16,baseline-115,16,230);
+  cx.fillStyle='#153d53';cx.font='bold 12px Arial';cx.fillText('Moving paddle',40,Math.max(20,baseline-amp-38));cx.fillText('Reflected waves',Math.max(30,w-150),Math.max(20,baseline-amp-38));
+ }
+ requestAnimationFrame(draw);
 })();
 </script>
 </body>
