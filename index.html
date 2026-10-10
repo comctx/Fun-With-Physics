@@ -895,6 +895,31 @@ header{min-height:50px;padding:5px 10px;background:#102839}
 .wpLessons{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:10px}.wpLessons details{font-size:12px}.wpLessons summary{cursor:pointer;font-weight:700}
 @media(max-width:800px){.wpLayout{grid-template-columns:1fr}.wpLessons{grid-template-columns:repeat(2,minmax(0,1fr))}#weatherLabPage{padding:9px}.wpHead strong{font-size:16px}}
 </style>
+<style>
+#weatherLabPage{background:linear-gradient(140deg,#071c35,#0a3768 45%,#091c35);padding:16px}
+.wpHero{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(260px,.9fr);gap:12px;margin:14px 0}
+.wpSky{min-height:315px;border:1px solid #67a9e0;border-radius:14px;position:relative;overflow:hidden;background:linear-gradient(170deg,#0460aa,#4c9bd2 65%,#245f79);padding:12px}
+.wpSky:after{content:"";position:absolute;bottom:0;left:0;right:0;height:55px;background:linear-gradient(#508c71,#244d48)}
+.wpSun{font-size:75px;position:absolute;top:12px;left:25px;filter:drop-shadow(0 0 26px #fffaa3)}
+.wpClouds{position:absolute;font-size:85px;left:30%;top:20%;color:white;filter:drop-shadow(0 3px 8px #214464)}
+.wpAtmos{position:absolute;bottom:65px;left:16px;right:16px;z-index:1;display:flex;align-items:flex-end;justify-content:space-between;gap:6px}
+.wpAtmos span{background:#073456d9;border:1px solid #a0dafa;border-radius:9px;padding:9px;font-size:12px;max-width:29%}
+.wpFocus{border:1px solid #3b77a9;border-radius:14px;background:#0c2543;padding:15px}
+.wpFocus h3{margin:0 0 14px}.wpFocus h4{margin:15px 0 7px;font-size:17px}
+.wpFocus p{font-size:14px;line-height:1.6;min-height:130px}
+.wpFocusTabs{display:flex;flex-wrap:wrap;gap:3px}.wpFocusTabs button{font-size:11px;padding:7px;background:#14375b;border-radius:6px;border:1px solid #2b5581}.wpFocusTabs button.active{background:#1466c3}
+.wpFocus>button,.wpBack,#wpSimulate{background:#1466c3;border:1px solid #70b5f3;border-radius:8px;padding:10px}
+.wpExpHeading{margin:18px 0 8px}
+.wpDashboardCards{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
+.wpDashboardCards button{display:flex;flex-direction:column;text-align:left;gap:9px;padding:13px;min-height:185px;font-size:38px;border:1px solid #447da6;background:linear-gradient(#163f6b,#0c263e);border-radius:12px}
+.wpDashboardCards button:hover{border-color:#77d8ff;transform:translateY(-2px)}
+.wpDashboardCards strong{font-size:14px}.wpDashboardCards small{font-size:12px;line-height:1.4;flex:1}.wpDashboardCards span{font-size:12px;background:#145a99;padding:8px;border-radius:6px;text-align:center}
+.wpExperimentView h3{margin:13px 0}.wpBack{margin-bottom:7px}
+.wpOtherLayout{display:grid;grid-template-columns:minmax(190px,260px) 1fr;gap:15px}.wpOtherLayout>div{padding:15px;background:#15354f;border-radius:12px}.wpOtherLayout input{width:100%}
+#wpOtherCanvas{display:block;width:100%;border-radius:12px;background:linear-gradient(#2e75b1,#193a59)}
+#wpOtherExplanation{font-size:13px;line-height:1.6}
+@media(max-width:900px){.wpHero{grid-template-columns:1fr}.wpDashboardCards{grid-template-columns:repeat(2,minmax(0,1fr))}.wpOtherLayout{grid-template-columns:1fr}.wpSky{min-height:230px}}
+</style>
 </head>
 <body>
 <div id="app">
@@ -1123,7 +1148,7 @@ header{min-height:50px;padding:5px 10px;background:#102839}
 <div id="workspace">
 <section id="weatherLabPage" aria-label="Weather Physics Lab" hidden>
  <div class="wpHead"><strong>🌤️ Weather Physics Lab</strong><span id="wpDataState">Experiment with your own weather conditions</span></div>
- <div class="wpLayout">
+ <div id="wpDashboard"><div class="wpHero"><div class="wpSky"><div class="wpSun">☀️</div><div class="wpClouds">☁️ ☁️</div><div class="wpAtmos"><span>☀️ Solar radiation heats the surface</span><span>☁️ Rising air cools and forms clouds</span><span>💨 Pressure differences create wind</span></div></div><aside class="wpFocus"><h3>Today’s Physics Focus</h3><div class="wpFocusTabs"><button data-focus="temperature">Temperature</button><button data-focus="wind">Wind</button><button data-focus="humidity">Humidity</button><button data-focus="clouds">Clouds</button><button data-focus="pressure">Pressure</button></div><h4 id="wpFocusTitle"></h4><p id="wpFocusText"></p><button data-weather-open="projectile">🎯 Start Today’s Challenge →</button></aside></div><h3 class="wpExpHeading">Hands-On Experiments</h3><div class="wpDashboardCards"><button data-weather-open="projectile">🎯<strong>Projectile Simulator</strong><small>Test how wind affects a water balloon.</small><span>Try It →</span></button><button data-weather-open="parachute">🪂<strong>Parachute Lab</strong><small>Explore falling speed and air resistance.</small><span>Try It →</span></button><button data-weather-open="clouds">☁️<strong>Cloud Formation</strong><small>Cool moist air to create a cloud.</small><span>Try It →</span></button><button data-weather-open="drag">💨<strong>Drag Force Explorer</strong><small>Compare different shapes in wind.</small><span>Try It →</span></button><button data-weather-open="machine">🌦️<strong>Weather Machine Builder</strong><small>Connect sunlight, evaporation and rain.</small><span>Open Builder →</span></button></div></div><div class="wpExperimentView" id="wpProjectileView" hidden><button class="wpBack" data-weather-home>← Weather Home</button><h3>🎯 Wind-Affected Projectile Simulator</h3><div class="wpLayout">
   <div class="wpControls">
    <label>Temperature <output id="wpTempOut">72°F</output><input id="wpTemp" type="range" min="-20" max="115" value="72"></label>
    <label>Wind speed <output id="wpWindOut">10 m/s</output><input id="wpWind" type="range" min="0" max="35" value="10"></label>
@@ -1138,7 +1163,7 @@ header{min-height:50px;padding:5px 10px;background:#102839}
    <div class="wpExplainer"><strong>Physics in action</strong><p id="wpExplain"></p><p id="wpCloud"></p></div>
   </div>
  </div>
- <div class="wpLessons"><details><summary>⚡ Lightning</summary>Charge separation inside storms can create electric fields strong enough to break down air.</details><details><summary>🌪️ Tornadoes</summary>Rising air, wind shear, and angular momentum help rotating updrafts develop.</details><details><summary>🌈 Rainbows</summary>Water droplets refract, internally reflect, and disperse sunlight into colors.</details><details><summary>❄️ Snow crystals</summary>Water vapor deposits onto ice; temperature and humidity affect branching shapes.</details></div>
+ <div class="wpLessons"><details><summary>⚡ Lightning</summary>Charge separation inside storms can create electric fields strong enough to break down air.</details><details><summary>🌪️ Tornadoes</summary>Rising air, wind shear, and angular momentum help rotating updrafts develop.</details><details><summary>🌈 Rainbows</summary>Water droplets refract, internally reflect, and disperse sunlight into colors.</details><details><summary>❄️ Snow crystals</summary>Water vapor deposits onto ice; temperature and humidity affect branching shapes.</details></div></div><div id="wpOtherView" class="wpExperimentView" hidden><button class="wpBack" data-weather-home>← Weather Home</button><h3 id="wpOtherTitle"></h3><div class="wpOtherLayout"><div><label id="wpVariableLabel" for="wpVariable"></label><input id="wpVariable" type="range" min="0" max="100" value="50"><p id="wpVariableValue"></p><button id="wpSimulate" type="button">▶ Run Experiment</button><p id="wpOtherExplanation"></p></div><canvas id="wpOtherCanvas" width="800" height="420"></canvas></div></div>
 </section>
 <button id="desktopLabRun" type="button" style="display:none" aria-label="Start or stop lab">▶ Start Air</button>
 <button id="desktopToolsToggle" type="button" aria-expanded="false" aria-controls="tray" title="Show or hide tools">＋ Tools</button>
@@ -6298,6 +6323,57 @@ setTimeout(()=>{
   },()=>document.getElementById('wpDataState').textContent='Location not shared; use manual controls',{timeout:10000});
  });
  updateLabels();draw();
+})();
+</script>
+<script>
+(function(){
+ const home=document.getElementById('wpDashboard'),projectile=document.getElementById('wpProjectileView'),other=document.getElementById('wpOtherView');
+ const focus={
+ temperature:['Temperature: Kinetic Energy','Temperature relates to the average translational kinetic energy of air molecules. Warmer air changes density and affects rising air.'],
+ wind:['Wind: Pressure and Motion','Air accelerates under pressure-gradient forces and is deflected by Earth’s rotation. Explore how wind changes trajectories.'],
+ humidity:['Humidity: Water Vapor','Relative humidity measures how close air is to saturation at its temperature. Cooling can bring it to the dew point.'],
+ clouds:['Clouds: Condensation','Rising moist air expands and cools. When water vapor condenses onto tiny particles, clouds can form.'],
+ pressure:['Air Pressure: The Atmosphere','Atmospheric pressure reflects the weight of the air above you. Differences in pressure help drive winds.']
+ };
+ function focusOn(key){document.querySelectorAll('[data-focus]').forEach(b=>b.classList.toggle('active',b.dataset.focus===key));document.getElementById('wpFocusTitle').textContent=focus[key][0];document.getElementById('wpFocusText').textContent=focus[key][1]}
+ document.querySelectorAll('[data-focus]').forEach(b=>b.addEventListener('click',()=>focusOn(b.dataset.focus)));focusOn('temperature');
+ const specs={
+ parachute:['🪂 Parachute Lab','Parachute canopy area','m²',1,30,12,'A larger parachute has greater drag area and usually falls more slowly.'],
+ clouds:['☁️ Cloud Formation','Air temperature','°C',-15,35,15,'Cooling moist air toward its dew point encourages condensation.'],
+ drag:['💨 Drag Force Explorer','Wind speed','m/s',0,35,10,'Aerodynamic drag grows approximately with the square of relative speed.'],
+ machine:['🌦️ Weather Machine Builder','Solar heating','%',0,100,55,'Build the chain: sunlight heats the ground → air rises → water evaporates → clouds develop → rain may fall.']
+ };
+ let selected='parachute';
+ const slider=document.getElementById('wpVariable'),c=document.getElementById('wpOtherCanvas'),ctx=c.getContext('2d');
+ function render(){
+  const v=Number(slider.value),w=c.width,h=c.height;
+  ctx.clearRect(0,0,w,h);ctx.fillStyle='#507b67';ctx.fillRect(0,h-40,w,40);
+  ctx.font='30px sans-serif';ctx.fillStyle='white';
+  if(selected==='parachute'){
+   const size=45+v*3;ctx.fillStyle='#ec6767';ctx.beginPath();ctx.arc(w/2,125,size,Math.PI,0);ctx.fill();ctx.strokeStyle='#e6f4ff';ctx.beginPath();ctx.moveTo(w/2-size,125);ctx.lineTo(w/2,270);ctx.lineTo(w/2+size,125);ctx.stroke();ctx.fillText('🧍',w/2-18,315);
+  }else if(selected==='clouds'){
+   const condensation=Math.max(0,Math.min(1,(22-v)/25));ctx.font=(50+condensation*75)+'px sans-serif';ctx.fillText('☁️',w*.32,h*.49);ctx.font='22px sans-serif';ctx.fillText(condensation>.6?'Cloud droplets forming':'Air cooling toward saturation',50,h-74);
+  }else if(selected==='drag'){
+   ctx.font='75px sans-serif';ctx.fillText('⚪',w*.38,h*.55);ctx.strokeStyle='#b5eaff';ctx.lineWidth=2;for(let i=0;i<6;i++){const y=85+i*37;ctx.beginPath();ctx.moveTo(50,y);ctx.lineTo(50+v*14,y);ctx.stroke()}ctx.font='20px sans-serif';ctx.fillText('Drag ∝ wind speed²',45,h-65);
+  }else{
+   ctx.font='58px sans-serif';ctx.fillText('☀️  →  🌡️  →  ☁️  →  🌧️',30,h*.48);ctx.font='19px sans-serif';ctx.fillText('Solar heating strength: '+v+'%',45,h-75);
+  }
+  const extra=selected==='drag'?' Relative drag index: '+(v*v/100).toFixed(1)+'.':selected==='parachute'?' Relative terminal-speed factor: '+(1/Math.sqrt(v)).toFixed(2)+'.':selected==='clouds'?(v<10?' Cold air is more likely to reach saturation.':' Cooling helps raise relative humidity.'):' Stronger heating can drive convection when the atmosphere is unstable.';
+  document.getElementById('wpVariableValue').textContent=v+specs[selected][2]+'.'+extra;
+ }
+ function open(which){
+  home.hidden=true;projectile.hidden=which!=='projectile';other.hidden=which==='projectile';
+  if(which!=='projectile'){
+   selected=which;const p=specs[which];
+   document.getElementById('wpOtherTitle').textContent=p[0];document.getElementById('wpVariableLabel').textContent=p[1];
+   slider.min=p[3];slider.max=p[4];slider.value=p[5];document.getElementById('wpOtherExplanation').textContent=p[6];render();
+  }
+  document.getElementById('weatherLabPage').scrollTop=0;
+ }
+ document.querySelectorAll('[data-weather-open]').forEach(b=>b.addEventListener('click',()=>open(b.dataset.weatherOpen)));
+ document.querySelectorAll('[data-weather-home]').forEach(b=>b.addEventListener('click',()=>{home.hidden=false;projectile.hidden=true;other.hidden=true;document.getElementById('weatherLabPage').scrollTop=0}));
+ slider.addEventListener('input',render);
+ document.getElementById('wpSimulate').addEventListener('click',()=>{render();document.getElementById('wpOtherExplanation').textContent=specs[selected][6]+' Experiment updated with the selected setting.'});
 })();
 </script>
 </body>
