@@ -1,0 +1,80 @@
+/* WEATHER CINEMATIC V1 — accurate subject photography, visual focus, lightweight effects */
+#weatherLabPage{--wcInk:#061627;--wcGlass:#09243ee8;--wcBlue:#8fd7fa;color:#f4faff}
+#weatherLabPage .wpHead{border-bottom:1px solid #c5e8ff32;padding:12px 0 16px}
+#weatherLabPage .wpHead strong{font-size:clamp(31px,3.5vw,48px);font-weight:800;letter-spacing:-.035em}
+#weatherLabPage .wpHead span{font-size:13px;color:#bfdaee}
+#weatherLabPage .wpCitySearch{border:1px solid #b4dcf26b;background:#052642cf;box-shadow:0 8px 28px #04132475;border-radius:15px;padding:13px 16px}
+#weatherLabPage .wpStormLaunch{background:linear-gradient(90deg,#082d4e,#12538f 55%,#1d4d85);border:1px solid #7cc4eb;border-radius:14px;box-shadow:0 8px 20px #001d37bd;letter-spacing:.03em}
+#weatherLabPage .wpConditions{margin:15px 0;padding:14px;background:linear-gradient(115deg,#0d334fff,#09223aff)!important;border:1px solid #9bcce06e!important}
+#weatherLabPage .wpConditions>div{background:linear-gradient(155deg,#23587e87,#061a30be)!important;box-shadow:inset 0 1px #e2f5ff20,0 4px 16px #00182d5c}
+#weatherLabPage .wpConditions strong{font-size:clamp(21px,2.6vw,34px)!important;font-variant-numeric:tabular-nums}
+#weatherLabPage .wpConditions small{color:#a8d8f4}
+#weatherLabPage .wpHero{gap:16px;margin:18px 0}
+#weatherLabPage .wpSky{min-height:450px!important;height:450px!important;background:#0e1828!important;border-radius:18px!important;box-shadow:0 22px 42px #000b,inset 0 0 90px #0005;border:1px solid #c4e9fc74!important}
+#weatherLabPage .wpSkyPhoto{background:linear-gradient(90deg,#0313217d 0%,#0717260c 55%),linear-gradient(0deg,#07162585,transparent 42%),url('https://commons.wikimedia.org/wiki/Special:FilePath/2015-08-07_23-13-18_orage.jpg?width=1280') center 49%/cover no-repeat!important;filter:contrast(1.15) saturate(1.12)!important;transform:scale(1.02)!important}
+#weatherLabPage .wpSky[data-sky="clear"] .wpSkyPhoto{background-image:linear-gradient(0deg,#061c3199,transparent 60%),url('https://images.unsplash.com/photo-1470252649378-9c29740c9fa8?auto=format&fit=crop&w=1450&q=85')!important;filter:saturate(1.13)!important}
+#weatherLabPage .wpSky[data-sky="cloud"] .wpSkyPhoto{background-image:linear-gradient(0deg,#051726a8,transparent 45%),url('https://images.unsplash.com/photo-1534088568595-a066f410bcda?auto=format&fit=crop&w=1450&q=85')!important}
+#weatherLabPage .wpSky[data-sky="snow"] .wpSkyPhoto{background-image:linear-gradient(0deg,#061c3180,transparent 58%),url('https://images.unsplash.com/photo-1457269449834-928af64c684d?auto=format&fit=crop&w=1450&q=85')!important}
+#weatherLabPage .wpSky[data-sky="storm"] .wpSkyPhoto{background-image:linear-gradient(0deg,#07142366,transparent 52%),url('https://commons.wikimedia.org/wiki/Special:FilePath/2015-08-07_23-13-18_orage.jpg?width=1280')!important}
+#weatherLabPage .wpSkyVignette{background:linear-gradient(90deg,#021124a1,transparent 67%),linear-gradient(0deg,#03162ce6,transparent 45%)!important}
+#weatherLabPage .wpSceneTitle{top:25px;left:25px;padding:15px 20px!important;max-width:76%!important;background:linear-gradient(95deg,#06152998,transparent)!important}
+#weatherLabPage .wpSceneTitle small{letter-spacing:.25em;font-size:11px;color:#a2deff}
+#weatherLabPage .wpSceneTitle strong{font-size:clamp(29px,3.2vw,46px);letter-spacing:-.04em;line-height:1.02;text-shadow:0 3px 18px #00131f}
+#weatherLabPage .wpSky .wpAtmos{left:20px;right:20px;bottom:31px!important;z-index:8;gap:8px}
+#weatherLabPage .wpSky .wpAtmos span{background:#031c30c9!important;box-shadow:0 8px 18px #0007;border:1px solid #a8def270!important;padding:12px!important;backdrop-filter:blur(10px)}
+#weatherLabPage .wpSky .wpCloudLayer{mix-blend-mode:screen;filter:blur(15px)!important;opacity:.12!important}
+#weatherLabPage .wpPhotoCredit{bottom:6px!important;right:18px;z-index:9}
+#weatherLabPage .wpHeatOverlay,#weatherLabPage .wpPressureContours{mix-blend-mode:screen}
+#weatherLabPage .wpFocus{background:linear-gradient(145deg,#143d5cef,#071d33f9)!important;box-shadow:0 14px 32px #0009;border:1px solid #8cc8e77d}
+#weatherLabPage .wpFocus h3{font-weight:800;letter-spacing:-.02em}
+#weatherLabPage .wpFeatureDeck{grid-template-columns:1fr 1.13fr .98fr;gap:15px}
+#weatherLabPage .wpFeatureCard{border-radius:16px;background:linear-gradient(160deg,#0f3757f5,#081b32fa);border:1px solid #b0d8ef63;padding:15px;box-shadow:0 13px 27px #0008}
+#weatherLabPage .wpFeatureCard h3{font-size:18px;margin-bottom:5px}
+#weatherLabPage .wpFeatureImage{height:220px!important;border-radius:12px;background-size:cover!important;position:relative;border:1px solid #c1e6ff66}
+#weatherLabPage .wpTargetPhoto{background-image:linear-gradient(0deg,#041424b8,transparent 45%),url('https://images.unsplash.com/photo-1500534623283-312aade485b7?auto=format&fit=crop&w=940&q=88')!important}
+#weatherLabPage .wpFlightPhoto{background-image:linear-gradient(0deg,#051a2cbd,transparent 55%),url('https://commons.wikimedia.org/wiki/Special:FilePath/Orage-nuit.jpg')!important}
+#weatherLabPage .wpFeatureImage span{font-size:11px;letter-spacing:.1em}
+#weatherLabPage .wpExtremeCard button[data-weather-topic]{display:grid!important;grid-template-columns:98px minmax(0,1fr);grid-template-rows:auto auto;gap:3px 12px;align-content:center;align-items:center;min-height:91px;text-align:left;background:#e5eff6!important;border-radius:10px;padding:7px 10px!important;font-size:15px;color:#0d253d!important}
+#weatherLabPage .wpExtremeCard button[data-weather-topic]::before{content:"";grid-column:1;grid-row:1/span 2;display:block;width:98px;height:72px;background-color:#244662;background-size:cover;background-position:center;border-radius:7px;box-shadow:0 2px 9px #0004}
+#weatherLabPage .wpExtremeCard button[data-weather-topic] small{display:block;grid-column:2;grid-row:2;margin-left:0!important;color:#365875!important;font-size:11px}
+#weatherLabPage [data-weather-topic="lightning"]::before{background-image:url('https://upload.wikimedia.org/wikipedia/commons/1/19/Orage-nuit.jpg')}
+#weatherLabPage [data-weather-topic="tornadoes"]::before{background-image:url('https://commons.wikimedia.org/wiki/Special:FilePath/2016-05-16_Tornado_north_of_Solomon%2C_Kansas.jpg?width=520')}
+#weatherLabPage [data-weather-topic="hurricanes"]::before{background-image:url('https://assets.science.nasa.gov/dynamicimage/assets/science/esd/eo/images/imagerecords/84000/84145/HurricaneIselle_tmo_2014216.jpg?crop=faces%2Cfocalpoint&fit=clip&h=480&w=720')}
+#weatherLabPage [data-weather-topic="rainbows"]::before{background-image:url('https://commons.wikimedia.org/wiki/Special:FilePath/Rainbow5_-_NOAA.jpg?width=600')}
+#weatherLabPage [data-weather-topic="snowflakes"]::before{background-image:url('https://commons.wikimedia.org/wiki/Special:FilePath/Snowflake_macro_%28Unsplash%29.jpg?width=600')}
+#weatherLabPage #wpDashboard .wpMapIllustration{background:linear-gradient(#001b2a55,#001a2a66),url('https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=1200&q=85') center/cover!important;box-shadow:inset 0 0 45px #001426}
+#weatherLabPage .wpCycle{border:1px solid #a9e2fa99}
+#wpScienceVisual{height:clamp(340px,48vw,570px)!important;min-height:340px!important;border:1px solid #9ccded99!important;border-radius:17px!important;box-shadow:0 20px 40px #000b;overflow:hidden}
+#wpScienceVisual[data-scene]{font-size:0!important;background-size:cover!important;background-position:center!important}
+#wpScienceVisual[data-scene="lightning"]{background-image:linear-gradient(0deg,#031220bd,transparent 68%),url('https://commons.wikimedia.org/wiki/Special:FilePath/2015-08-07_23-13-18_orage.jpg?width=1280')!important}
+#wpScienceVisual[data-scene="tornadoes"]{background-image:linear-gradient(0deg,#0617257d,transparent 72%),url('https://commons.wikimedia.org/wiki/Special:FilePath/2016-05-16_Tornado_north_of_Solomon%2C_Kansas.jpg?width=1280')!important;background-size:cover!important}
+#wpScienceVisual[data-scene="hurricanes"]{background-image:linear-gradient(0deg,#00162ec5,transparent 72%),url('https://assets.science.nasa.gov/dynamicimage/assets/science/esd/eo/images/imagerecords/84000/84145/HurricaneIselle_tmo_2014216.jpg?crop=faces%2Cfocalpoint&fit=clip&h=1000&w=1400')!important}
+#wpScienceVisual[data-scene="rainbows"]{background-image:linear-gradient(0deg,#011b2dbd,transparent 72%),url('https://commons.wikimedia.org/wiki/Special:FilePath/Rainbow5_-_NOAA.jpg?width=1280')!important}
+#wpScienceVisual[data-scene="snowflakes"]{background-image:linear-gradient(0deg,#051627a8,transparent 70%),url('https://commons.wikimedia.org/wiki/Special:FilePath/Snowflake_macro_%28Unsplash%29.jpg?width=1280')!important}
+#wpScienceVisual[data-scene]:after{display:block!important;content:attr(data-label)!important;position:absolute;left:25px;bottom:23px;z-index:6;font-size:clamp(28px,5vw,51px)!important;color:white;font-weight:900;letter-spacing:-.03em;text-shadow:0 4px 15px #000c}
+#wpScienceVisual[data-scene="tornadoes"] .wpTornadoFunnel,#wpScienceVisual[data-scene="tornadoes"] .wpTornadoClouds{opacity:0!important}
+#wpScienceVisual[data-scene="tornadoes"] .wpTornadoDust{opacity:.27!important}
+#wpScienceVisual[data-scene="tornadoes"] .wpTornadoRain{opacity:.14!important}
+#wpScienceVisual[data-scene="tornadoes"] .wpTornadoCaption{left:auto;right:20px;bottom:25px;width:280px;max-width:40%;font-size:12px;z-index:7}
+#weatherLabPage .wpCinematicGallery{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin:18px 0 7px}
+#weatherLabPage .wpCinematicGallery button{min-width:0;height:172px;position:relative;overflow:hidden;border:1px solid #bce9fa5c;border-radius:12px;background:#152b42;color:#fff;padding:0;text-align:left;box-shadow:0 10px 24px #0007;transition:transform .15s,border-color .15s}
+#weatherLabPage .wpCinematicGallery button:hover{transform:translateY(-4px);border-color:#c6f4ff}
+#weatherLabPage .wpCinematicGallery button .wcImage{position:absolute;inset:0;background-size:cover;background-position:center;transition:transform .3s}
+#weatherLabPage .wpCinematicGallery button:hover .wcImage{transform:scale(1.06)}
+#weatherLabPage .wpCinematicGallery button::after{content:"";position:absolute;inset:0;background:linear-gradient(0deg,#01111bef 0%,transparent 65%)}
+#weatherLabPage .wpCinematicGallery button strong{position:absolute;bottom:14px;left:12px;z-index:2;font-size:16px;font-weight:850;text-shadow:0 2px 10px #000}
+#weatherLabPage .wcGalleryTitle{font-size:19px;font-weight:800;margin:22px 0 10px;letter-spacing:-.02em}
+#weatherLabPage .wcCredits{font-size:11px;color:#acc5d6;margin:16px 0 4px;line-height:1.6}
+#weatherLabPage .wcCredits a{color:#acdafa}
+#weatherLabPage .wpStormSceneWrap{background:url('https://commons.wikimedia.org/wiki/Special:FilePath/Orage-nuit.jpg') center/cover!important;box-shadow:0 18px 38px #0008}
+#weatherLabPage .wpStormSceneWrap[data-wc-weather="clear"]{background-image:url('https://images.unsplash.com/photo-1470252649378-9c29740c9fa8?auto=format&fit=crop&w=1400&q=85')!important}
+#weatherLabPage .wpStormSceneWrap[data-wc-weather="cloud"]{background-image:url('https://images.unsplash.com/photo-1534088568595-a066f410bcda?auto=format&fit=crop&w=1400&q=85')!important}
+#weatherLabPage .wpStormSceneWrap[data-wc-weather="snow"]{background-image:url('https://images.unsplash.com/photo-1457269449834-928af64c684d?auto=format&fit=crop&w=1400&q=85')!important}
+#weatherLabPage #wstCanvas{position:relative;z-index:1;opacity:.42!important;mix-blend-mode:screen}
+#weatherLabPage .wpStormSceneStatus,#weatherLabPage .wpStormLegend{z-index:3}
+#weatherLabPage .wpStormHeader h2{font-weight:900;letter-spacing:-.03em}
+#weatherLabPage .wpStormPanel{box-shadow:0 16px 28px #0008}
+@media(max-width:1080px){#weatherLabPage .wpFeatureDeck{grid-template-columns:1fr 1fr}#weatherLabPage .wpExtremeCard{grid-column:1/-1}#weatherLabPage .wpCinematicGallery{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:760px){#weatherLabPage .wpHero{grid-template-columns:1fr}#weatherLabPage .wpSky{height:340px!important;min-height:340px!important}#weatherLabPage .wpCinematicGallery{grid-template-columns:repeat(2,minmax(0,1fr))}#wpScienceVisual{min-height:280px!important}#wpScienceVisual[data-scene="tornadoes"] .wpTornadoCaption{display:none}}
+@media(max-width:580px){#weatherLabPage .wpFeatureDeck{grid-template-columns:1fr}#weatherLabPage .wpExtremeCard{grid-column:auto}#weatherLabPage .wpSky{height:310px!important;min-height:310px!important}#weatherLabPage .wpSky .wpAtmos{display:flex;flex-direction:row;flex-wrap:wrap}#weatherLabPage .wpSky .wpAtmos span{flex:1 1 44%;max-width:none}#weatherLabPage .wpSceneTitle{top:15px;left:12px}#weatherLabPage .wpCinematicGallery button{height:140px}}
+@media(prefers-reduced-motion:reduce){#weatherLabPage .wpCinematicGallery button .wcImage{transition:none}}
