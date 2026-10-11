@@ -86,7 +86,7 @@ function paintCloudDeck(cx,baseY,wind){
  shade.addColorStop(.53,"rgba(22,29,36,"+(.012+wind*.003)+")");
  shade.addColorStop(1,"rgba(19,27,35,0)");
  ctx.fillStyle=shade;ctx.fillRect(0,0,width,height*.66);
- for(let i=0;i<20;i++){
+ for(let i=0;i<17;i++){
   const n=noise(i*13+1);
   const px=cx+(n-.5)*width*.46+Math.sin(time*.14+i)*width*.006;
   const y=baseY-height*(.025+noise(i*16)*.105);
@@ -109,7 +109,7 @@ function paintFunnel(cx,top,bottom,wind){
  // The funnel has no polygon edge. Its silhouette is the overlap of many
  // semi-transparent, feathered condensation packets at different depths.
  const length=bottom-top;
- const count=47;
+ const count=37;
  for(let i=0;i<count;i++){
   const p=(i+.45)/count;
   const radius=funnelRadius(p,wind);
@@ -127,7 +127,7 @@ function paintFunnel(cx,top,bottom,wind){
  }
  // Irregular density pockets rotate around the funnel rather than painting
  // a uniform dark cone; behind-the-funnel clouds are more transparent.
- const packets=125+Math.round(wind*3);
+ const packets=82+Math.round(wind*3);
  for(let i=0;i<packets;i++){
   const p=.015+noise(i*11+7)*.96;
   const y=top+length*p+Math.sin(time*.35+i)*height*.003;
@@ -147,7 +147,7 @@ function paintFunnel(cx,top,bottom,wind){
  // Partial, broken horizontal condensation streaks that wrap around
  // the rotating column. Never draw full circles or graphic guide-lines.
  ctx.save();ctx.lineCap="round";ctx.lineJoin="round";
- for(let j=0;j<52;j++){
+ for(let j=0;j<40;j++){
   const p=.035+noise(j*31+3)*.90;
   const rr=funnelRadius(p,wind);
   const y=top+length*p;
@@ -169,7 +169,7 @@ function paintFunnel(cx,top,bottom,wind){
  ctx.restore();
  // Very soft stray condensation across the edges creates an irregular,
  // continuously changing boundary, not hard corners or jagged pixels.
- for(let i=0;i<42;i++){
+ for(let i=0;i<28;i++){
   const p=noise(i*29+15)*.96;
   const r=funnelRadius(p,wind);
   const side=i%2?-1:1;
@@ -187,7 +187,7 @@ function dust(cx,ground,wind){
  const spread=Math.max(width*.095,5.6*funnelFoot)*(0.76+wind*.046);
  const depth=height*(.062+wind*.009);
  // Wide rolling dust at ground level, in layered muted earth tones.
- for(let i=0;i<71;i++){
+ for(let i=0;i<55;i++){
   const angle=noise(i*17+5)*6.283+time*(.15+wind*.052);
   const dist=(.22+noise(i*41)*1.12)*spread;
   const side=Math.cos(angle);
@@ -252,7 +252,7 @@ function environment(wind){
 function draw(now){
  raf=0;
  if(!running())return;
- if(!prefersReduced?.matches&&now-lastFrame<33){
+ if(!prefersReduced?.matches&&now-lastFrame<(width<700?58:45)){
   raf=requestAnimationFrame(draw);return;
  }
  const elapsed=lastFrame?Math.min(.06,(now-lastFrame)/1000):.033;
@@ -278,7 +278,7 @@ function resize(){
  const box=visual.getBoundingClientRect();
  width=box.width;height=box.height;
  if(width<1||height<1)return;
- const dpr=Math.min(1.7,devicePixelRatio||1);
+ const dpr=Math.min(1.4,window.devicePixelRatio||1);
  canvas.width=Math.round(width*dpr);canvas.height=Math.round(height*dpr);
  ctx.setTransform(dpr,0,0,dpr,0,0);
  requestDraw();
