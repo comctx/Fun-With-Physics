@@ -1,0 +1,65 @@
+/* FUN WITH PHYSICS — ATOM BUILDER */
+#atomLabPage{position:absolute;inset:0;z-index:16;overflow-y:auto;overscroll-behavior:contain;background:radial-gradient(ellipse 70% 45% at 52% 20%,#153763 0%,transparent 72%),linear-gradient(155deg,#040c1d,#09172e 60%,#0b1730);color:#eef7ff;padding:clamp(12px,2.2vw,25px);box-sizing:border-box;font-family:inherit}
+#atomLabPage[hidden]{display:none!important}
+#atomLabPage *,#atomLabPage *::before,#atomLabPage *::after{box-sizing:border-box}
+#atomLabPage button{cursor:pointer;font-family:inherit}
+#atomLabPage button:focus-visible,#atomLabPage input:focus-visible{outline:2px solid #a5ecff;outline-offset:3px}
+.abTop{display:flex;justify-content:space-between;align-items:center;gap:18px;flex-wrap:wrap;margin-bottom:18px}
+.abEyebrow{display:block;color:#93ddf5;font-size:11px;letter-spacing:.21em;font-weight:800;margin-bottom:6px}
+.abTop h2{font-size:clamp(27px,4vw,50px);line-height:1.08;letter-spacing:-.045em;margin:0 0 9px;color:#fff}
+.abTop p{font-size:14px;line-height:1.5;color:#b9d1e9;margin:0;max-width:690px}
+.abTop .abMiniBrand{border:1px solid #7fd1eb78;border-radius:14px;background:#16395d7a;padding:12px 15px;color:#d9f2ff;font-weight:700;font-size:13px}
+.abLayout{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(290px,.85fr);gap:16px;align-items:start}
+.abStage{border:1px solid #688fc193;box-shadow:0 20px 55px #0008, inset 0 0 40px #11294a;border-radius:19px;overflow:hidden;position:relative;background:radial-gradient(ellipse at 50% 50%,#122c50,#050d1e 74%);min-height:470px}
+.abStage canvas{display:block!important;width:100%!important;height:465px!important;background:transparent!important;background-image:none!important;background-color:transparent!important;touch-action:auto!important}
+.abStageHead{position:absolute;top:18px;left:19px;z-index:2;pointer-events:none;max-width:70%;background:#0615269e;padding:12px 16px;border:1px solid #8bc4ef57;border-radius:12px;backdrop-filter:blur(10px)}
+.abStageHead strong{font-size:16px;display:block;color:#fff}
+.abStageHead span{font-size:12px;color:#a6d5f2;line-height:1.5;display:block;margin-top:5px}
+.abStageNote{position:absolute;bottom:13px;left:15px;right:15px;display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:11px;color:#b7cfe7;background:#071528b9;padding:10px 13px;border-radius:9px;backdrop-filter:blur(6px)}
+.abStageBadge{position:absolute;right:14px;top:18px;color:#b7e3ff;background:#071a31af;border:1px solid #7198b578;padding:8px 12px;border-radius:9px;font-size:12px;font-weight:800}
+.abElement{display:grid;grid-template-columns:118px 1fr;align-items:center;gap:17px;border:1px solid #92bfdd68;background:linear-gradient(130deg,#153961d1,#0b213e);border-radius:17px;padding:16px;margin-bottom:13px;box-shadow:0 14px 32px #0004}
+.abElementSymbol{position:relative;width:112px;height:117px;display:flex;align-items:center;justify-content:center;border-radius:13px;background:radial-gradient(circle at 29% 22%,#2d7da1,#0e315c 60%,#0b1932);border:1px solid #83cbeb80;box-shadow:inset 0 1px #c4f0ff48,0 4px 18px #0005;color:#fff;font-size:57px;font-weight:800;letter-spacing:-.05em}
+.abElementSymbol small{position:absolute;left:10px;top:8px;font-size:12px;letter-spacing:normal;color:#e3eff8}
+.abElementSymbol em{position:absolute;right:8px;bottom:8px;font-size:11px;font-style:normal;letter-spacing:normal;color:#beeaff}
+.abElement h3{margin:0 0 6px;font-size:clamp(22px,2.7vw,34px);letter-spacing:-.04em}
+.abElement p{font-size:13px;color:#c3dcf4;margin:3px 0}
+.abElement .abCharge{display:inline-block;margin-top:7px;background:#1f698c;border:1px solid #87d9f1;border-radius:999px;padding:5px 11px;font-size:12px;color:#f5feff;font-weight:750}
+.abControls,.abInfo,.abChallenges,.abLessons{border-radius:17px;border:1px solid #6c98c275;background:linear-gradient(160deg,#102d4bdc,#091b32ed);padding:17px;margin-bottom:13px;box-shadow:0 12px 26px #0004}
+.abControls h3,.abChallenges h3,.abLessons h3,.abInfo h3{margin:0 0 12px;font-size:18px;letter-spacing:-.015em}
+.abControl{margin:13px 0;padding:12px;border:1px solid #7ca2c347;background:#0c2946a1;border-radius:12px}
+.abControlTop{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:11px}
+.abControlTop label{font-weight:800;font-size:14px;display:flex;align-items:center;gap:9px}
+.abParticleDot{display:inline-block;width:11px;height:11px;border-radius:50%;background:radial-gradient(circle at 32% 23%,white,#e35b68 60%,#8b2639);box-shadow:0 0 10px #ec58788a}
+.abParticleDot.neutron{background:radial-gradient(circle at 32% 23%,white,#4dbbe0 60%,#22538e);box-shadow:0 0 10px #4eaadb8a}
+.abParticleDot.electron{background:radial-gradient(circle at 32% 23%,white,#cd94f9 60%,#7040b9);box-shadow:0 0 10px #b487faaa}
+.abStepper{display:flex;align-items:center;gap:7px}
+.abStepper button{border:1px solid #79b8dc;background:#174d75;color:#fff;width:35px;height:35px;border-radius:9px;font-size:22px;line-height:1;font-weight:800}
+.abStepper button:hover{background:#227ab2}
+.abStepper output{min-width:32px;text-align:center;font-weight:850;font-size:19px;font-variant-numeric:tabular-nums}
+.abControl input[type=range]{width:100%;display:block;accent-color:#60d1f5;margin:5px 0}
+.abControl small{display:block;color:#b5d4eb;font-size:11px;line-height:1.45;margin-top:5px}
+.abPresets{display:flex;flex-wrap:wrap;gap:7px;margin-top:11px}
+.abPresets button{border:1px solid #72b8dd70;background:#163e62;color:#eaf9ff;border-radius:9px;padding:8px 12px;font-size:12px;font-weight:800}
+.abPresets button:hover,.abPresets button:focus-visible{background:#2375a6}
+.abStats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin-bottom:13px}
+.abStat{border:1px solid #7cacd05c;border-radius:13px;padding:13px 8px;text-align:center;background:linear-gradient(155deg,#153c62ad,#0c243d)}
+.abStat span{font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:#b9d4e7;display:block;margin-bottom:8px}
+.abStat strong{font-size:clamp(17px,2.5vw,28px);display:block;color:#f3fbff;font-variant-numeric:tabular-nums}
+.abStat small{display:block;font-size:10px;color:#a7d2ea;margin-top:5px}
+.abInfo p,.abLessons p{font-size:13px;line-height:1.58;color:#d5e9f6;margin:6px 0}
+.abInfo #abIdentityExplain{font-weight:700;color:#f4fcff}
+.abChallenges .abChallengeRow{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:10px}
+.abChallenges button{background:#1a5f8e;border:1px solid #82d0f4;border-radius:9px;padding:9px 12px;color:#fff;font-weight:800}
+.abChallenges button:hover{background:#277db2}
+.abChallenges #abChallengeStatus{margin:9px 0 0;color:#e0efff;font-size:13px;line-height:1.4}
+.abLegend{display:flex;gap:13px;flex-wrap:wrap;font-size:12px;color:#c9e7f5;padding-top:4px}
+.abLegend span{display:flex;align-items:center;gap:7px}
+.abLessons{margin-top:3px}
+.abLessonTiles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}
+.abLessonTiles article{background:linear-gradient(135deg,#12375d,#091e36);padding:15px;border-radius:13px;border:1px solid #7aadde7a}
+.abLessonTiles strong{display:block;font-size:16px;margin-bottom:5px}
+.abLessonTiles p{margin:0;color:#c2d7ed;font-size:12px;line-height:1.55}
+.abDisclaimer{font-size:11px;line-height:1.5;color:#aac9df;margin:9px 0 0}
+@media(max-width:920px){.abLayout{grid-template-columns:1fr}.abTop .abMiniBrand{display:none}.abStage{min-height:370px}.abStage canvas{height:390px!important}.abElement{max-width:none}}
+@media(max-width:600px){#atomLabPage{padding:12px}.abTop h2{font-size:31px}.abStage canvas{height:350px!important}.abStageHead{top:9px;left:9px;padding:9px;max-width:60%}.abStageHead span{font-size:11px}.abStageBadge{top:10px;right:8px;padding:7px;font-size:10px}.abElement{grid-template-columns:90px 1fr;padding:11px;gap:13px}.abElementSymbol{width:88px;height:92px;font-size:43px}.abStats{gap:6px}.abStat{padding:11px 5px}.abLessonTiles{grid-template-columns:1fr}.abStageNote{left:8px;right:8px;bottom:8px;font-size:10px}.abControls{padding:12px}}
+@media(prefers-reduced-motion:reduce){#atomLabPage *{scroll-behavior:auto!important}}
