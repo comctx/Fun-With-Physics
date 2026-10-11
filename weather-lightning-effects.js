@@ -163,6 +163,9 @@
           layer.classList.add("wlfxAfterglowOn");
         }
         flashOnce();
+        if (i === 0 && visible()) {
+          visual.dispatchEvent(new CustomEvent("fwphysics-lightning", { detail: { type } }));
+        }
       }, delays[i]));
     }
     const caption = layer.querySelector(".wlfxCaption");
