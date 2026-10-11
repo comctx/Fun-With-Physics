@@ -41,7 +41,7 @@ function show(open){
   document.getElementById("desktopToolsToggle").style.display="none";
   document.getElementById("desktopLabRun").style.display="none";
   nav.value="atom";page.scrollTop=0;
- }else document.getElementById("desktopToolsToggle").style.removeProperty("display");
+ }else if(document.getElementById("weatherLabPage").hidden)document.getElementById("desktopToolsToggle").style.removeProperty("display");
 }
 btn.addEventListener("click",()=>show(true));
 nav.addEventListener("change",()=>{if(nav.value==="atom")show(true);else if(!page.hidden)show(false)});
