@@ -458,9 +458,14 @@
  background-position:center bottom!important;
 }
 #weatherLabPage #wpScienceVisual[data-scene="tornadoes"] .wtTornadoShade{
- opacity:.055!important;
- background:linear-gradient(180deg,rgba(12,20,30,.09),
- rgba(23,31,36,.05) 59%,transparent 84%)!important;
+ /* Intensify cloud shadow as the user raises vortex strength. */
+ opacity:var(--wtAtmosphere,.07)!important;
+ background:
+  radial-gradient(ellipse 38% 53% at 58.5% 51%,
+    rgba(11,19,27,.70) 0%,rgba(18,26,31,.31) 51%,transparent 96%),
+  linear-gradient(180deg,rgba(12,20,30,.11),
+    rgba(23,31,36,.16) 59%,transparent 87%)!important;
+ transition:opacity .18s ease!important;
 }
 #weatherLabPage #wpScienceVisual[data-scene="tornadoes"] .wpTornadoCaption{
  left:14px!important;right:auto!important;bottom:14px!important;
