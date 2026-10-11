@@ -342,3 +342,35 @@
 }
 @keyframes wlfxSoftReduced{0%{opacity:0}35%{opacity:.25}100%{opacity:0}}
 @keyframes wlfxGentleReduced{0%{opacity:0}35%{opacity:.55}100%{opacity:0}}
+
+
+/* Lightning lesson — optional thunder audio controls */
+#weatherLabPage #wpScienceVisual[data-scene="lightning"] .wlfxThunderToggle{
+ position:absolute;top:68px;right:18px;z-index:11;
+ border:2px solid rgba(220,237,255,.8);border-radius:12px;
+ background:linear-gradient(165deg,#18334f,#0c2340);color:#fff;
+ padding:10px 15px;font-size:14px!important;font-weight:750;
+ box-shadow:0 6px 18px #000a;cursor:pointer;
+}
+#weatherLabPage #wpScienceVisual[data-scene="lightning"] .wlfxThunderToggle[aria-pressed="true"]{
+ background:linear-gradient(165deg,#337560,#164836);
+ border-color:#b4f4dd;
+}
+#weatherLabPage #wpScienceVisual[data-scene="lightning"] .wlfxThunderToggle:focus-visible{
+ outline:3px solid #fff;outline-offset:3px
+}
+#weatherLabPage #wpScienceVisual[data-scene="lightning"] .wlfxThunderStatus{
+ position:absolute;top:126px;right:18px;z-index:10;
+ max-width:215px;padding:7px 9px;border-radius:8px;
+ background:rgba(3,22,40,.8);color:#d5eaff;
+ font-size:11px!important;text-align:right;line-height:1.35;
+ pointer-events:none
+}
+@media(max-width:660px){
+ #weatherLabPage #wpScienceVisual[data-scene="lightning"] .wlfxThunderToggle{
+  top:58px;right:10px;padding:8px 10px;font-size:12px!important
+ }
+ #weatherLabPage #wpScienceVisual[data-scene="lightning"] .wlfxThunderStatus{
+  top:105px;right:10px;max-width:160px;font-size:10px!important
+ }
+}
