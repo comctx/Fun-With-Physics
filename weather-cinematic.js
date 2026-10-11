@@ -6,10 +6,10 @@ var home=document.getElementById("wpDashboard");
 if(!page||!home||document.getElementById("wcGallery2026"))return;
 var scenes=[
  {key:"lightning",label:"Lightning",url:"https://upload.wikimedia.org/wikipedia/commons/1/19/Orage-nuit.jpg"},
- {key:"tornadoes",label:"Tornadoes",url:"https://commons.wikimedia.org/wiki/Special:FilePath/2016-05-16_Tornado_north_of_Solomon%2C_Kansas.jpg?width=580"},
+ {key:"tornadoes",label:"Tornadoes",url:"https://upload.wikimedia.org/wikipedia/commons/3/30/2016-05-16_Tornado_north_of_Solomon%2C_Kansas.jpg"},
  {key:"hurricanes",label:"Hurricanes",url:"https://assets.science.nasa.gov/dynamicimage/assets/science/esd/eo/images/imagerecords/84000/84145/HurricaneIselle_tmo_2014216.jpg?crop=faces%2Cfocalpoint&fit=clip&h=550&w=900"},
- {key:"rainbows",label:"Rainbows",url:"https://commons.wikimedia.org/wiki/Special:FilePath/Rainbow5_-_NOAA.jpg?width=650"},
- {key:"snowflakes",label:"Snow Crystals",url:"https://commons.wikimedia.org/wiki/Special:FilePath/Snowflake_macro_%28Unsplash%29.jpg?width=650"}
+ {key:"rainbows",label:"Rainbows",url:"https://upload.wikimedia.org/wikipedia/commons/e/e9/Rainbow5_-_NOAA.jpg"},
+ {key:"snowflakes",label:"Snow Crystals",url:"https://upload.wikimedia.org/wikipedia/commons/2/21/Snowflake_macro_%28Unsplash%29.jpg"}
 ];
 var title=document.createElement("h3");title.className="wcGalleryTitle";title.textContent="Explore Real Weather Phenomena";
 var gallery=document.createElement("div");gallery.id="wcGallery2026";gallery.className="wpCinematicGallery";
