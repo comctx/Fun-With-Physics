@@ -144,3 +144,22 @@
 }
 #weatherLabPage #wpStormLab .wpStormSceneStatus,
 #weatherLabPage #wpStormLab .wpStormLegend{z-index:4}
+
+/* Weather-state photography: preserve a recognizable field and sky as the simulation changes. */
+#weatherLabPage .wpStormSceneWrap[data-wc-weather="tornado"]{
+ background:linear-gradient(0deg,rgba(8,20,22,.23),rgba(7,16,23,.28)),
+ url('https://upload.wikimedia.org/wikipedia/commons/3/30/2016-05-16_Tornado_north_of_Solomon%2C_Kansas.jpg') center/cover no-repeat!important;
+}
+#weatherLabPage .wpStormSceneWrap[data-wc-weather="rain"]{
+ background:linear-gradient(0deg,rgba(11,34,49,.33),rgba(12,28,43,.25)),
+ url('https://images.unsplash.com/photo-1534088568595-a066f410bcda?auto=format&fit=crop&w=1400&q=85') center/cover no-repeat!important;
+}
+#weatherLabPage .wpStormSceneWrap[data-wc-weather="storm"]{
+ background:linear-gradient(0deg,rgba(4,15,32,.50),rgba(7,18,36,.36)),
+ url('https://upload.wikimedia.org/wikipedia/commons/1/19/Orage-nuit.jpg') center/cover no-repeat!important;
+}
+#weatherLabPage .wpStormSceneWrap[data-wc-weather="cloud"]{
+ background:linear-gradient(0deg,rgba(7,18,37,.18),rgba(9,20,39,.12)),
+ url('https://images.unsplash.com/photo-1534088568595-a066f410bcda?auto=format&fit=crop&w=1400&q=85') center/cover no-repeat!important;
+}
+#weatherLabPage #wpStormLab canvas#wstFXCanvas{background:transparent!important;opacity:1!important;mix-blend-mode:normal!important;}
