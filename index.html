@@ -1088,7 +1088,7 @@ header{min-height:50px;padding:5px 10px;background:#102839}
 @media(max-width:1000px){#weatherLabPage #wpDashboard .wpConditions{grid-template-columns:repeat(2,minmax(0,1fr))}#weatherLabPage #wpDashboard .wpConditions>button{grid-column:1/-1}}
 @media(max-width:580px){#weatherLabPage #wpDashboard .wpConditions{grid-template-columns:1fr 1fr}#weatherLabPage #wpDashboard .wpConditions strong{font-size:22px}#weatherLabPage #wpDashboard .wpSceneTitle{max-width:90%}}
 </style>
-<link rel="stylesheet" href="weather-cinematic.css?v=20261011tornado4">
+<link rel="stylesheet" href="weather-cinematic.css?v=20261011tornado5">
 <link rel="stylesheet" href="atom-builder.css?v=20261010a">
 </head>
 <body>
@@ -6705,7 +6705,7 @@ setTimeout(()=>{
  if(!tornadoButton)return;
  tornadoButton.addEventListener('click',()=>{
   visual.dataset.scene='tornadoes';visual.dataset.label='';
-  visual.innerHTML='<div class="wpTornadoClouds"></div><div class="wpTornadoRain"></div><div class="wpTornadoFunnel"><div class="wpTornadoSpiral"></div></div><div class="wpTornadoDust"></div><div class="wpTornadoCaption"><strong>Inside a Tornado</strong><small>Strong updrafts and wind shear can organize rotating air into a narrow, intense vortex.</small></div>';
+  visual.innerHTML='<div class="wpTornadoCaption"><strong>Interactive Tornado</strong><small>Adjust the wind intensity to see one tornado develop beneath a supercell storm.</small></div>';
   let controls=document.getElementById('wpTornadoControl');
   if(!controls){
    controls=document.createElement('div');controls.id='wpTornadoControl';controls.className='wpTornadoControl';
@@ -6770,7 +6770,7 @@ function update(){
 </script>
 <script defer src="weather-cinematic.js?v=20261010f"></script>
 <script defer src="weather-storm-effects.js?v=20261010f"></script>
-<script defer src="weather-tornado-interaction.js?v=20261011tornado4"></script>
+<script defer src="weather-tornado-interaction.js?v=20261011tornado5"></script>
 <script defer src="atom-builder.js?v=20261010b"></script>
 <script defer src="atom-graphics.js?v=20261010a"></script>
 <script defer src="weather-lightning-effects.js?v=20261011thunder1"></script>
