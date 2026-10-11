@@ -1,6 +1,6 @@
 /* Fun With Physics — Tornado Weather Science
- * Photographic vortex enhancement: turbulent condensation, rotating dust,
- * rain curtains, debris and ground-level wind. No artificial spiral guides.
+ * Volumetric mist vortex: soft density edges, internal cloud rotation,
+ * rain curtains, wide debris cloud and ground-level wind. No solid silhouette.
  * An illustrative visualization, not a measured or predictive wind field.
  */
 (function () {
@@ -36,138 +36,194 @@ function radial(x,y,rx,ry,color,alpha){
  gr.addColorStop(1,"rgba("+color+",0)");
  ctx.fillStyle=gr;ctx.fillRect(-rx,-rx,2*rx,2*rx);ctx.restore();
 }
-function beginFunnel(cx,top,bottom,phase,expand){
- const parts=26;
- const left=[],right=[];
- for(let i=0;i<=parts;i++){
-  const p=i/parts,y=top+(bottom-top)*p;
-  const radius=(width*(.112*Math.pow(1-p,1.20)+.015))*expand;
-  const wobble=Math.sin(phase*.62+p*7)*width*.0035+
-               Math.sin(p*14-phase*.85)*width*.0018;
-  const jag=Math.sin(i*2.81+phase*.9)*radius*.10+
-             Math.sin(i*5.22-phase*1.2)*radius*.06;
-  left.push([cx+wobble-radius-jag,y]);
-  right.push([cx+wobble+radius+jag*.7,y]);
- }
- ctx.beginPath();ctx.moveTo(...left[0]);
- for(let i=1;i<left.length;i++)ctx.lineTo(...left[i]);
- for(let i=right.length-1;i>=0;i--)ctx.lineTo(...right[i]);
- ctx.closePath();
+/* Smooth evolving radius; density is made from mist, never a clipped polygon. */
+function funnelRadius(p,wind){
+ const taper=Math.pow(Math.max(0,1-p),1.28);
+ return width*(.017+.119*taper)*(.70+wind*.043);
+}
+function funnelAxis(cx,p,phase){
+ return cx+width*(Math.sin(p*5.6+phase*.33)*.0045+
+                     Math.sin(p*12.2-phase*.24)*.0025);
+}
+function cloudPuff(x,y,rx,ry,color,alpha){
+ radial(x,y,rx,ry,color,clamp(alpha,0,.85));
 }
 function paintRain(t,wind){
- const n=36+Math.round(wind*5);
- for(let i=0;i<n;i++){
-  const side=noise(i*8+4);
-  // Rain curtains mostly behind the condensation funnel.
-  const x=(side*width+time*(7+wind*.7)*(i%2?1:-1)+width*3)%width;
-  const y=noise(i*11+3)*height*.74;
-  const length=height*(.07+noise(i*15)*.18);
-  const a=.025+noise(i*21)*.043;
-  ctx.strokeStyle="rgba(197,211,219,"+a+")";
-  ctx.lineWidth=.6+noise(i*4)*1.5;
-  ctx.beginPath();ctx.moveTo(x,y);
-  ctx.lineTo(x+length*.13,y+length);
-  ctx.stroke();
+ // Rain behind the circulation: translucent shafts and soft perspective haze.
+ const density=20+Math.round(wind*3.4);
+ ctx.save();
+ for(let i=0;i<density;i++){
+  const k=noise(i*7+1);
+  const x=(k*width+t*(4.4+wind*1.3)*(i%3?1:-1)+width*4)%width;
+  const y=noise(i*19+3)*height*.63;
+  const len=height*(.04+noise(i*9)*.19);
+  ctx.strokeStyle="rgba(172,193,202,"+(.012+noise(i*5)*.029)+")";
+  ctx.lineWidth=.6+noise(i*15);
+  ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+len*.08,y+len);ctx.stroke();
  }
- // Broad semitransparent rain shafts, not vertical white lines.
- for(let i=0;i<6;i++){
-  const x=width*(.13+i*.145)+Math.sin(time*.19+i)*width*.014;
-  radial(x,height*.40,width*.085,height*.42,"84,101,115",.08+wind*.006);
+ ctx.restore();
+ for(let i=0;i<8;i++){
+  const x=width*(.075+i*.13)+Math.sin(time*.10+i)*width*.011;
+  cloudPuff(x,height*.49,width*(.035+noise(i*12)*.038),
+    height*.34,"98,117,124",.028+wind*.004);
  }
 }
-function paintCloudDeck(cx,y,wind){
- const shade=ctx.createLinearGradient(0,0,0,height*.76);
- shade.addColorStop(0,"rgba(15,23,35,.06)");
- shade.addColorStop(.62,"rgba(18,25,31,"+(.045+wind*.010)+")");
- shade.addColorStop(1,"rgba(16,25,30,0)");
- ctx.fillStyle=shade;ctx.fillRect(0,0,width,height*.77);
- for(let i=0;i<13;i++){
-  const dx=(noise(i*13)-.5)*width*.40;
-  const px=cx+dx+Math.sin(time*.15+i)*width*.006;
-  const py=y-height*(.015+noise(i*16)*.08);
-  radial(px,py,width*(.042+noise(i*21)*.065),height*.09,
-         i%3===0?"91,107,116":"19,29,39",.09+wind*.008);
+function rainForeground(cx,wind){
+ // Some rain passes in front of the funnel and breaks its visible outline.
+ for(let i=0;i<17;i++){
+  const x=cx+width*(noise(i*19+4)-.5)*.36+
+    Math.sin(time*.33+i*4)*width*.009;
+  const y=height*(.30+noise(i*16)*.29);
+  cloudPuff(x,y,width*(.015+noise(i*13)*.020),
+     height*(.12+noise(i*7)*.14),
+     i%3?"141,158,161":"84,100,113",.029+wind*.0025);
+ }
+}
+function paintCloudDeck(cx,baseY,wind){
+ // Slowly layered, textured wall cloud visually merges into the funnel top.
+ const shade=ctx.createLinearGradient(0,0,0,height*.64);
+ shade.addColorStop(0,"rgba(18,25,35,0)");
+ shade.addColorStop(.53,"rgba(22,29,36,"+(.012+wind*.003)+")");
+ shade.addColorStop(1,"rgba(19,27,35,0)");
+ ctx.fillStyle=shade;ctx.fillRect(0,0,width,height*.66);
+ for(let i=0;i<20;i++){
+  const n=noise(i*13+1);
+  const px=cx+(n-.5)*width*.46+Math.sin(time*.14+i)*width*.006;
+  const y=baseY-height*(.025+noise(i*16)*.105);
+  const rx=width*(.045+noise(i*21)*.074);
+  const tone=i%4===0?"121,138,147":i%3===0?"60,75,86":"28,38,46";
+  cloudPuff(px,y,rx,height*(.06+noise(i*7)*.066),
+            tone,.044+wind*.004);
+ }
+ // Wisps spill downward from cloud base, softening the attachment.
+ for(let i=0;i<24;i++){
+  const p=noise(i*17+3);
+  const x=cx+(p-.5)*width*.23;
+  const y=baseY+height*(noise(i*9)*.035);
+  cloudPuff(x,y,width*(.023+noise(i*21)*.027),
+           height*(.025+noise(i*14)*.038),
+           i%3?"76,89,96":"142,153,155",.043+wind*.002);
  }
 }
 function paintFunnel(cx,top,bottom,wind){
- const expand=.73+wind*.042;
- beginFunnel(cx,top,bottom,time,expand);
- ctx.save();ctx.filter="blur(11px)";
- ctx.fillStyle="rgba(19,28,36,"+(.13+wind*.012)+")";ctx.fill();
- ctx.restore();
- beginFunnel(cx,top,bottom,time,expand);
- ctx.save();ctx.clip();
- const fill=ctx.createLinearGradient(cx-width*.12,top,cx+width*.08,bottom);
- fill.addColorStop(0,"rgba(31,39,48,.23)");
- fill.addColorStop(.32,"rgba(30,37,42,"+(.18+wind*.018)+")");
- fill.addColorStop(.57,"rgba(19,26,30,"+(.20+wind*.021)+")");
- fill.addColorStop(.84,"rgba(46,47,46,.29)");
- fill.addColorStop(1,"rgba(70,65,56,.23)");
- ctx.fillStyle=fill;ctx.fillRect(cx-width*.19,top,width*.38,bottom-top);
- ctx.globalAlpha=.22;
- ctx.fillStyle=ctx.createPattern(texture,"repeat");
- ctx.translate(Math.sin(time*.4)*11,time*16%96);
- ctx.fillRect(cx-width*.2-15,top-96,width*.4+30,bottom-top+110);
- ctx.restore();
-
- // Condensation wisps orbit different altitudes at different speeds.
- // They are irregular blurred cloud packets, never outlined ellipses.
- const count=23+Math.round(wind*2.5);
+ // The funnel has no polygon edge. Its silhouette is the overlap of many
+ // semi-transparent, feathered condensation packets at different depths.
+ const length=bottom-top;
+ const count=47;
  for(let i=0;i<count;i++){
-  const p=.05+noise(i*23+6)*.91;
-  const y=top+(bottom-top)*p;
-  const rad=width*(.106*Math.pow(1-p,1.22)+.019)*expand;
-  const theta=time*(.32+wind*.105)*(1+p*.8)+i*2.399+noise(i*8);
-  const depth=Math.sin(theta);
-  const xpos=cx+Math.cos(theta)*rad*.94+Math.sin(time*.41+p*8)*width*.004;
-  const r=width*(.009+noise(i*5)*.019)*(1-p*.5);
-  const alpha=(.028+noise(i*7)*.07)*(depth>.05?1.14:.53);
-  radial(xpos,y,r,r*(.54+noise(i*15)*.5),
-         depth>.2?"168,179,182":"39,51,57",alpha+wind*.002);
+  const p=(i+.45)/count;
+  const radius=funnelRadius(p,wind);
+  const x=funnelAxis(cx,p,time);
+  const y=top+length*p;
+  const roll=Math.sin(p*16.2-time*.55);
+  const density=.072+wind*.005+roll*.009;
+  // Dark central air, with a lighter storm-facing side.
+  cloudPuff(x,y,radius*1.02,height*.032,
+            p>.7?"53,57,58":"30,43,50",density);
+  cloudPuff(x-radius*.37,y-height*.008,radius*.66,height*.037,
+            "126,140,145",.032+wind*.001);
+  cloudPuff(x+radius*.28,y+height*.004,radius*.73,height*.034,
+            "34,40,44",.048+wind*.002);
  }
- // Sparse, short turbulent patches at the edge; not guide-lines.
- for(let i=0;i<12;i++){
-  const p=.05+noise(i*13)*.87;
-  const y=top+(bottom-top)*p;
-  const r=width*(.105*Math.pow(1-p,1.2)+.018)*expand;
+ // Irregular density pockets rotate around the funnel rather than painting
+ // a uniform dark cone; behind-the-funnel clouds are more transparent.
+ const packets=125+Math.round(wind*3);
+ for(let i=0;i<packets;i++){
+  const p=.015+noise(i*11+7)*.96;
+  const y=top+length*p+Math.sin(time*.35+i)*height*.003;
+  const radius=funnelRadius(p,wind);
+  const phase=time*(.32+wind*.066)*(1+p*.6)+i*2.399;
+  const depth=Math.sin(phase),radialPosition=.25+noise(i*19)*.83;
+  const x=funnelAxis(cx,p,time)+Math.cos(phase)*radius*radialPosition;
+  const rx=radius*(.15+noise(i*17)*.35)+width*.001;
+  const ry=height*(.005+noise(i*23)*.019);
+  const tone=depth>.3?
+     (i%3===0?"147,158,163":"92,105,111"):
+     (i%4===0?"85,102,113":"26,37,44");
+  const alpha=(.035+noise(i*13)*.083)*
+             (depth>=0?1:.62)*(1-p*.14);
+  cloudPuff(x,y,rx,ry,tone,alpha);
+ }
+ // Partial, broken horizontal condensation streaks that wrap around
+ // the rotating column. Never draw full circles or graphic guide-lines.
+ ctx.save();ctx.lineCap="round";ctx.lineJoin="round";
+ for(let j=0;j<52;j++){
+  const p=.035+noise(j*31+3)*.90;
+  const rr=funnelRadius(p,wind);
+  const y=top+length*p;
+  const phase=time*(.36+wind*.083)+j*1.618;
+  const front=Math.sin(phase);
+  const x=funnelAxis(cx,p,time)+Math.cos(phase)*rr*.64;
+  const arc=rr*(.15+noise(j*17)*.38);
+  const color=front>.0?"162,180,181":"57,78,87";
+  const a=(.023+noise(j*11)*.044)*(front>.0?1:.56);
+  ctx.strokeStyle="rgba("+color+","+a+")";
+  ctx.lineWidth=.55+noise(j*7)*1.4;
+  ctx.beginPath();
+  ctx.moveTo(x-arc*.65,y+rr*.05*Math.sin(phase));
+  ctx.bezierCurveTo(x-arc*.2,y-rr*.045,
+                    x+arc*.35,y-rr*.036+Math.sin(phase)*2,
+                    x+arc*.72,y+rr*.047);
+  ctx.stroke();
+ }
+ ctx.restore();
+ // Very soft stray condensation across the edges creates an irregular,
+ // continuously changing boundary, not hard corners or jagged pixels.
+ for(let i=0;i<42;i++){
+  const p=noise(i*29+15)*.96;
+  const r=funnelRadius(p,wind);
   const side=i%2?-1:1;
-  radial(cx+side*r*(.68+Math.sin(time+i)*.12),y,
-         width*.011,height*.027,"119,131,132",.025+wind*.002);
+  const drift=.75+noise(i*7)*.47;
+  const x=funnelAxis(cx,p,time)+side*r*drift+
+      Math.sin(time*(.39+wind*.04)+i*2.5)*r*.18;
+  const y=top+length*p;
+  cloudPuff(x,y,r*(.19+noise(i*8)*.21),height*.014,
+   i%3?"95,110,118":"164,169,167",.033+wind*.002);
  }
 }
 function dust(cx,ground,wind){
- const base=width*(.045+wind*.006),lift=height*(.055+wind*.004);
- // Uneven billowing dust along ground rather than an obvious circular ring.
- for(let i=0;i<32;i++){
-  const angle=noise(i*7)*Math.PI*2+time*(.20+wind*.055);
-  const depth=(Math.sin(angle)+1)*.5;
-  const orbit=(.22+noise(i*17)*1.1)*base;
-  const px=cx+Math.cos(angle)*orbit+Math.sin(time*.4+i)*3;
-  const py=ground-Math.abs(Math.sin(angle))*(lift*.55)
-          +(noise(i*19)-.5)*lift*.38;
-  const rad=width*(.011+noise(i*13)*.024);
-  const a=(.055+wind*.010)*(.35+depth*.65);
-  radial(px,py,rad,rad*.64,
-     i%4===0?"154,148,135":"86,83,75",a);
+ // A chaotic, broad, turbulent debris cloud extends far past the funnel foot.
+ const funnelFoot=funnelRadius(.98,wind);
+ const spread=Math.max(width*.095,5.6*funnelFoot)*(0.76+wind*.046);
+ const depth=height*(.062+wind*.009);
+ // Wide rolling dust at ground level, in layered muted earth tones.
+ for(let i=0;i<71;i++){
+  const angle=noise(i*17+5)*6.283+time*(.15+wind*.052);
+  const dist=(.22+noise(i*41)*1.12)*spread;
+  const side=Math.cos(angle);
+  const x=cx+side*dist+Math.sin(time*.18+i)*width*.003;
+  const y=ground-Math.abs(Math.sin(angle))*depth*.38+
+     (noise(i*29)-.55)*depth*.42;
+  const rx=width*(.010+noise(i*13)*.023)*(1+wind*.013);
+  const ry=height*(.015+noise(i*23)*.039);
+  cloudPuff(x,y,rx,ry,
+    i%5===0?"169,163,147":i%3===0?"126,120,108":"73,73,70",
+    (.06+wind*.009)*(.60+noise(i*11)*.67));
  }
- radial(cx,ground-width*.003,base*1.4,lift*.65,"100,94,81",.12+wind*.022);
- radial(cx,ground+lift*.14,base*1.25,lift*.48,"42,48,46",.11+wind*.013);
-
- // Bits of dirt and plant material circulate at varied depths.
- const count=25+wind*9;
- for(let i=0;i<count;i++){
-  const r=noise(i*37),alt=noise(i*13+29);
-  const spin=time*(.55+wind*.16)*( .7+noise(i*3))+i*2.399;
-  const orbit=base*(.13+r*1.65);
-  const depth=(Math.sin(spin)+1)*.5;
-  const x=cx+Math.cos(spin)*orbit+Math.sin(time+i)*2.2;
-  const y=ground-alt*lift*(.3+wind*.11)+Math.sin(spin)*lift*.16;
-  const opacity=(.06+wind*.032)*(.35+depth*.65);
-  ctx.strokeStyle="rgba("+(82+Math.round(alt*72))+","+
-    (75+Math.round(alt*67))+","+(61+Math.round(alt*56))+","+opacity+")";
-  ctx.lineWidth=.5+depth*1.3;
-  ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+Math.cos(spin+1.3)*(1.5+r*4),
-    y+Math.sin(spin+1.3)*(1.5+r*4));ctx.stroke();
+ // Layered opaque-looking heart, with completely soft edges.
+ cloudPuff(cx,ground-depth*.16,spread*.89,depth*.68,
+           "69,70,67",.17+wind*.016);
+ cloudPuff(cx-spread*.18,ground-depth*.3,spread*.59,depth*.67,
+           "140,135,123",.068+wind*.006);
+ cloudPuff(cx+spread*.3,ground-depth*.1,spread*.82,depth*.47,
+           "94,91,83",.095+wind*.008);
+ // Eddies and debris of many sizes; no concentric circles.
+ const pieces=62+wind*15;
+ for(let i=0;i<pieces;i++){
+  const fraction=noise(i*37),alt=noise(i*13+29);
+  const omega=time*(.26+wind*.092)*(.6+noise(i*3));
+  const phase=omega+i*2.399;
+  const r=spread*(.1+fraction*1.26);
+  const x=cx+Math.cos(phase)*r;
+  const y=ground-alt*depth*(.15+wind*.067)+Math.sin(phase)*depth*.25;
+  const a=(.034+wind*.012)*(.45+(Math.sin(phase)+1)*.25);
+  const v=80+Math.round(alt*88);
+  ctx.strokeStyle="rgba("+v+","+(v-7)+","+(v-19)+","+a+")";
+  ctx.lineWidth=.5+fraction*1.3;
+  ctx.beginPath();ctx.moveTo(x,y);
+  ctx.lineTo(x+Math.cos(phase+1.2)*(1+fraction*5),
+             y+Math.sin(phase+1.2)*(1+fraction*5));
+  ctx.stroke();
  }
 }
 function environment(wind){
@@ -203,10 +259,11 @@ function draw(now){
  lastFrame=now;time+=prefersReduced?.matches?0:elapsed;
  if(!width||!height)return;
  ctx.clearRect(0,0,width,height);
- const cx=width*.428,top=height*.36,ground=height*.77;
+ const cx=width*.485,top=height*.345,ground=height*.755;
  paintRain(time,level);
  paintCloudDeck(cx,top,level);
  paintFunnel(cx,top,ground,level);
+ rainForeground(cx,level);
  dust(cx,ground,level);
  environment(level);
  if(!prefersReduced?.matches)raf=requestAnimationFrame(draw);
