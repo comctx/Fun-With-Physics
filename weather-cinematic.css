@@ -38,7 +38,7 @@
 #weatherLabPage .wpExtremeCard button[data-weather-topic]::before{content:"";grid-column:1;grid-row:1/span 2;display:block;width:98px;height:72px;background-color:#244662;background-size:cover;background-position:center;border-radius:7px;box-shadow:0 2px 9px #0004}
 #weatherLabPage .wpExtremeCard button[data-weather-topic] small{display:block;grid-column:2;grid-row:2;margin-left:0!important;color:#365875!important;font-size:11px}
 #weatherLabPage [data-weather-topic="lightning"]::before{background-image:url('https://upload.wikimedia.org/wikipedia/commons/1/19/Orage-nuit.jpg')}
-#weatherLabPage [data-weather-topic="tornadoes"]::before{background-image:url('https://upload.wikimedia.org/wikipedia/commons/3/30/2016-05-16_Tornado_north_of_Solomon%2C_Kansas.jpg')}
+#weatherLabPage [data-weather-topic="tornadoes"]::before{background-image:url('https://upload.wikimedia.org/wikipedia/commons/2/2a/Low_Precipitation_Supercell_Thunderstorm.jpg')}
 #weatherLabPage [data-weather-topic="hurricanes"]::before{background-image:url('https://assets.science.nasa.gov/dynamicimage/assets/science/esd/eo/images/imagerecords/84000/84145/HurricaneIselle_tmo_2014216.jpg?crop=faces%2Cfocalpoint&fit=clip&h=480&w=720')}
 #weatherLabPage [data-weather-topic="rainbows"]::before{background-image:url('https://upload.wikimedia.org/wikipedia/commons/e/e9/Rainbow5_-_NOAA.jpg')}
 #weatherLabPage [data-weather-topic="snowflakes"]::before{background-image:url('https://upload.wikimedia.org/wikipedia/commons/2/21/Snowflake_macro_%28Unsplash%29.jpg')}
@@ -47,7 +47,7 @@
 #wpScienceVisual{height:clamp(340px,48vw,570px)!important;min-height:340px!important;border:1px solid #9ccded99!important;border-radius:17px!important;box-shadow:0 20px 40px #000b;overflow:hidden}
 #wpScienceVisual[data-scene]{font-size:0!important;background-size:cover!important;background-position:center!important}
 #wpScienceVisual[data-scene="lightning"]{background-image:linear-gradient(0deg,#031220bd,transparent 68%),url('https://upload.wikimedia.org/wikipedia/commons/thumb/d/d8/2015-08-07_23-13-18_orage.jpg/1280px-2015-08-07_23-13-18_orage.jpg')!important}
-#wpScienceVisual[data-scene="tornadoes"]{background-image:linear-gradient(0deg,#0617257d,transparent 72%),url('https://upload.wikimedia.org/wikipedia/commons/3/30/2016-05-16_Tornado_north_of_Solomon%2C_Kansas.jpg')!important;background-size:cover!important}
+/* Tornado background is defined in the v5 interactive scene section below. */
 #wpScienceVisual[data-scene="hurricanes"]{background-image:linear-gradient(0deg,#00162ec5,transparent 72%),url('https://assets.science.nasa.gov/dynamicimage/assets/science/esd/eo/images/imagerecords/84000/84145/HurricaneIselle_tmo_2014216.jpg?crop=faces%2Cfocalpoint&fit=clip&h=1000&w=1400')!important}
 #wpScienceVisual[data-scene="rainbows"]{background-image:linear-gradient(0deg,#011b2dbd,transparent 72%),url('https://upload.wikimedia.org/wikipedia/commons/e/e9/Rainbow5_-_NOAA.jpg')!important}
 #wpScienceVisual[data-scene="snowflakes"]{background-image:linear-gradient(0deg,#051627a8,transparent 70%),url('https://upload.wikimedia.org/wikipedia/commons/2/21/Snowflake_macro_%28Unsplash%29.jpg')!important}
