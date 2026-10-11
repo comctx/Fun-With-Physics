@@ -1046,6 +1046,26 @@ header{min-height:50px;padding:5px 10px;background:#102839}
 @media(prefers-reduced-motion:reduce){.wpTornadoClouds,.wpTornadoFunnel,.wpTornadoSpiral,.wpTornadoDust,.wpTornadoRain{animation:none!important}}
 @media(max-width:700px){#wpScienceVisual[data-scene="tornadoes"]{height:310px}.wpTornadoCaption{right:12px;left:12px;bottom:10px}}
 </style>
+<style>
+.wpStormLaunch{width:100%;display:block;text-align:center;margin:7px 0 13px;border:1px solid #8de1fc;border-radius:13px;padding:15px;background:linear-gradient(100deg,#0f5394,#172f65);font-size:17px;font-weight:800;color:#fff;box-shadow:0 6px 24px #0019}
+#wpStormLab{color:#eef9ff;padding:8px}#wpStormLab[hidden]{display:none!important}
+.wpStormHeader{display:flex;justify-content:space-between;gap:14px;align-items:center;padding:12px 0 17px}
+.wpStormHeader small{font-size:11px;letter-spacing:.2em;color:#a9defb}.wpStormHeader h2{margin:6px 0;font-size:clamp(27px,4vw,44px)}.wpStormHeader p{margin:0;color:#cce5fa}
+.wpStormLevel{background:#102e50;border:1px solid #638caf;border-radius:14px;padding:12px;min-width:116px;text-align:center;font-size:12px}.wpStormLevel strong{display:block;font-size:38px}
+.wpStormGrid{display:grid;grid-template-columns:minmax(240px,320px) minmax(0,1fr);gap:13px}
+.wpStormPanel{background:linear-gradient(145deg,#183c5b,#0b223d);padding:17px;border-radius:14px;border:1px solid #6694b5}
+.wpStormPanel h3{margin:0 0 14px}.wpStormPanel label{display:block;font-size:13px;font-weight:700;margin:12px 0}.wpStormPanel output{float:right;color:#bcefff}.wpStormPanel input{width:100%;display:block;margin:8px 0;accent-color:#43b6e8}
+.wpStormActions{display:flex;gap:8px}.wpStormActions button,#wstPreset{border:1px solid #77bded;background:linear-gradient(#176fb4,#105087);padding:10px 13px;border-radius:8px;font-weight:700}
+#wstExplain{font-size:13px;line-height:1.55;color:#d5eaff;min-height:64px}
+.wpStormSceneWrap{position:relative;overflow:hidden;min-height:330px;border:1px solid #7cbbd7;border-radius:14px;background:#5c90bd;box-shadow:0 15px 30px #0019}
+#wstCanvas{width:100%;height:100%;display:block;aspect-ratio:1000/590}
+.wpStormSceneStatus{position:absolute;left:14px;top:13px;background:#061f37ba;border:1px solid #aed5eb9c;border-radius:9px;padding:10px 15px;font-weight:800}
+.wpStormLegend{position:absolute;bottom:11px;right:12px;font-size:10px;color:#f1faff;background:#071e35a8;padding:5px;border-radius:4px}
+.wpStormChallenge{display:flex;align-items:center;justify-content:space-between;gap:12px;border:1px solid #67b3d0;background:#0e3757;border-radius:13px;padding:15px;margin-top:15px}.wpStormChallenge h3{margin:0 0 5px}.wpStormChallenge p{font-size:13px;margin:5px 0}
+.wpStormSteps{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:12px;background:#123654;border-radius:10px;padding:13px;font-size:12px}
+@media(max-width:790px){.wpStormGrid{grid-template-columns:1fr}.wpStormChallenge{flex-direction:column;align-items:flex-start}.wpStormSceneWrap{min-height:220px}}
+@media(prefers-reduced-motion:reduce){#wstCanvas{scroll-behavior:auto}}
+</style>
 </head>
 <body>
 <div id="app">
@@ -1275,7 +1295,7 @@ header{min-height:50px;padding:5px 10px;background:#102839}
 <section id="weatherLabPage" aria-label="Weather Physics Lab" hidden>
  <div class="wpHead"><strong>🌤️ Weather Physics Lab</strong><span id="wpDataState">Choose a city or use your location</span></div>
  <div class="wpCitySearch"><label for="wpCityInput">Weather location</label><input id="wpCityInput" type="search" placeholder="Enter a city (e.g., Bay City, Michigan)" autocomplete="off"><button id="wpCitySearchBtn" type="button">🔎 Find Weather</button><span id="wpCityChosen">No city selected — manual experiment settings</span></div>
- <div id="wpDashboard"><div class="wpConditions"><div><span class="wpThermoSymbol">°</span><strong id="wpHomeTemp">72°F</strong><small>Air temperature</small></div><div>💨 Wind <strong id="wpHomeWind">10 m/s</strong></div><div>💧 Humidity <strong id="wpHomeHum">55%</strong></div><div>◉ Pressure <strong id="wpHomePress">1013 hPa</strong></div><button id="wpHomeLive" type="button">📍 Refresh local weather</button></div><div class="wpHero"><div class="wpSky" id="wpSkyScene"><div class="wpSkyPhoto"></div><div class="wpSkyVignette"></div><div class="wpHorizonGlow"></div><div class="wpSceneTitle"><small>ATMOSPHERIC OBSERVATORY</small><strong>Weather in Motion</strong><span>Explore the forces shaping the sky</span></div><div class="wpHeatOverlay" id="wpHeatOverlay"></div><div class="wpPressureContours" id="wpPressureContours"></div><div class="wpCloudLayer wpCloudFar" id="wpCloudFar"></div><div class="wpCloudLayer wpCloudMid" id="wpCloudMid"></div><div class="wpCloudLayer wpCloudNear" id="wpCloudNear"></div><canvas id="wpWindCanvas" class="wpWindCanvas"></canvas><div id="wpLightningLayer" class="wpLightningLayer"><svg viewBox="0 0 600 350" preserveAspectRatio="none" aria-hidden="true"><path d="M341 0 L315 100 L363 112 L295 205 L325 214 L266 345 M309 174 L250 197 L215 260" stroke="#96cfff" stroke-width="13" fill="none"/><path d="M341 0 L315 100 L363 112 L295 205 L325 214 L266 345 M309 174 L250 197 L215 260" stroke="white" stroke-width="4" fill="none"/></svg></div><div class="wpAtmos"><span>Temperature: 72°F</span><span>Humidity: 55%</span><span>Wind: 10 m/s</span></div><div class="wpPhotoCredit">Illustrative atmosphere • weather-responsive overlays</div></div><aside class="wpFocus"><h3>Today’s Physics Focus</h3><div class="wpFocusTabs"><button data-focus="temperature">Temperature</button><button data-focus="wind">Wind</button><button data-focus="humidity">Humidity</button><button data-focus="clouds">Clouds</button><button data-focus="pressure">Pressure</button></div><h4 id="wpFocusTitle"></h4><p id="wpFocusText"></p><button data-weather-open="projectile">🎯 Start Today’s Challenge →</button></aside></div><div class="wpFeatureDeck">
+ <div id="wpDashboard"><button id="wpStormHomeOpen" type="button" class="wpStormLaunch">⛈️ BUILD A STORM — Interactive Weather Sandbox →</button><div class="wpConditions"><div><span class="wpThermoSymbol">°</span><strong id="wpHomeTemp">72°F</strong><small>Air temperature</small></div><div>💨 Wind <strong id="wpHomeWind">10 m/s</strong></div><div>💧 Humidity <strong id="wpHomeHum">55%</strong></div><div>◉ Pressure <strong id="wpHomePress">1013 hPa</strong></div><button id="wpHomeLive" type="button">📍 Refresh local weather</button></div><div class="wpHero"><div class="wpSky" id="wpSkyScene"><div class="wpSkyPhoto"></div><div class="wpSkyVignette"></div><div class="wpHorizonGlow"></div><div class="wpSceneTitle"><small>ATMOSPHERIC OBSERVATORY</small><strong>Weather in Motion</strong><span>Explore the forces shaping the sky</span></div><div class="wpHeatOverlay" id="wpHeatOverlay"></div><div class="wpPressureContours" id="wpPressureContours"></div><div class="wpCloudLayer wpCloudFar" id="wpCloudFar"></div><div class="wpCloudLayer wpCloudMid" id="wpCloudMid"></div><div class="wpCloudLayer wpCloudNear" id="wpCloudNear"></div><canvas id="wpWindCanvas" class="wpWindCanvas"></canvas><div id="wpLightningLayer" class="wpLightningLayer"><svg viewBox="0 0 600 350" preserveAspectRatio="none" aria-hidden="true"><path d="M341 0 L315 100 L363 112 L295 205 L325 214 L266 345 M309 174 L250 197 L215 260" stroke="#96cfff" stroke-width="13" fill="none"/><path d="M341 0 L315 100 L363 112 L295 205 L325 214 L266 345 M309 174 L250 197 L215 260" stroke="white" stroke-width="4" fill="none"/></svg></div><div class="wpAtmos"><span>Temperature: 72°F</span><span>Humidity: 55%</span><span>Wind: 10 m/s</span></div><div class="wpPhotoCredit">Illustrative atmosphere • weather-responsive overlays</div></div><aside class="wpFocus"><h3>Today’s Physics Focus</h3><div class="wpFocusTabs"><button data-focus="temperature">Temperature</button><button data-focus="wind">Wind</button><button data-focus="humidity">Humidity</button><button data-focus="clouds">Clouds</button><button data-focus="pressure">Pressure</button></div><h4 id="wpFocusTitle"></h4><p id="wpFocusText"></p><button data-weather-open="projectile">🎯 Start Today’s Challenge →</button></aside></div><div class="wpFeatureDeck">
  <article class="wpFeatureCard wpChallengeCard"><h3>🎯 Today's Physics Challenge</h3><p>Can you adjust the wind and land a water balloon within 3 meters of the target 50 meters away?</p><div class="wpFeatureImage wpTargetPhoto" aria-hidden="true"><span>WIND & TRAJECTORY</span></div><button type="button" data-weather-open="projectile">Try the challenge →</button></article>
  <article class="wpFeatureCard wpLiveCard"><h3>🔬 Live Weather Simulator</h3><p>Test today's conditions in the projectile simulator. Try zero wind, then use the weather you've selected.</p><div class="wpFeatureImage wpFlightPhoto" aria-hidden="true"><span>ATMOSPHERIC FORCES</span></div><button type="button" data-weather-open="projectile">Run simulation →</button></article>
  <article class="wpFeatureCard wpExtremeCard"><h3>⚡ Extreme Weather Science</h3><button type="button" data-weather-topic="lightning">⚡ Lightning <small>Electrical breakdown in air</small></button><button type="button" data-weather-topic="tornadoes">🌪️ Tornadoes <small>Rotation and rising air</small></button><button type="button" data-weather-topic="hurricanes">🌀 Hurricanes <small>Heat and angular momentum</small></button><button type="button" data-weather-topic="rainbows">🌈 Rainbows <small>Refraction and dispersion</small></button><button type="button" data-weather-topic="snowflakes">❄️ Snowflakes <small>Crystallization and symmetry</small></button><p id="wpTopicDetail" role="status">Select a topic to learn about the physics behind it.</p></article>
@@ -1301,7 +1321,22 @@ header{min-height:50px;padding:5px 10px;background:#102839}
   </div>
  </div>
  <div class="wpLessons"><details><summary>⚡ Lightning</summary>Charge separation inside storms can create electric fields strong enough to break down air.</details><details><summary>🌪️ Tornadoes</summary>Rising air, wind shear, and angular momentum help rotating updrafts develop.</details><details><summary>🌈 Rainbows</summary>Water droplets refract, internally reflect, and disperse sunlight into colors.</details><details><summary>❄️ Snow crystals</summary>Water vapor deposits onto ice; temperature and humidity affect branching shapes.</details></div></div><div id="wpOtherView" class="wpExperimentView" hidden><button class="wpBack" data-weather-home>← Weather Home</button><h3 id="wpOtherTitle"></h3><div class="wpOtherLayout"><div><label id="wpVariableLabel" for="wpVariable"></label><input id="wpVariable" type="range" min="0" max="100" value="50"><p id="wpVariableValue"></p><button id="wpSimulate" type="button">▶ Run Experiment</button><p id="wpOtherExplanation"></p></div><canvas id="wpOtherCanvas" width="800" height="420"></canvas></div></div>
-<div id="wpScienceView" class="wpExperimentView" hidden><button type="button" id="wpScienceBack" class="wpBack">← Weather Home</button><h2 id="wpScienceTitle"></h2><div class="wpScienceVisual" id="wpScienceVisual" aria-hidden="true"></div><h3>What's happening?</h3><p id="wpScienceExplanation"></p><h3>Try this thought experiment</h3><p id="wpScienceQuestion"></p></div></section>
+<div id="wpStormLab" hidden>
+ <button id="wpStormBack" type="button" class="wpBack">← Weather Home</button>
+ <div class="wpStormHeader"><div><small>FUN WITH PHYSICS • WEATHER SYSTEMS</small><h2>⛈ Build a Storm</h2><p>Change the atmosphere and watch the simulated sky respond.</p></div><div class="wpStormLevel">Storm Level <strong id="wpStormLevel">0</strong><span>/ 10</span></div></div>
+ <div class="wpStormGrid"><div class="wpStormPanel">
+ <h3>Atmosphere Controls</h3>
+ <label>🌡 Temperature <output id="wstTempOut">75°F</output><input id="wstTemp" type="range" min="-10" max="110" value="75"></label>
+ <label>💧 Humidity <output id="wstHumOut">40%</output><input id="wstHum" type="range" min="0" max="100" value="40"></label>
+ <label>💨 Wind Speed <output id="wstWindOut">15 mph</output><input id="wstWind" type="range" min="0" max="100" value="15"></label>
+ <label>☁️ Cloud Density <output id="wstCloudOut">25%</output><input id="wstCloud" type="range" min="0" max="100" value="25"></label>
+ <label>⚡ Atmospheric Charge <output id="wstChargeOut">15%</output><input id="wstCharge" type="range" min="0" max="100" value="15"></label>
+ <div class="wpStormActions"><button id="wstStrike" type="button">⚡ STRIKE</button><button id="wstReset" type="button">↺ Sunny Reset</button></div>
+ <p id="wstExplain">Start by raising humidity to build moisture in the atmosphere.</p></div>
+ <div class="wpStormSceneWrap"><canvas id="wstCanvas" width="1000" height="590" aria-label="Animated simulated weather landscape"></canvas><div id="wstSceneStatus" class="wpStormSceneStatus" role="status">☀️ Clear skies</div><div class="wpStormLegend">Visual teaching model • not a weather forecast</div></div></div>
+ <div class="wpStormChallenge"><div><h3>🏆 Challenge: Create a Thunderstorm</h3><p>Humidity above 70% • Cloud density above 60% • Charge above 80%</p><p id="wstChallengeStatus" role="status">Adjust all three controls to win.</p></div><button id="wstPreset" type="button">Try storm conditions</button></div>
+ <div class="wpStormSteps"><strong>Weather chain reaction</strong><span>☀️ Heating</span><span>→ Evaporation</span><span>→ Clouds</span><span>→ Rain</span><span>→ Charge</span><span>→ Lightning</span></div>
+ </div><div id="wpScienceView" class="wpExperimentView" hidden><button type="button" id="wpScienceBack" class="wpBack">← Weather Home</button><h2 id="wpScienceTitle"></h2><div class="wpScienceVisual" id="wpScienceVisual" aria-hidden="true"></div><h3>What's happening?</h3><p id="wpScienceExplanation"></p><h3>Try this thought experiment</h3><p id="wpScienceQuestion"></p></div></section>
 <button id="desktopLabRun" type="button" style="display:none" aria-label="Start or stop lab">▶ Start Air</button>
 <button id="desktopToolsToggle" type="button" aria-expanded="false" aria-controls="tray" title="Show or hide tools">＋ Tools</button>
 <button class="uiAddTool" id="uiAddTool" type="button">＋ Add Tool</button><button class="uiCloseTools" id="uiCloseTools" type="button">✕ Close Tools</button><button class="uiFullScreen" id="uiFullScreen" type="button" title="Expand simulation">⛶</button>
@@ -6665,6 +6700,47 @@ setTimeout(()=>{
  });
  document.querySelectorAll('[data-weather-topic]').forEach(b=>{if(b!==tornadoButton)b.addEventListener('click',()=>{const c=document.getElementById('wpTornadoControl');if(c)c.hidden=true})});
  document.getElementById('wpScienceBack')?.addEventListener('click',()=>{const c=document.getElementById('wpTornadoControl');if(c)c.hidden=true});
+})();
+</script>
+<script>
+(function(){
+const lab=document.getElementById('wpStormLab'),home=document.getElementById('wpDashboard'),canvas=document.getElementById('wstCanvas');if(!lab||!canvas)return;
+const ctx=canvas.getContext('2d'),ids=['Temp','Hum','Wind','Cloud','Charge'];let t=0,flash=0,won=false;
+function value(k){return Number(document.getElementById('wst'+k).value)}
+function read(){return Object.fromEntries(ids.map(k=>[k,value(k)]))}
+function update(){
+ const v=read();ids.forEach(k=>document.getElementById('wst'+k+'Out').textContent=v[k]+({Temp:'°F',Hum:'%',Wind:' mph',Cloud:'%',Charge:'%'}[k]));
+ const score=Math.min(10,Math.round((v.Hum*.24+v.Cloud*.26+v.Charge*.28+v.Wind*.14+Math.max(0,v.Temp-60)*.08)/10));
+ document.getElementById('wpStormLevel').textContent=score;
+ const win=v.Hum>70&&v.Cloud>60&&v.Charge>80;
+ const message=win?'🏆 Thunderstorm Created! You balanced moisture, cloud cover and charge.':'Adjust all three controls to win. Humidity >70%, cloud density >60%, charge >80%.';
+ document.getElementById('wstChallengeStatus').textContent=message;
+ if(win&&!won){flash=13}won=win;
+ const snow=v.Temp<=32&&v.Hum>35,rain=v.Hum>=65&&v.Cloud>=55;
+ document.getElementById('wstSceneStatus').textContent=win?'⛈️ Thunderstorm':snow?'❄️ Snowfall':rain?'🌧️ Rain':v.Cloud>55?'☁️ Overcast':'☀️ Mostly clear';
+ document.getElementById('wstExplain').textContent=win?'The storm challenge is complete! Now change wind or temperature and watch the atmosphere respond.':snow?'Cold moist air can produce snow when other atmospheric conditions allow.':rain?'High moisture and dense clouds can support precipitation; this is a simplified teaching model.':v.Hum>70?'Moist air contains abundant water vapor. Increase cloud density to model condensation.':v.Wind>60?'Strong wind moves cloud structures faster.':'Heat helps drive evaporation and convection. Try raising humidity and cloud density.';
+ }
+ function open(){home.hidden=true;document.getElementById('wpProjectileView').hidden=true;document.getElementById('wpOtherView').hidden=true;document.getElementById('wpScienceView').hidden=true;lab.hidden=false;update();lab.scrollIntoView({block:'start'})}
+ document.getElementById('wpStormHomeOpen').addEventListener('click',open);
+ document.getElementById('wpStormBack').addEventListener('click',()=>{lab.hidden=true;home.hidden=false;home.scrollIntoView({block:'start'})});
+ ids.forEach(k=>document.getElementById('wst'+k).addEventListener('input',update));
+ document.getElementById('wstPreset').addEventListener('click',()=>{Object.entries({Temp:78,Hum:84,Wind:38,Cloud:86,Charge:92}).forEach(([k,v])=>document.getElementById('wst'+k).value=v);update()});
+ document.getElementById('wstReset').addEventListener('click',()=>{Object.entries({Temp:75,Hum:40,Wind:15,Cloud:25,Charge:15}).forEach(([k,v])=>document.getElementById('wst'+k).value=v);won=false;flash=0;update()});
+ document.getElementById('wstStrike').addEventListener('click',()=>{if(value('Charge')>=70&&value('Cloud')>=50){flash=12;document.getElementById('wstExplain').textContent='Lightning flash! Electrical breakdown occurs when the electric field becomes strong enough.'}else{document.getElementById('wstExplain').textContent='Build greater cloud density and charge before attempting a lightning strike.'}});
+ const rand=(seed)=>{const x=Math.sin(seed*127.1+78.233)*43758.5453;return x-Math.floor(x)};
+ function cloud(x,y,r,a){ctx.save();ctx.globalAlpha=a;for(let i=0;i<11;i++){const dx=(i-5)*r*.27,dy=Math.sin(i*2.2)*r*.17;const g=ctx.createRadialGradient(x+dx,y+dy,2,x+dx,y+dy,r*.55);g.addColorStop(0,'#e4e9ed');g.addColorStop(1,'#43556300');ctx.fillStyle=g;ctx.beginPath();ctx.arc(x+dx,y+dy,r*.56,0,Math.PI*2);ctx.fill()}ctx.restore()}
+ function render(){requestAnimationFrame(render);if(lab.hidden)return;const v=read(),w=canvas.width,h=canvas.height,heavy=v.Cloud/100;ctx.clearRect(0,0,w,h);
+ const sky=ctx.createLinearGradient(0,0,0,h);const dark=Math.round(160-heavy*100);sky.addColorStop(0,'rgb('+Math.round(30-heavy*20)+','+Math.round(89-heavy*50)+','+dark+')');sky.addColorStop(1,'rgb('+Math.round(130-heavy*70)+','+Math.round(175-heavy*90)+','+Math.round(205-heavy*100)+')');ctx.fillStyle=sky;ctx.fillRect(0,0,w,h);
+ const sun=ctx.createRadialGradient(760,105,10,760,105,180);sun.addColorStop(0,'#ffeab4');sun.addColorStop(1,'#ffde8600');ctx.fillStyle=sun;ctx.fillRect(540,0,440,300);
+ ctx.fillStyle='#243f3b';ctx.beginPath();ctx.moveTo(0,460);for(let x=0;x<=w;x+=25)ctx.lineTo(x,445+Math.sin(x*.012)*16);ctx.lineTo(w,h);ctx.lineTo(0,h);ctx.fill();
+ ctx.fillStyle='#44634b';ctx.fillRect(0,h-65,w,65);
+ for(let i=0;i<18;i++){const x=((i*167+ t*(v.Wind*.25+2))%(w+300))-150,y=65+(i%5)*59;cloud(x,y,75+i%3*25,heavy*.86+.03)}
+ if(v.Hum>55&&v.Cloud>45){ctx.strokeStyle=v.Temp<=32?'#effbff9a':'#c4dbef70';for(let i=0;i<170;i++){const x=(rand(i*23)*w+t*(v.Wind*.8+12))%w,y=(rand(i*43)*h+t*(v.Temp<=32?1.2:7)+i*12)%h;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+(v.Temp<=32?2:9),y+(v.Temp<=32?4:20));ctx.stroke()}}
+ if(v.Wind>5){ctx.strokeStyle='#edf8ff6e';for(let i=0;i<55;i++){const x=(rand(i*13)*w+t*(v.Wind*1.3+7))%w,y=(rand(i*9+8)*h);ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+v.Wind*.6,y-2);ctx.stroke()}}
+ if(flash>0){ctx.fillStyle='rgba(228,240,255,'+(flash/18)+')';ctx.fillRect(0,0,w,h);ctx.save();ctx.strokeStyle='#fff';ctx.shadowBlur=20;ctx.shadowColor='#c9eaff';ctx.lineWidth=7;ctx.beginPath();ctx.moveTo(525,0);ctx.lineTo(490,118);ctx.lineTo(550,168);ctx.lineTo(465,270);ctx.lineTo(515,310);ctx.lineTo(430,470);ctx.stroke();ctx.restore();flash--}
+ t+=.5;
+ }
+ update();requestAnimationFrame(render);
 })();
 </script>
 </body>
