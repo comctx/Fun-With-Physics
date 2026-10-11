@@ -42,8 +42,13 @@ async function enableSound(){
   await ctx.resume();
   soundOn=ctx.state==="running";
   reflect();
-  notify(soundOn?"Thunder enabled — previewing sound":"Tap Thunder On to enable audio");
-  if(soundOn)playThunder(.6,"ground");
+  if(soundOn){
+   notify("Loading real thunder recording…");
+   const loaded=await loadRealThunder();
+   if(!soundOn||!active())return;
+   notify(loaded?"Real thunder enabled — previewing sound":"Thunder enabled — using offline sound");
+   playThunder(.6,"ground");
+  }else notify("Tap Thunder On to enable audio");
  }catch(_e){
   soundOn=false;
   reflect();
@@ -87,8 +92,102 @@ function createLayer(buffer,time,frequency,gainAmount,shape,mode="lowpass"){
  source.stop(time+buffer.duration);
  track(source);
 }
+
+/* Public-domain field recording: "Tonitrus" by Mysid, Wikimedia Commons.
+   https://commons.wikimedia.org/wiki/File:Tonitrus.ogg
+   Loaded once when sound is enabled. If the recording is unavailable,
+   the self-contained synthesized thunder remains the fallback. */
+const THUNDER_RECORDING="https://upload.wikimedia.org/wikipedia/commons/c/c8/Tonitrus.ogg";
+let recordedBuffer=null,recordingLoad=null,recordedSections=[];
+async function loadRealThunder(){
+ if(recordedBuffer)return true;
+ if(!ctx||!window.fetch)return false;
+ if(recordingLoad)return recordingLoad;
+ recordingLoad=(async()=>{
+  const abort=new AbortController();
+  const timeout=setTimeout(()=>abort.abort(),6500);
+  try{
+   const response=await fetch(THUNDER_RECORDING,{signal:abort.signal,mode:"cors"});
+   if(!response.ok)throw new Error("Thunder recording could not load");
+   const raw=await response.arrayBuffer();
+   const decoded=await ctx.decodeAudioData(raw);
+   if(decoded.duration<3)throw new Error("Thunder recording too short");
+   recordedBuffer=decoded;
+   // Find loud portions of the real recording so each triggered sound
+   // starts near a thunderclap, rather than an arbitrary quiet passage.
+   const data=decoded.getChannelData(0),rate=decoded.sampleRate;
+   const frameLength=Math.max(1,Math.floor(rate*.2));
+   const energies=[];
+   for(let start=0;start<data.length;start+=frameLength){
+    let sum=0,count=0;
+    for(let j=start;j<Math.min(start+frameLength,data.length);j+=8){
+     const v=data[j];sum+=v*v;count++;
+    }
+    energies.push(Math.sqrt(sum/Math.max(1,count)));
+   }
+   const candidates=energies.map((energy,i)=>({energy,time:i*.2}))
+    .filter(x=>x.time<decoded.duration-3.5)
+    .sort((a,b)=>b.energy-a.energy);
+   recordedSections=[];
+   for(const candidate of candidates){
+    const start=Math.max(0,candidate.time-.4);
+    if(recordedSections.every(existing=>Math.abs(existing-start)>2.8)){
+     recordedSections.push(start);
+     if(recordedSections.length>=6)break;
+    }
+   }
+   if(!recordedSections.length)recordedSections=[0];
+   return true;
+  }catch(_err){
+   recordedBuffer=null;
+   return false;
+  }finally{clearTimeout(timeout)}
+ })();
+ const loaded=await recordingLoad;
+ if(!loaded)recordingLoad=null;
+ return loaded;
+}
+function playRealThunder(distanceKm,type){
+ if(!recordedBuffer||!ctx)return false;
+ const start=ctx.currentTime+.015;
+ const distant=Math.min(1,Math.max(0,(distanceKm-.4)/1.7));
+ const offset=recordedSections[Math.floor(random(0,recordedSections.length))]||0;
+ const length=Math.min(random(5.0,7.8),recordedBuffer.duration-offset-.04);
+ if(length<1)return false;
+ const source=ctx.createBufferSource();
+ source.buffer=recordedBuffer;
+ source.playbackRate.value=random(.91,1.06)*(distant>.55?.95:1);
+ const filter=ctx.createBiquadFilter();
+ filter.type="lowpass";
+ filter.frequency.value=1200+(1-distant)*2900;
+ const volume=ctx.createGain();
+ const intensity=(type==="sheet"?.59:1)*(1-distant*.65)*random(.75,.94);
+ volume.gain.setValueAtTime(.0001,start);
+ volume.gain.linearRampToValueAtTime(intensity,start+.10);
+ volume.gain.setValueAtTime(intensity*.88,start+Math.min(1.8,length*.45));
+ volume.gain.exponentialRampToValueAtTime(.0001,start+length-.015);
+ source.connect(filter);
+ filter.connect(volume);
+ if(ctx.createStereoPanner){
+  const pan=ctx.createStereoPanner();
+  pan.pan.value=random(-.27,.27);
+  volume.connect(pan);pan.connect(master);
+ }else volume.connect(master);
+ source.start(start,offset,length);
+ source.stop(start+length+.03);
+ track(source);
+ // For near strikes, a sharp crack arrives with the recorded deep rumble.
+ if(distanceKm<.72&&type!=="sheet"){
+  const crack=makeNoise(.37);
+  createLayer(crack,start,random(950,1900),.22*(1-distant),
+   [[0,.001],[.01,1],[.05,.62],[.13,.28],[.34,.0001]],"highpass");
+ }
+ return true;
+}
+
 function playThunder(distanceKm,type){
  if(!soundOn||!active()||!ctx||ctx.state!=="running")return;
+ if(recordedBuffer&&playRealThunder(distanceKm,type))return;
  // Close strikes start with a sharp crack, distant strikes have softer rolling lows.
  const closeness=Math.max(0,1-distanceKm/2.4);
  const duration=random(3.8,5.5);
