@@ -1088,7 +1088,7 @@ header{min-height:50px;padding:5px 10px;background:#102839}
 @media(max-width:1000px){#weatherLabPage #wpDashboard .wpConditions{grid-template-columns:repeat(2,minmax(0,1fr))}#weatherLabPage #wpDashboard .wpConditions>button{grid-column:1/-1}}
 @media(max-width:580px){#weatherLabPage #wpDashboard .wpConditions{grid-template-columns:1fr 1fr}#weatherLabPage #wpDashboard .wpConditions strong{font-size:22px}#weatherLabPage #wpDashboard .wpSceneTitle{max-width:90%}}
 </style>
-<link rel="stylesheet" href="weather-cinematic.css?v=20261010b">
+<link rel="stylesheet" href="weather-cinematic.css?v=20261010c">
 </head>
 <body>
 <div id="app">
@@ -6739,7 +6739,7 @@ function update(){
  const message=win?'🏆 Thunderstorm Created! You balanced moisture, cloud cover and charge.':'Adjust all three controls to win. Humidity >70%, cloud density >60%, charge >80%.';
  document.getElementById('wstChallengeStatus').textContent=message;
  if(win&&!won){flash=13}won=win;
- const snow=v.Temp<=32&&v.Hum>35,rain=v.Hum>=65&&v.Cloud>=55;
+ const snow=v.Temp<=32&&v.Hum>=65&&v.Cloud>=45,rain=v.Temp>32&&v.Hum>=70&&v.Cloud>=45;
  document.getElementById('wstSceneStatus').textContent=win?'⛈️ Thunderstorm':snow?'❄️ Snowfall':rain?'🌧️ Rain':v.Cloud>55?'☁️ Overcast':'☀️ Mostly clear';
  document.getElementById('wstExplain').textContent=win?'The storm challenge is complete! Now change wind or temperature and watch the atmosphere respond.':snow?'Cold moist air can produce snow when other atmospheric conditions allow.':rain?'High moisture and dense clouds can support precipitation; this is a simplified teaching model.':v.Hum>70?'Moist air contains abundant water vapor. Increase cloud density to model condensation.':v.Wind>60?'Strong wind moves cloud structures faster.':'Heat helps drive evaporation and convection. Try raising humidity and cloud density.';
  }
@@ -6749,7 +6749,7 @@ function update(){
  ids.forEach(k=>document.getElementById('wst'+k).addEventListener('input',update));
  document.getElementById('wstPreset').addEventListener('click',()=>{Object.entries({Temp:78,Hum:84,Wind:38,Cloud:86,Charge:92}).forEach(([k,v])=>document.getElementById('wst'+k).value=v);update()});
  document.getElementById('wstReset').addEventListener('click',()=>{Object.entries({Temp:75,Hum:40,Wind:15,Cloud:25,Charge:15}).forEach(([k,v])=>document.getElementById('wst'+k).value=v);won=false;flash=0;update()});
- document.getElementById('wstStrike').addEventListener('click',()=>{if(value('Charge')>=70&&value('Cloud')>=50){flash=12;document.getElementById('wstExplain').textContent='Lightning flash! Electrical breakdown occurs when the electric field becomes strong enough.'}else{document.getElementById('wstExplain').textContent='Build greater cloud density and charge before attempting a lightning strike.'}});
+ document.getElementById('wstStrike').addEventListener('click',()=>{if(value('Charge')>=65&&value('Cloud')>=45){flash=12;document.getElementById('wstExplain').textContent='Lightning flash! Electrical breakdown occurs when the electric field becomes strong enough.'}else{document.getElementById('wstExplain').textContent='For lightning, set atmospheric charge to at least 65% and cloud density to at least 45%.'}});
  const rand=(seed)=>{const x=Math.sin(seed*127.1+78.233)*43758.5453;return x-Math.floor(x)};
  function cloud(x,y,r,a){ctx.save();ctx.globalAlpha=a;for(let i=0;i<11;i++){const dx=(i-5)*r*.27,dy=Math.sin(i*2.2)*r*.17;const g=ctx.createRadialGradient(x+dx,y+dy,2,x+dx,y+dy,r*.55);g.addColorStop(0,'#e4e9ed');g.addColorStop(1,'#43556300');ctx.fillStyle=g;ctx.beginPath();ctx.arc(x+dx,y+dy,r*.56,0,Math.PI*2);ctx.fill()}ctx.restore()}
  function render(){requestAnimationFrame(render);if(lab.hidden)return;const v=read(),w=canvas.width,h=canvas.height,heavy=v.Cloud/100;ctx.clearRect(0,0,w,h);
@@ -6767,5 +6767,6 @@ function update(){
 })();
 </script>
 <script defer src="weather-cinematic.js?v=20261010b"></script>
+<script defer src="weather-storm-effects.js?v=20261010c"></script>
 </body>
 </html>
