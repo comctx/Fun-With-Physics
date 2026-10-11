@@ -12,6 +12,8 @@ const opener=page?.querySelector('[data-weather-topic="tornadoes"]');
 if(!page||!science||!visual||!opener)return;
 const prefersReduced=window.matchMedia?.("(prefers-reduced-motion: reduce)");
 let canvas=null,ctx=null,raf=0,lastFrame=0,time=0,level=5,width=0,height=0,texture=null;
+// Brief, irregular distant cloud flashes. Scheduled once per event, not randomly per frame.
+let nextLightningAt=0,flashStart=-100,flashX=.35,flashIsBolt=false;
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const noise=n=>{const v=Math.sin(n*79.132+27.71)*14567.29;return v-Math.floor(v)};
 const running=()=>!document.hidden&&!page.hidden&&!science.hidden&&visual.dataset.scene==="tornadoes"&&canvas?.isConnected;
@@ -52,14 +54,15 @@ function funnelRadius(p,wind){
    width*(.017+.119*taper)*(.70+wind*.043)*breathing*localTurbulence);
 }
 function funnelAxis(cx,p,phase){
- // Ground stays near the moving debris base; upper levels curve and twist.
- // Multiple nonmatching frequencies prevent mechanical side-to-side repetition.
- const upper=1-p*.76;
- const bend=upper*(Math.sin(phase*.32+p*4.6)*.007+
-                   Math.sin(phase*.67-p*8.8)*.0038);
- const kink=(Math.sin(phase*1.22+p*15.3)*.0023+
-             Math.sin(phase*.86-p*26.2)*.0014)*(1-p*.5);
- return cx+width*(bend+kink);
+ // Upper funnel gently wanders under the cloud base; the ground contact stays anchored.
+ const topWeight=Math.pow(Math.max(0,1-p),1.18);
+ const upperSway=(Math.sin(phase*.20)*.012+
+                  Math.sin(phase*.43+1.1)*.0045)*topWeight;
+ const bend=(Math.sin(phase*.29+p*4.8)*.0072+
+             Math.sin(phase*.61-p*8.5)*.0032)*topWeight;
+ const eddy=(Math.sin(phase*1.08+p*15)*.0019+
+             Math.sin(phase*.81-p*24)*.0011)*topWeight;
+ return cx+width*(upperSway+bend+eddy);
 }
 function cloudPuff(x,y,rx,ry,color,alpha){
  radial(x,y,rx,ry,color,clamp(alpha,0,.85));
@@ -137,9 +140,11 @@ function paintFunnel(cx,top,bottom,wind){
   const p=(i+.45)/count;
   const radius=funnelRadius(p,wind);
   const x=funnelAxis(cx,p,time)+
-          Math.sin(time*.82+p*8.2)*width*.0015;
+          Math.sin(time*.86+p*8.2)*width*.0018+
+          Math.sin(time*1.55-p*6)*width*.0008;
   const y=top+length*p+
-          Math.sin(time*1.15+i*.39)*height*.0011;
+          Math.sin(time*1.18+i*.39)*height*.0012+
+          Math.sin(time*1.9+p*10)*height*.0005;
   const roll=Math.sin(p*16.2-time*.55);
   const density=.072+severity*.185+roll*.012;
   const softness=height*(.033+severity*.009);
@@ -221,15 +226,50 @@ function paintFunnel(cx,top,bottom,wind){
     i%3?"95,110,118":"164,169,167",.034+wind*.002);
  }
 }
+/* Lightning stays in the distant storm; a short cloud flash may reveal a faint bolt.
+   It is deliberately subtle, without full-screen strobing or thunder audio. */
+function paintLightning(wind){
+ if(prefersReduced?.matches)return;
+ const age=time-flashStart;
+ if(age<0||age>.55)return;
+ const pulse=(age<.065?.42+age/.065*.5:
+              age<.125?.94-(age-.065)/.06*.76:
+              age<.21?.08+(age-.125)/.085*.36:
+              age<.28?.44-(age-.21)/.07*.35:
+              .09*Math.max(0,1-(age-.28)/.27));
+ if(pulse<=0)return;
+ const strength=pulse*(.65+wind*.035);
+ ctx.save();
+ ctx.globalCompositeOperation="screen";
+ // Illuminated upper cloud cells fade unevenly, not the entire sky.
+ radial(width*flashX,height*.27,width*.18,height*.21,
+        "194,216,239",Math.min(.22,strength*.17));
+ radial(width*(flashX+.08),height*.39,width*.12,height*.15,
+        "164,193,227",Math.min(.13,strength*.085));
+ if(flashIsBolt){
+  const x=width*flashX,y=height*.37;
+  ctx.lineCap="round";
+  ctx.strokeStyle="rgba(226,237,255,"+Math.min(.23,strength*.19)+")";
+  ctx.lineWidth=Math.max(.65,width*.0008);
+  ctx.beginPath();
+  ctx.moveTo(x,y);ctx.lineTo(x-width*.008,y+height*.045);
+  ctx.lineTo(x+width*.002,y+height*.080);
+  ctx.lineTo(x-width*.011,y+height*.125);ctx.stroke();
+ }
+ ctx.restore();
+}
+
 function dust(cx,ground,wind){
  // A chaotic, broad, turbulent debris cloud extends far past the funnel foot.
  const funnelFoot=funnelRadius(.98,wind);
  const severity=clamp((wind-1)/9,0,1);
- const turbulentPulse=1+Math.sin(time*.67)*.055+
-                         Math.sin(time*1.26+1.9)*.027;
- const spread=Math.max(width*(.082+severity*.083),5.6*funnelFoot)*turbulentPulse;
- const depth=height*(.07+severity*.095)*
-             (1+Math.sin(time*.92+1.4)*.047);
+ const turbulentPulse=1+Math.sin(time*.67)*.040+
+                         Math.sin(time*1.26+1.9)*.020;
+ const spread=Math.max(width*(.084+severity*.080),5.7*funnelFoot)*turbulentPulse;
+ const depth=height*(.075+severity*.090)*
+             (1+Math.sin(time*.92+1.4)*.030);
+ // Slight turbulence stays close to the anchored ground contact.
+ cx+=Math.sin(time*.55)*width*.0011;
  // Wide rolling dust at ground level, in layered muted earth tones.
  for(let i=0;i<55+Math.round(severity*27);i++){
   const angle=noise(i*17+5)*6.283+time*(.15+wind*.052);
@@ -301,15 +341,22 @@ function draw(now){
  }
  const elapsed=lastFrame?Math.min(.06,(now-lastFrame)/1000):.033;
  lastFrame=now;time+=prefersReduced?.matches?0:elapsed;
+ if(!prefersReduced?.matches&&time>=nextLightningAt){
+  flashStart=time;
+  flashX=.21+Math.random()*.61;
+  flashIsBolt=Math.random()<.30;
+  nextLightningAt=time+9+Math.random()*10;
+ }
  if(!width||!height)return;
  ctx.clearRect(0,0,width,height);
  // The funnel, dust column, and inflow travel together; the landscape does not.
- const drift=width*(Math.sin(time*.25)*.009+
-                    Math.sin(time*.57+1.2)*.0037+
-                    Math.sin(time*1.12)*.0014);
+ // Keep the whole circulation nearly stationary; the upper funnel does the swaying.
+ const drift=width*(Math.sin(time*.17)*.0025+
+                    Math.sin(time*.40+1.1)*.0007);
  const cx=width*.585+drift,top=height*.355,ground=height*.892;
  paintRain(time,level);
  paintCloudDeck(cx,top,level);
+ paintLightning(level);
  paintFunnel(cx,top,ground,level);
  rainForeground(cx,level);
  dust(cx,ground,level);
@@ -357,6 +404,9 @@ function start(){
  const slider=document.getElementById("wpTornadoStrength");
  if(!controls||!slider)return;
  stop();
+ // A new lesson visit starts with a calm interval before its first distant flash.
+ nextLightningAt=time+5+Math.random()*5;
+ flashStart=-100;
  canvas=visual.querySelector("#wtTornadoMotion");
  if(!canvas){
   canvas=document.createElement("canvas");
