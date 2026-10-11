@@ -35,14 +35,15 @@ async function enableSound(){
   if(!ctx){
    ctx=new AudioContextClass();
    master=ctx.createGain();
-   master.gain.value=.43;
+   master.gain.value=.54;
    master.connect(ctx.destination);
   }
   // Runs directly from a click, which is required to unlock browser audio.
   await ctx.resume();
   soundOn=ctx.state==="running";
   reflect();
-  notify(soundOn?"Thunder enabled — listen after the next flash":"Tap Thunder On to enable audio");
+  notify(soundOn?"Thunder enabled — previewing sound":"Tap Thunder On to enable audio");
+  if(soundOn)playThunder(.6,"ground");
  }catch(_e){
   soundOn=false;
   reflect();
