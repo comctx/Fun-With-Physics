@@ -101,6 +101,9 @@
     const b = buildBolt(type);
     const svg = layer.querySelector("svg");
     svg.replaceChildren();
+    const leader = svgPath(b.main, "wlfxLeaderLine");
+    leader.setAttribute("pathLength", "100");
+    svg.appendChild(leader);
     // Layer the blur behind the thinner, bright discharge channel.
     svg.appendChild(svgPath(b.main, "wlfxBoltGlow"));
     b.forks.forEach(f => svg.appendChild(svgPath(f.path, f.fine ? "wlfxTwigGlow" : "wlfxBranchGlow")));
@@ -117,9 +120,12 @@
       "radial-gradient(ellipse 88% 74% at " + px +
       "% 22%,rgba(181,207,244,.38),rgba(125,155,203,.12) 58%,transparent 95%)," +
       "linear-gradient(180deg,rgba(183,202,232,.20),rgba(111,149,197,.04))";
+    const afterglow = layer.querySelector(".wlfxAfterglow");
+    afterglow.style.background = "radial-gradient(ellipse 84% 70% at " + px + "% " + py + "%,rgba(180,209,255,.42),rgba(113,161,237,.15) 47%,transparent 100%)";
     const impact = layer.querySelector(".wlfxImpact");
     impact.style.left = (b.impactX / 10).toFixed(1) + "%";
     layer.classList.toggle("wlfxGround", b.ground);
+    layer.classList.toggle("wlfxSheet", type === "sheet");
     layer.classList.toggle("wlfxDistant", Math.random() < .18);
   }
 
@@ -141,19 +147,28 @@
     if (!manual && now - lastStrike < 420) return;
     lastStrike = now;
     clearTimers();
-    const type = Math.random() < .69 ? "ground" : "cloud";
+    layer.classList.remove("wlfxLead", "wlfxActive", "wlfxAfterglowOn");
+    const roll = Math.random();
+    const type = roll < .63 ? "ground" : roll < .90 ? "cloud" : "sheet";
     drawBolt(type);
+    if (!reduced() && type !== "sheet") layer.classList.add("wlfxLead");
     // Repeat return strokes follow exactly the same ionized channel.
     // Most lightning has one or two visible pulses; a few have three.
     const pulses = reduced() ? 1 : (Math.random() < .22 ? 3 : Math.random() < .55 ? 2 : 1);
-    const delays = [0, integer(280, 350), integer(610, 720)];
+    const delays = [reduced() ? 0 : 245, integer(565, 635), integer(900, 1020)];
     for (let i = 0; i < pulses; i++) {
-      pulseTimers.push(setTimeout(flashOnce, delays[i]));
+      pulseTimers.push(setTimeout(() => {
+        if (i === 0 && layer) {
+          layer.classList.remove("wlfxLead");
+          layer.classList.add("wlfxAfterglowOn");
+        }
+        flashOnce();
+      }, delays[i]));
     }
     const caption = layer.querySelector(".wlfxCaption");
     if (caption) caption.textContent =
       (manual ? "Triggered • " : "Simulated • ") +
-      (type === "ground" ? "cloud-to-ground discharge" : "cloud-to-cloud discharge");
+      (type === "ground" ? "cloud-to-ground discharge" : type === "sheet" ? "lightning illuminating clouds" : "cloud-to-cloud discharge");
     schedule();
   }
   function cleanup() {
@@ -170,6 +185,8 @@
     layer.setAttribute("aria-hidden", "true");
     const flash = document.createElement("div");
     flash.className = "wlfxSkyFlash";
+    const afterglow = document.createElement("div");
+    afterglow.className = "wlfxAfterglow";
     const impact = document.createElement("div");
     impact.className = "wlfxImpact";
     const svg = document.createElementNS(NS, "svg");
@@ -181,7 +198,7 @@
     caption.textContent = reduced() ?
       "Reduced motion • use Flash Lightning" :
       "Simulated lightning • new strikes every few seconds";
-    layer.append(flash, impact, svg, caption);
+    layer.append(flash, afterglow, impact, svg, caption);
     visual.appendChild(layer);
 
     triggerButton = document.createElement("button");
