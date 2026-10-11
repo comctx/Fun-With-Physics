@@ -14,21 +14,25 @@ let flashAt=-1,lastAuto=0,clock=0,pendingStrike=false;
 const rnd=n=>{const x=Math.sin(n*78.233+2.73)*43758.5453123;return x-Math.floor(x)};
 function conditions(){
  const t=get("Temp"),hum=get("Hum"),cloud=get("Cloud"),charge=get("Charge"),wind=get("Wind");
- const snow=t<=32&&hum>=65&&cloud>=45;
- const rain=!snow&&hum>=70&&cloud>=45;
- const storm=rain&&charge>=65;
- return {t,hum,cloud,charge,wind,snow,rain,storm};
+ // Adapted from the user's Flutter weather rules. Temperature here is Fahrenheit.
+ const snow=t<32&&hum>60&&cloud>=40;
+ const storm=!snow&&((hum>80&&charge>75&&cloud>60)||(hum>70&&cloud>60&&charge>80));
+ const tornado=!snow&&!storm&&wind>85&&hum>70&&cloud>=45;
+ const rain=!snow&&hum>60&&cloud>=45;
+ const cloudy=cloud>=40||hum>40;
+ return {t,hum,cloud,charge,wind,snow,storm,tornado,rain,cloudy};
 }
 function update(){
  const c=conditions(),ready=c.charge>=65&&c.cloud>=45;
  strike.disabled=false;strike.title=ready?"Trigger a lightning strike":"Raise charge to 65% and clouds to 45% to strike";
  strike.setAttribute("aria-label","Strike lightning. Requires charge at least 65 percent and cloud density at least 45 percent");
- if(c.storm){output.textContent="⛈️ Storm forming • Rain & lightning ready";}
- else if(c.snow){output.textContent="❄️ Snowfall";}
- else if(c.rain){output.textContent="🌧️ Rain falling";}
- else if(c.cloud>=45){output.textContent="☁️ Clouds gathering";}
- else{output.textContent="☀️ Mostly clear"}
- scene.dataset.wcWeather=c.snow?"snow":c.storm?"storm":c.rain?"rain":c.cloud>=45?"cloud":"clear";
+ if(c.snow)output.textContent="❄️ Snowstorm";
+ else if(c.storm)output.textContent="⛈️ Thunderstorm";
+ else if(c.tornado)output.textContent="🌪️ Tornado conditions (simulation)";
+ else if(c.rain)output.textContent="🌧️ Rain falling";
+ else if(c.cloudy)output.textContent="☁️ Cloudy";
+ else output.textContent="☀️ Sunny";
+ scene.dataset.wcWeather=c.snow?"snow":c.storm?"storm":c.tornado?"tornado":c.rain?"rain":c.cloudy?"cloud":"clear";
 }
 function trigger(){
  const c=conditions(),ready=c.charge>=65&&c.cloud>=45;
@@ -97,6 +101,29 @@ function draw(now){
    ctx.beginPath();ctx.arc(x,y,1+rnd(i*2)*2.5,0,Math.PI*2);ctx.fill();
   }
   ctx.globalAlpha=1;
+ }
+ if(c.tornado){
+  // An animated visual illustration of funnel circulation over tornado photography.
+  const x=W*.49,y=H*.55;
+  const intensity=Math.max(0.4,(c.wind-70)/30);
+  const veil=ctx.createRadialGradient(x,y,14,x,y,210);
+  veil.addColorStop(0,"rgba(26,31,36,"+(Math.min(.47,intensity*.36))+")");
+  veil.addColorStop(1,"rgba(26,31,36,0)");
+  ctx.fillStyle=veil;ctx.fillRect(x-215,y-245,430,450);
+  for(let i=0;i<50;i++){
+   const ring=i/49,yy=H*.13+ring*H*.54;
+   const radius=(1-ring)*140+ring*36;
+   const phase=clock*(.03+intensity*.09)+i*.43;
+   ctx.strokeStyle="rgba(224,232,231,"+(.1+.12*Math.sin(phase)*Math.sin(phase))+")";
+   ctx.lineWidth=1.3+intensity*.5;
+   ctx.beginPath();ctx.ellipse(x+Math.sin(phase)*12,yy,radius,8+ring*8,-.16,phase,phase+2.3);ctx.stroke();
+  }
+  for(let i=0;i<200;i++){
+   const phase=i*2.39+clock*(.02+intensity*.07);
+   const radius=12+rnd(i*7)*160,xx=x+Math.cos(phase)*radius,yy=H*.78+Math.sin(phase)*radius*.17;
+   ctx.fillStyle="rgba(184,165,137,"+(.08+rnd(i)*.40)+")";
+   ctx.fillRect(xx,yy,2+rnd(i*11)*3,1.6);
+  }
  }
  if(c.wind>12){
   for(let i=0;i<80;i++){
