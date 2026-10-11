@@ -39,11 +39,27 @@ function radial(x,y,rx,ry,color,alpha){
 /* Smooth evolving radius; density is made from mist, never a clipped polygon. */
 function funnelRadius(p,wind){
  const taper=Math.pow(Math.max(0,1-p),1.28);
- return width*(.017+.119*taper)*(.70+wind*.043);
+ const severity=clamp((wind-1)/9,0,1);
+ // Broad, slow "breathing" and smaller independent eddies along the funnel.
+ // Keep these deformations continuous so the edge never jumps or pixelates.
+ const breathing=1+
+   Math.sin(time*.72+p*4.3)*.034+
+   Math.sin(time*1.43-p*9.1)*.019;
+ const localTurbulence=1+
+   Math.sin(time*1.17+p*12.4)*(.024+severity*.023)+
+   Math.sin(time*2.13-p*22.7)*(.011+severity*.012);
+ return Math.max(width*.006,
+   width*(.017+.119*taper)*(.70+wind*.043)*breathing*localTurbulence);
 }
 function funnelAxis(cx,p,phase){
- return cx+width*(Math.sin(p*5.6+phase*.33)*.0045+
-                     Math.sin(p*12.2-phase*.24)*.0025);
+ // Ground stays near the moving debris base; upper levels curve and twist.
+ // Multiple nonmatching frequencies prevent mechanical side-to-side repetition.
+ const upper=1-p*.76;
+ const bend=upper*(Math.sin(phase*.32+p*4.6)*.007+
+                   Math.sin(phase*.67-p*8.8)*.0038);
+ const kink=(Math.sin(phase*1.22+p*15.3)*.0023+
+             Math.sin(phase*.86-p*26.2)*.0014)*(1-p*.5);
+ return cx+width*(bend+kink);
 }
 function cloudPuff(x,y,rx,ry,color,alpha){
  radial(x,y,rx,ry,color,clamp(alpha,0,.85));
@@ -120,8 +136,10 @@ function paintFunnel(cx,top,bottom,wind){
  for(let i=0;i<count;i++){
   const p=(i+.45)/count;
   const radius=funnelRadius(p,wind);
-  const x=funnelAxis(cx,p,time);
-  const y=top+length*p;
+  const x=funnelAxis(cx,p,time)+
+          Math.sin(time*.82+p*8.2)*width*.0015;
+  const y=top+length*p+
+          Math.sin(time*1.15+i*.39)*height*.0011;
   const roll=Math.sin(p*16.2-time*.55);
   const density=.072+severity*.185+roll*.012;
   const softness=height*(.033+severity*.009);
@@ -139,19 +157,27 @@ function paintFunnel(cx,top,bottom,wind){
  const packets=82+Math.round(wind*3)+Math.round(severity*25);
  for(let i=0;i<packets;i++){
   const p=.015+noise(i*11+7)*.96;
-  const y=top+length*p+Math.sin(time*.35+i)*height*.003;
+  const y=top+length*p+
+           Math.sin(time*(.85+noise(i*2)) + i*.41)*height*.0032;
   const radius=funnelRadius(p,wind);
-  const phase=time*(.32+wind*.066)*(1+p*.6)+i*2.399;
+  const basePhase=time*(.32+wind*.066)*(1+p*.6)+i*2.399;
+  const phase=basePhase+
+      Math.sin(time*.91+i*.67)*(.07+severity*.035);
   const depth=Math.sin(phase),radialPosition=.25+noise(i*19)*.83;
-  const x=funnelAxis(cx,p,time)+Math.cos(phase)*radius*radialPosition;
+  // Orbiting cloudy eddies move asynchronously but remain within the vortex.
+  const flutterX=Math.sin(time*1.85+i*.73+p*11)*radius*.055;
+  const flutterY=Math.sin(time*1.49-i*.42+p*15)*height*.0019;
+  const x=funnelAxis(cx,p,time)+
+          Math.cos(phase)*radius*radialPosition+flutterX;
   const rx=radius*(.15+noise(i*17)*.35)+width*.001;
-  const ry=height*(.005+noise(i*23)*.019);
+  const ry=height*(.005+noise(i*23)*.019)*
+           (1+Math.sin(time*.84+i*.31)*.11);
   const tone=depth>.3?
      (i%3===0?"147,158,163":"92,105,111"):
      (i%4===0?"85,102,113":"26,37,44");
   const alpha=(.044+noise(i*13)*.085+severity*.068)*
              (depth>=0?1:.62)*(1-p*.14);
-  cloudPuff(x,y,rx,ry,tone,alpha);
+  cloudPuff(x,y+flutterY,rx,ry,tone,alpha);
  }
  // Partial, broken horizontal condensation streaks that wrap around
  // the rotating column. Never draw full circles or graphic guide-lines.
@@ -160,10 +186,12 @@ function paintFunnel(cx,top,bottom,wind){
   const p=.035+noise(j*31+3)*.90;
   const rr=funnelRadius(p,wind);
   const y=top+length*p;
-  const phase=time*(.36+wind*.083)+j*1.618;
+  const phase=time*(.36+wind*.083)+j*1.618+
+              Math.sin(time*.72+j*.38)*.08;
   const front=Math.sin(phase);
   const x=funnelAxis(cx,p,time)+Math.cos(phase)*rr*.64;
-  const arc=rr*(.15+noise(j*17)*.38);
+  const arc=rr*(.15+noise(j*17)*.38)*
+            (1+Math.sin(time*1.11+j*.37)*.14);
   const color=front>.0?"162,180,181":"57,78,87";
   const a=(.021+noise(j*11)*.045+severity*.020)*(front>.0?1:.56);
   ctx.strokeStyle="rgba("+color+","+a+")";
@@ -178,24 +206,30 @@ function paintFunnel(cx,top,bottom,wind){
  ctx.restore();
  // Very soft stray condensation across the edges creates an irregular,
  // continuously changing boundary, not hard corners or jagged pixels.
- for(let i=0;i<28;i++){
+ for(let i=0;i<33;i++){
   const p=noise(i*29+15)*.96;
   const r=funnelRadius(p,wind);
   const side=i%2?-1:1;
-  const drift=.75+noise(i*7)*.47;
+  const drift=.70+noise(i*7)*.54;
   const x=funnelAxis(cx,p,time)+side*r*drift+
-      Math.sin(time*(.39+wind*.04)+i*2.5)*r*.18;
-  const y=top+length*p;
-  cloudPuff(x,y,r*(.19+noise(i*8)*.21),height*.014,
-   i%3?"95,110,118":"164,169,167",.033+wind*.002);
+      Math.sin(time*(.39+wind*.04)+i*2.5)*r*.17+
+      Math.sin(time*1.48+i*.73)*r*.065;
+  const y=top+length*p+
+          Math.sin(time*1.07+i*.91)*height*.002;
+  cloudPuff(x,y,r*(.17+noise(i*8)*.24),
+    height*(.011+noise(i*13)*.007),
+    i%3?"95,110,118":"164,169,167",.034+wind*.002);
  }
 }
 function dust(cx,ground,wind){
  // A chaotic, broad, turbulent debris cloud extends far past the funnel foot.
  const funnelFoot=funnelRadius(.98,wind);
  const severity=clamp((wind-1)/9,0,1);
- const spread=Math.max(width*(.082+severity*.083),5.6*funnelFoot);
- const depth=height*(.07+severity*.095);
+ const turbulentPulse=1+Math.sin(time*.67)*.055+
+                         Math.sin(time*1.26+1.9)*.027;
+ const spread=Math.max(width*(.082+severity*.083),5.6*funnelFoot)*turbulentPulse;
+ const depth=height*(.07+severity*.095)*
+             (1+Math.sin(time*.92+1.4)*.047);
  // Wide rolling dust at ground level, in layered muted earth tones.
  for(let i=0;i<55+Math.round(severity*27);i++){
   const angle=noise(i*17+5)*6.283+time*(.15+wind*.052);
@@ -269,7 +303,11 @@ function draw(now){
  lastFrame=now;time+=prefersReduced?.matches?0:elapsed;
  if(!width||!height)return;
  ctx.clearRect(0,0,width,height);
- const cx=width*.585,top=height*.355,ground=height*.892;
+ // The funnel, dust column, and inflow travel together; the landscape does not.
+ const drift=width*(Math.sin(time*.25)*.009+
+                    Math.sin(time*.57+1.2)*.0037+
+                    Math.sin(time*1.12)*.0014);
+ const cx=width*.585+drift,top=height*.355,ground=height*.892;
  paintRain(time,level);
  paintCloudDeck(cx,top,level);
  paintFunnel(cx,top,ground,level);
