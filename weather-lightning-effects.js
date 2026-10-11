@@ -133,7 +133,7 @@
   function schedule() {
     clearTimeout(autoTimer);
     if (reduced() || !visible()) return;
-    autoTimer = setTimeout(() => fire(false), rand(2200, 4900));
+    autoTimer = setTimeout(() => fire(false), rand(3000, 5200));
   }
   function fire(manual) {
     if (!visible()) return;
@@ -146,7 +146,7 @@
     // Repeat return strokes follow exactly the same ionized channel.
     // Most lightning has one or two visible pulses; a few have three.
     const pulses = reduced() ? 1 : (Math.random() < .22 ? 3 : Math.random() < .55 ? 2 : 1);
-    const delays = [0, integer(90, 145), integer(225, 310)];
+    const delays = [0, integer(280, 350), integer(610, 720)];
     for (let i = 0; i < pulses; i++) {
       pulseTimers.push(setTimeout(flashOnce, delays[i]));
     }
