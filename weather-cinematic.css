@@ -442,3 +442,34 @@
  opacity:1!important;mix-blend-mode:normal!important;
  image-rendering:auto!important;
 }
+
+
+/* Tornado simulation scene v5: storm without a photographed tornado.
+   Photo: Stefan Klein, "Low Precipitation Supercell Thunderstorm"
+   Wikimedia Commons, CC BY-SA 4.0. The scene is cropped and darkened.
+   https://commons.wikimedia.org/wiki/File:Low_Precipitation_Supercell_Thunderstorm.jpg */
+#weatherLabPage #wpScienceVisual[data-scene="tornadoes"]{
+ background-image:
+  linear-gradient(180deg,rgba(13,25,39,.34) 0%,rgba(24,34,41,.27) 34%,
+    rgba(28,37,43,.10) 63%,rgba(12,23,26,.13) 100%),
+  url('https://upload.wikimedia.org/wikipedia/commons/2/2a/Low_Precipitation_Supercell_Thunderstorm.jpg')!important;
+ background-color:#485868!important;
+ background-size:cover!important;
+ background-position:center bottom!important;
+}
+#weatherLabPage #wpScienceVisual[data-scene="tornadoes"] .wtTornadoShade{
+ opacity:.055!important;
+ background:linear-gradient(180deg,rgba(12,20,30,.09),
+ rgba(23,31,36,.05) 59%,transparent 84%)!important;
+}
+#weatherLabPage #wpScienceVisual[data-scene="tornadoes"] .wpTornadoCaption{
+ left:14px!important;right:auto!important;bottom:14px!important;
+ max-width:min(36%,320px)!important;
+ background:rgba(8,24,36,.78)!important;
+}
+@media(max-width:700px){
+ #weatherLabPage #wpScienceVisual[data-scene="tornadoes"] .wpTornadoCaption{
+  left:10px!important;bottom:10px!important;
+  max-width:58%!important;
+ }
+}
