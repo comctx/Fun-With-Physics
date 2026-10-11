@@ -1027,6 +1027,25 @@ header{min-height:50px;padding:5px 10px;background:#102839}
 @media(max-width:800px){#weatherLabPage .wpHero{grid-template-columns:1fr}#weatherLabPage .wpSky{height:320px;min-height:320px!important}#weatherLabPage .wpSky .wpAtmos{left:10px;right:10px;bottom:24px}#weatherLabPage .wpSky .wpAtmos span{font-size:10px;padding:8px 6px}#weatherLabPage .wpSceneTitle{top:20px;left:18px}}
 @media(max-width:500px){#weatherLabPage .wpSky{height:290px;min-height:290px!important}#weatherLabPage .wpConditions>div{min-height:50px;padding:0 8px}#weatherLabPage .wpSky .wpAtmos{flex-direction:column;align-items:stretch}#weatherLabPage .wpSky .wpAtmos span{width:100%}}
 </style>
+<style>
+#wpScienceVisual[data-scene="tornadoes"]{font-size:initial!important;background:linear-gradient(180deg,#202e3b8a,#07131ed0),url('https://images.unsplash.com/photo-1534088568595-a066f410bcda?auto=format&fit=crop&w=1600&q=85') center/cover!important;height:430px;overflow:hidden;isolation:isolate}
+#wpScienceVisual[data-scene="tornadoes"]:after{display:none}
+.wpTornadoClouds{position:absolute;inset:-10% -10% 38%;background:radial-gradient(ellipse at 50% 42%,#171e28 2%,#3b4554d9 45%,transparent 73%);filter:blur(17px);animation:wpStormRoll 9s ease-in-out infinite alternate}
+.wpTornadoFunnel{position:absolute;left:50%;top:8%;width:clamp(140px,29%,310px);height:82%;transform:translateX(-50%);background:repeating-linear-gradient(165deg,#121d26f0 0 12px,#89929bb3 16px 23px,#25303add 28px 40px);clip-path:polygon(5% 0,95% 0,85% 13%,71% 28%,63% 42%,57% 56%,53% 70%,51% 82%,53% 93%,58% 100%,39% 100%,45% 83%,44% 69%,39% 54%,32% 37%,21% 19%);filter:blur(6px) drop-shadow(0 0 24px #000);animation:wpFunnelSway 5s ease-in-out infinite alternate}
+.wpTornadoSpiral{position:absolute;inset:0;background:repeating-linear-gradient(165deg,transparent 0 14px,#d2e5ec45 17px 19px,transparent 23px 32px);opacity:.5;animation:wpVortex 1.2s linear infinite}
+.wpTornadoDust{position:absolute;left:50%;bottom:8%;width:43%;height:19%;transform:translateX(-50%);background:radial-gradient(ellipse,#b7a494a8,transparent 68%);filter:blur(12px);animation:wpStormRoll 2.2s ease-in-out infinite alternate}
+.wpTornadoRain{position:absolute;inset:0;background:repeating-linear-gradient(105deg,transparent 0 18px,#c2d9f226 19px 20px,transparent 21px 34px);animation:wpTornadoRain .5s linear infinite;opacity:.6}
+.wpTornadoCaption{position:absolute;left:20px;bottom:18px;max-width:360px;background:#061b2cd9;color:#f1fbff;border:1px solid #a0cade88;padding:12px 16px;border-radius:12px;backdrop-filter:blur(8px)}
+.wpTornadoCaption strong{display:block;font-size:19px}.wpTornadoCaption small{font-size:12px;line-height:1.5}
+.wpTornadoControl{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:10px 0;padding:13px;background:#0c2b46;border:1px solid #6599bb;border-radius:12px}
+.wpTornadoControl label{font-weight:700}.wpTornadoControl input{flex:1;min-width:140px}.wpTornadoControl output{min-width:35px}
+@keyframes wpStormRoll{to{transform:translateX(3%) scale(1.05);opacity:.8}}
+@keyframes wpFunnelSway{to{transform:translateX(-46%) rotate(3deg)}}
+@keyframes wpVortex{to{background-position:0 60px}}
+@keyframes wpTornadoRain{to{background-position:-25px 70px}}
+@media(prefers-reduced-motion:reduce){.wpTornadoClouds,.wpTornadoFunnel,.wpTornadoSpiral,.wpTornadoDust,.wpTornadoRain{animation:none!important}}
+@media(max-width:700px){#wpScienceVisual[data-scene="tornadoes"]{height:310px}.wpTornadoCaption{right:12px;left:12px;bottom:10px}}
+</style>
 </head>
 <body>
 <div id="app">
@@ -6615,6 +6634,37 @@ setTimeout(()=>{
  document.querySelectorAll('[data-weather-topic]').forEach(button=>button.addEventListener('click',()=>{
  const key=button.dataset.weatherTopic;science.dataset.scene=key;science.dataset.label=titles[key]||'Weather Science';science.textContent='';
  }));
+})();
+</script>
+<script>
+(function(){
+ const visual=document.getElementById('wpScienceVisual');
+ const info=document.getElementById('wpScienceExplanation');
+ if(!visual||!info)return;
+ const tornadoButton=document.querySelector('[data-weather-topic="tornadoes"]');
+ if(!tornadoButton)return;
+ tornadoButton.addEventListener('click',()=>{
+  visual.dataset.scene='tornadoes';visual.dataset.label='';
+  visual.innerHTML='<div class="wpTornadoClouds"></div><div class="wpTornadoRain"></div><div class="wpTornadoFunnel"><div class="wpTornadoSpiral"></div></div><div class="wpTornadoDust"></div><div class="wpTornadoCaption"><strong>Inside a Tornado</strong><small>Strong updrafts and wind shear can organize rotating air into a narrow, intense vortex.</small></div>';
+  let controls=document.getElementById('wpTornadoControl');
+  if(!controls){
+   controls=document.createElement('div');controls.id='wpTornadoControl';controls.className='wpTornadoControl';
+   controls.innerHTML='<label for="wpTornadoStrength">Wind shear / vortex intensity</label><input id="wpTornadoStrength" type="range" min="1" max="10" value="5"><output id="wpTornadoStrengthOut">5 / 10</output>';
+   visual.after(controls);
+   const slider=document.getElementById('wpTornadoStrength');
+   slider.addEventListener('input',()=>{
+    const v=Number(slider.value);document.getElementById('wpTornadoStrengthOut').textContent=v+' / 10';
+    const f=visual.querySelector('.wpTornadoFunnel'),spin=visual.querySelector('.wpTornadoSpiral'),dust=visual.querySelector('.wpTornadoDust');
+    if(f)f.style.width=(16+v*2.7)+'%';
+    if(spin)spin.style.animationDuration=(2.6-v*.19)+'s';
+    if(dust)dust.style.opacity=String(.3+v*.07);
+   });
+  }
+  controls.hidden=false;
+  info.textContent='A tornado is a violently rotating column of air connected to a thunderstorm. Wind shear, atmospheric instability, and a strong updraft can help organize rotation. Move the slider to explore a visual model of a tightening, faster-moving vortex; it is illustrative, not a forecast.';
+ });
+ document.querySelectorAll('[data-weather-topic]').forEach(b=>{if(b!==tornadoButton)b.addEventListener('click',()=>{const c=document.getElementById('wpTornadoControl');if(c)c.hidden=true})});
+ document.getElementById('wpScienceBack')?.addEventListener('click',()=>{const c=document.getElementById('wpTornadoControl');if(c)c.hidden=true});
 })();
 </script>
 </body>
