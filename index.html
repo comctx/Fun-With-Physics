@@ -1066,6 +1066,28 @@ header{min-height:50px;padding:5px 10px;background:#102839}
 @media(max-width:790px){.wpStormGrid{grid-template-columns:1fr}.wpStormChallenge{flex-direction:column;align-items:flex-start}.wpStormSceneWrap{min-height:220px}}
 @media(prefers-reduced-motion:reduce){#wstCanvas{scroll-behavior:auto}}
 </style>
+<style id="wpPremiumVisual2026">
+/* Weather homepage: photograph-first styling. Preserve existing working IDs and event handlers. */
+#weatherLabPage #wpDashboard{color:#f1f8ff}
+#weatherLabPage #wpDashboard .wpConditions{display:grid;grid-template-columns:repeat(4,minmax(0,1fr)) auto;gap:9px;background:linear-gradient(115deg,#173f60f5,#0a2138f9)!important;border:1px solid #aacddd77;border-radius:16px;box-shadow:0 16px 35px #0006;padding:12px}
+#weatherLabPage #wpDashboard .wpConditions>div{background:linear-gradient(150deg,#24597e78,#102b4a80);border:1px solid #8ebad23a;border-radius:11px;min-width:0;padding:13px;display:flex;flex-direction:column;align-items:flex-start;gap:8px}
+#weatherLabPage #wpDashboard .wpConditions>div:first-child{display:flex}
+#weatherLabPage #wpDashboard .wpConditions strong{font-size:clamp(20px,2.5vw,34px);line-height:1.1}
+#weatherLabPage #wpDashboard .wpConditions>button{align-self:center}
+#weatherLabPage #wpDashboard .wpSky{box-shadow:0 17px 36px #0008;border:1px solid #b7dcef91}
+#weatherLabPage #wpDashboard .wpSceneTitle{max-width:65%;background:linear-gradient(90deg,#03172a88,transparent);border-radius:12px;padding:14px}
+#weatherLabPage #wpDashboard .wpFeatureCard{overflow:hidden;transition:border-color .2s}
+#weatherLabPage #wpDashboard .wpFeatureCard:hover{border-color:#c2e9fd}
+#weatherLabPage #wpDashboard .wpFeatureImage{height:205px;border-radius:11px;background-position:center;background-size:cover}
+#weatherLabPage #wpDashboard .wpTargetPhoto{background-image:linear-gradient(0deg,#061b32a8,transparent 55%),url('https://images.unsplash.com/photo-1470252649378-9c29740c9fa8?auto=format&fit=crop&w=1100&q=85')}
+#weatherLabPage #wpDashboard .wpFlightPhoto{background-image:linear-gradient(0deg,#061b32a8,transparent 55%),url('https://images.unsplash.com/photo-1534088568595-a066f410bcda?auto=format&fit=crop&w=1100&q=85')}
+#weatherLabPage #wpDashboard .wpFeatureCard button[data-weather-topic]{display:flex;flex-direction:column;min-height:54px;justify-content:center;padding:9px 12px;border:1px solid #aecddd5c;background:linear-gradient(105deg,#eaf2f8,#cde0ef);color:#102b44;border-radius:9px}
+#weatherLabPage #wpDashboard .wpFeatureCard button[data-weather-topic]:hover{background:#fff;border-color:#79c7f1}
+#weatherLabPage #wpDashboard .wpMapIllustration{background:linear-gradient(#113e62c9,#0a234dbb),url('https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=1050&q=85') center/cover}
+#weatherLabPage #wpDashboard .wpCycle{border:1px solid #e0f2ff99;box-shadow:inset 0 0 24px #11528344}
+@media(max-width:1000px){#weatherLabPage #wpDashboard .wpConditions{grid-template-columns:repeat(2,minmax(0,1fr))}#weatherLabPage #wpDashboard .wpConditions>button{grid-column:1/-1}}
+@media(max-width:580px){#weatherLabPage #wpDashboard .wpConditions{grid-template-columns:1fr 1fr}#weatherLabPage #wpDashboard .wpConditions strong{font-size:22px}#weatherLabPage #wpDashboard .wpSceneTitle{max-width:90%}}
+</style>
 </head>
 <body>
 <div id="app">
