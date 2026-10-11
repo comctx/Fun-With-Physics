@@ -10,7 +10,7 @@ const lightning=document.querySelector('[data-weather-topic="lightning"]');
 if(!view||!visual||!page||!lightning)return;
 const ns="http://www.w3.org/2000/svg";
 const reduced=window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-let layer=null,button=null,timer=0,lastStrike=0;
+let layer=null,button=null,timer=0,lastStrike=-1000000000;
 function visible(){return !view.hidden&&!page.hidden&&visual.dataset.scene==="lightning"}
 function nextStrike(){
  window.clearTimeout(timer);timer=0;
