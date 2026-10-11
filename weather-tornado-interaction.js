@@ -287,6 +287,8 @@ function update(){
  const slider=document.getElementById("wpTornadoStrength");
  if(!slider)return;
  level=clamp(Number(slider.value)||5,1,10);
+ const output=document.getElementById("wpTornadoStrengthOut");
+ if(output)output.textContent=level+" / 10";
  const description=level<=3?"Mild rotation":level<=6?"Developing funnel":
                    level<=8?"Powerful circulation":"Intense vortex";
  const badge=visual.querySelector("#wtTornadoSceneBadge");
