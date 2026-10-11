@@ -6,7 +6,7 @@ var home=document.getElementById("wpDashboard");
 if(!page||!home||document.getElementById("wcGallery2026"))return;
 var scenes=[
  {key:"lightning",label:"Lightning",url:"https://upload.wikimedia.org/wikipedia/commons/1/19/Orage-nuit.jpg"},
- {key:"tornadoes",label:"Tornadoes",url:"https://upload.wikimedia.org/wikipedia/commons/3/30/2016-05-16_Tornado_north_of_Solomon%2C_Kansas.jpg"},
+ {key:"tornadoes",label:"Tornadoes",url:"https://upload.wikimedia.org/wikipedia/commons/2/2a/Low_Precipitation_Supercell_Thunderstorm.jpg"},
  {key:"hurricanes",label:"Hurricanes",url:"https://assets.science.nasa.gov/dynamicimage/assets/science/esd/eo/images/imagerecords/84000/84145/HurricaneIselle_tmo_2014216.jpg?crop=faces%2Cfocalpoint&fit=clip&h=550&w=900"},
  {key:"rainbows",label:"Rainbows",url:"https://upload.wikimedia.org/wikipedia/commons/e/e9/Rainbow5_-_NOAA.jpg"},
  {key:"snowflakes",label:"Snow Crystals",url:"https://upload.wikimedia.org/wikipedia/commons/2/21/Snowflake_macro_%28Unsplash%29.jpg"}
@@ -28,6 +28,7 @@ var feature=home.querySelector(".wpFeatureDeck");
 if(feature){home.insertBefore(title,feature);home.insertBefore(gallery,feature)}
 var credits=document.createElement("details");credits.className="wcCredits";credits.innerHTML='<summary>Weather photograph credits and licenses</summary><p>Lightning photograph: <a href="https://commons.wikimedia.org/wiki/File:2015-08-07_23-13-18_orage.jpg" target="_blank" rel="noopener">Thomas Bresson / Wikimedia Commons (CC BY 3.0)</a>. Thunderstorm: <a href="https://commons.wikimedia.org/wiki/File:Orage-nuit.jpg" target="_blank" rel="noopener">National Science Foundation (public domain)</a>. Tornado: <a href="https://commons.wikimedia.org/wiki/File:2016-05-16_Tornado_north_of_Solomon,_Kansas.jpg" target="_blank" rel="noopener">Ks0stm / Wikimedia Commons (CC BY 4.0)</a>. Hurricane: <a href="https://science.nasa.gov/earth/earth-observatory/hurricanes-iselle-and-julio-84145/" target="_blank" rel="noopener">NASA Earth Observatory</a>. Rainbow: <a href="https://commons.wikimedia.org/wiki/File:Rainbow5_-_NOAA.jpg" target="_blank" rel="noopener">NOAA (public domain)</a>. Snow crystal: <a href="https://commons.wikimedia.org/wiki/File:Snowflake_macro_(Unsplash).jpg" target="_blank" rel="noopener">Aaron Burden (CC0)</a>. All photographs are illustrative, not live webcam views; some are cropped and darkened for readability.</p>';
 home.appendChild(credits);
+credits.insertAdjacentHTML("beforeend", '<p>Interactive tornado background: <a href="https://commons.wikimedia.org/wiki/File:Low_Precipitation_Supercell_Thunderstorm.jpg" target="_blank" rel="noopener">Stefan Klein / Wikimedia Commons</a> (<a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener">CC BY-SA 4.0</a>), cropped and color graded. Tornado animation is simulated.</p>');
 var sky=document.getElementById("wpSkyScene");
 var fields=["wpTemp","wpHum","wpPress","wpWind"];
 var changed=false;
