@@ -1089,6 +1089,7 @@ header{min-height:50px;padding:5px 10px;background:#102839}
 @media(max-width:580px){#weatherLabPage #wpDashboard .wpConditions{grid-template-columns:1fr 1fr}#weatherLabPage #wpDashboard .wpConditions strong{font-size:22px}#weatherLabPage #wpDashboard .wpSceneTitle{max-width:90%}}
 </style>
 <link rel="stylesheet" href="weather-cinematic.css?v=20261010f">
+<link rel="stylesheet" href="atom-builder.css?v=20261010a">
 </head>
 <body>
 <div id="app">
@@ -1124,7 +1125,7 @@ header{min-height:50px;padding:5px 10px;background:#102839}
   </div>
 </header>
 
-<select id="uiPhoneNav" class="uiPhoneNav" aria-label="Choose physics lab"><option value="sandbox">⚙ Mechanics</option><option value="puzzle">🧩 Puzzles</option><option value="challenge">🏆 Challenge</option><option value="fluid">🌊 Fluid Physics</option><option value="air">💨 Air Physics</option><option value="electric">⚡ Electricity</option><option value="simple">🛠 Simple Machines</option><option value="rube">🎭 Rube Goldberg</option><option value="weather">🌤️ Weather Physics</option></select>
+<select id="uiPhoneNav" class="uiPhoneNav" aria-label="Choose physics lab"><option value="sandbox">⚙ Mechanics</option><option value="puzzle">🧩 Puzzles</option><option value="challenge">🏆 Challenge</option><option value="fluid">🌊 Fluid Physics</option><option value="air">💨 Air Physics</option><option value="electric">⚡ Electricity</option><option value="simple">🛠 Simple Machines</option><option value="rube">🎭 Rube Goldberg</option><option value="weather">🌤️ Weather Physics</option><option value="atom">⚛️ Atoms & Nuclear Physics</option></select>
 <div class="modebar">
   <button id="sandboxModeBtn" class="active">⚙️ Mechanics</button>
   <button id="mechanicsExplainBtn" class="modeActionBtn">💡 What Happened?</button>
@@ -1136,6 +1137,7 @@ header{min-height:50px;padding:5px 10px;background:#102839}
   <button id="simpleModeBtn">🛠️ Simple Machines</button>
   <button id="rubeModeBtn">🎭 Rube Goldberg</button>
   <button id="weatherModeBtn">🌤️ Weather Physics</button>
+  <button id="atomModeBtn">⚛️ Atoms & Nuclear Physics</button>
   <div id="goalText" class="goal">Goal: Ring the bell any way you want.</div>
   <div id="hud">
     <div class="hudCard">
@@ -6456,7 +6458,7 @@ setTimeout(()=>{
   } else {cancelAnimationFrame(raf);raf=0;document.getElementById('desktopToolsToggle').style.removeProperty('display');}
  }
  btn.addEventListener('click',()=>{show(true);nav.value='weather'});
- document.querySelectorAll('.modebar button:not(#weatherModeBtn)').forEach(b=>b.addEventListener('click',()=>{if(active){show(false);document.getElementById('sandboxModeBtn').click();b.click()}}));
+ document.querySelectorAll('.modebar button:not(#weatherModeBtn)').forEach(b=>b.addEventListener('click',()=>{if(active){show(false);if(b.id!=='atomModeBtn'){document.getElementById('sandboxModeBtn').click();b.click()}}}));
  nav.addEventListener('change',()=>{if(nav.value==='weather')show(true);else if(active)show(false)});
  function updateLabels(){
   ['Temp','Wind','Hum','Press'].forEach(k=>document.getElementById('wp'+k+'Out').textContent=val('wp'+k)+(k==='Temp'?'°F':k==='Wind'?' m/s':k==='Hum'?'%':' hPa'));
@@ -6769,5 +6771,7 @@ function update(){
 <script defer src="weather-cinematic.js?v=20261010f"></script>
 <script defer src="weather-storm-effects.js?v=20261010f"></script>
 <script defer src="weather-tornado-interaction.js?v=20261010d"></script>
+<script defer src="atom-builder.js?v=20261010a"></script>
+<script defer src="atom-graphics.js?v=20261010a"></script>
 </body>
 </html>
