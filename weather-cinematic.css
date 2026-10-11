@@ -106,3 +106,41 @@
 #weatherLabPage #wpTornadoStrength{accent-color:#45b5f4;cursor:ew-resize}
 #weatherLabPage #wpTornadoStrengthOut{font-weight:800;color:#e6f7ff}
 @media(max-width:650px){#weatherLabPage #wtTornadoSceneBadge{font-size:11px;top:8px;right:8px;padding:7px}#weatherLabPage #wtTornadoReadout{width:100%;text-align:left;font-size:12px}}
+
+/* FIX: global "canvas" rule paints the Rube Goldberg grid over Weather Sandbox.
+   Weather canvases must have transparent CSS backgrounds so photograph/scenery shows. */
+#weatherLabPage #wpStormLab .wpStormSceneWrap{
+  position:relative;
+  isolation:isolate;
+  background-color:#4a7794!important;
+  background-repeat:no-repeat!important;
+  background-position:center!important;
+  background-size:cover!important;
+}
+#weatherLabPage #wpStormLab .wpStormSceneWrap::before{
+  content:"";
+  position:absolute;inset:0;
+  z-index:0;pointer-events:none;
+  background:linear-gradient(180deg,rgba(55,92,128,.12),rgba(107,151,156,.02) 51%,rgba(38,74,43,.31) 100%);
+}
+#weatherLabPage #wpStormLab canvas#wstCanvas,
+#weatherLabPage #wpStormLab canvas#wstFXCanvas{
+  background:none!important;
+  background-image:none!important;
+  background-color:transparent!important;
+  background-size:auto!important;
+  border:0!important;
+}
+#weatherLabPage #wpStormLab canvas#wstCanvas{
+  position:relative;z-index:1;
+  display:block;
+  opacity:.32!important;
+  mix-blend-mode:screen!important;
+}
+#weatherLabPage #wpStormLab canvas#wstFXCanvas{
+  position:absolute;inset:0;z-index:2;
+  opacity:1!important;
+  mix-blend-mode:normal!important;
+}
+#weatherLabPage #wpStormLab .wpStormSceneStatus,
+#weatherLabPage #wpStormLab .wpStormLegend{z-index:4}
