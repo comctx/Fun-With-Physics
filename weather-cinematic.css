@@ -262,3 +262,83 @@
   animation:wlfxImpactPulse 1.6s ease-out both
  }
 }
+
+
+/* Lightning enhancement: stepped leaders, slower strokes, diffuse in-cloud light */
+#weatherLabPage #wpScienceVisual[data-scene="lightning"] .wlfxLeaderLine{
+ opacity:0;stroke:rgba(169,216,255,.84);stroke-width:1.45;
+ stroke-dasharray:100 100;stroke-dashoffset:100;
+ filter:drop-shadow(0 0 3px rgba(178,213,255,.7))
+}
+#weatherLabPage #wpScienceVisual[data-scene="lightning"] .wlfxLead .wlfxSvg{
+ opacity:1;animation:none!important
+}
+#weatherLabPage #wpScienceVisual[data-scene="lightning"] .wlfxLead .wlfxLeaderLine{
+ opacity:.86;animation:wlfxLeaderStep .245s steps(14,end) both
+}
+#weatherLabPage #wpScienceVisual[data-scene="lightning"] .wlfxLead
+ :is(.wlfxBoltGlow,.wlfxBoltBody,.wlfxBoltCore,.wlfxBranchGlow,.wlfxBranchCore,.wlfxTwigGlow,.wlfxTwigCore){
+ opacity:0
+}
+@keyframes wlfxLeaderStep{
+ 0%{stroke-dashoffset:100;opacity:.15}
+ 87%{stroke-dashoffset:0;opacity:.88}
+ 100%{stroke-dashoffset:0;opacity:.96}
+}
+#weatherLabPage #wpScienceVisual[data-scene="lightning"] .wlfxAfterglow{
+ position:absolute;inset:0;opacity:0;mix-blend-mode:screen;pointer-events:none
+}
+#weatherLabPage #wpScienceVisual[data-scene="lightning"] .wlfxAfterglowOn .wlfxAfterglow{
+ animation:wlfxLongCloudGlow 1.75s ease-out both
+}
+@keyframes wlfxLongCloudGlow{
+ 0%{opacity:.06}18%{opacity:.4}37%{opacity:.30}65%{opacity:.15}100%{opacity:0}
+}
+/* Show more of the bolt per pulse, with irregular flicker rather than a single blink. */
+#weatherLabPage #wpScienceVisual[data-scene="lightning"] .wlfxActive .wlfxSkyFlash{
+ animation:wlfxSkyPulse .94s ease-out both
+}
+#weatherLabPage #wpScienceVisual[data-scene="lightning"] .wlfxActive .wlfxSvg{
+ animation:wlfxElectricChannel .77s ease-out both
+}
+#weatherLabPage #wpScienceVisual[data-scene="lightning"] .wlfxGround.wlfxActive .wlfxImpact{
+ animation:wlfxImpactPulse .8s ease-out both
+}
+@keyframes wlfxSkyPulse{
+ 0%{opacity:.05}8%{opacity:.20}16%{opacity:.91}28%{opacity:.72}
+ 40%{opacity:.30}50%{opacity:.55}65%{opacity:.20}
+ 83%{opacity:.08}100%{opacity:0}
+}
+@keyframes wlfxElectricChannel{
+ 0%{opacity:.07}7%{opacity:.52}14%{opacity:1}35%{opacity:1}
+ 44%{opacity:.44}55%{opacity:.76}67%{opacity:.28}84%{opacity:.08}
+ 100%{opacity:0}
+}
+@keyframes wlfxImpactPulse{
+ 0%{opacity:0}17%{opacity:.94}31%{opacity:.66}
+ 52%{opacity:.27}72%{opacity:.08}100%{opacity:0}
+}
+/* In-cloud (sheet) lightning lights cloud layers without a visible exposed bolt. */
+#weatherLabPage #wpScienceVisual[data-scene="lightning"] .wlfxSheet .wlfxSvg{
+ visibility:hidden
+}
+#weatherLabPage #wpScienceVisual[data-scene="lightning"] .wlfxSheet.wlfxActive .wlfxSkyFlash{
+ animation:wlfxCloudOnly .98s ease-out both
+}
+@keyframes wlfxCloudOnly{
+ 0%{opacity:0}16%{opacity:.50}24%{opacity:.76}
+ 40%{opacity:.25}53%{opacity:.54}74%{opacity:.19}100%{opacity:0}
+}
+@media(prefers-reduced-motion:reduce){
+ #weatherLabPage #wpScienceVisual[data-scene="lightning"] .wlfxActive .wlfxSkyFlash{
+  animation:wlfxSoftReduced 2s ease-out both
+ }
+ #weatherLabPage #wpScienceVisual[data-scene="lightning"] .wlfxActive .wlfxSvg{
+  animation:wlfxGentleReduced 2s ease-out both
+ }
+ #weatherLabPage #wpScienceVisual[data-scene="lightning"] .wlfxAfterglowOn .wlfxAfterglow{
+  animation:wlfxSoftReduced 2s ease-out both
+ }
+}
+@keyframes wlfxSoftReduced{0%{opacity:0}35%{opacity:.25}100%{opacity:0}}
+@keyframes wlfxGentleReduced{0%{opacity:0}35%{opacity:.55}100%{opacity:0}}
