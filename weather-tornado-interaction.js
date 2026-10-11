@@ -116,7 +116,7 @@ function paintFunnel(cx,top,bottom,wind){
   const x=funnelAxis(cx,p,time);
   const y=top+length*p;
   const roll=Math.sin(p*16.2-time*.55);
-  const density=.072+wind*.005+roll*.009;
+  const density=.088+wind*.007+roll*.010;
   // Dark central air, with a lighter storm-facing side.
   cloudPuff(x,y,radius*1.02,height*.032,
             p>.7?"53,57,58":"30,43,50",density);
@@ -140,7 +140,7 @@ function paintFunnel(cx,top,bottom,wind){
   const tone=depth>.3?
      (i%3===0?"147,158,163":"92,105,111"):
      (i%4===0?"85,102,113":"26,37,44");
-  const alpha=(.035+noise(i*13)*.083)*
+  const alpha=(.041+noise(i*13)*.089)*
              (depth>=0?1:.62)*(1-p*.14);
   cloudPuff(x,y,rx,ry,tone,alpha);
  }
@@ -227,7 +227,7 @@ function dust(cx,ground,wind){
  }
 }
 function environment(wind){
- const base=height*.79;
+ const base=height*.89;
  // Traveling gusts at field level, and short grass-like strokes that sway.
  for(let i=0;i<60;i++){
   const x=noise(i*17+2)*width;
@@ -259,7 +259,7 @@ function draw(now){
  lastFrame=now;time+=prefersReduced?.matches?0:elapsed;
  if(!width||!height)return;
  ctx.clearRect(0,0,width,height);
- const cx=width*.485,top=height*.345,ground=height*.755;
+ const cx=width*.585,top=height*.355,ground=height*.892;
  paintRain(time,level);
  paintCloudDeck(cx,top,level);
  paintFunnel(cx,top,ground,level);
