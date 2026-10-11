@@ -52,11 +52,14 @@ var stormScene=page.querySelector(".wpStormSceneWrap");
 function updateStormPhoto(){
  if(!stormScene)return;
  var get=function(id){return +(document.getElementById(id)||{}).value||0};
- var temperature=get("wstTemp"),hum=get("wstHum"),cloud=get("wstCloud"),charge=get("wstCharge");
- var state=temperature<=32&&hum>35?"snow":hum>70&&cloud>60&&charge>80?"storm":cloud>55?"cloud":"clear";
+ var temperature=get("wstTemp"),hum=get("wstHum"),cloud=get("wstCloud"),charge=get("wstCharge"),wind=get("wstWind");
+ var snow=temperature<32&&hum>60&&cloud>=40;
+ var thunder=!snow&&((hum>80&&charge>75&&cloud>60)||(hum>70&&cloud>60&&charge>80));
+ var tornado=!snow&&!thunder&&wind>85&&hum>70&&cloud>=45;
+ var state=snow?"snow":thunder?"storm":tornado?"tornado":hum>60&&cloud>=45?"rain":cloud>=40||hum>40?"cloud":"clear";
  stormScene.dataset.wcWeather=state;
 }
-["wstTemp","wstHum","wstCloud","wstCharge"].forEach(function(id){var input=document.getElementById(id);if(input)input.addEventListener("input",updateStormPhoto)});
+["wstTemp","wstHum","wstCloud","wstCharge","wstWind"].forEach(function(id){var input=document.getElementById(id);if(input)input.addEventListener("input",updateStormPhoto)});
 ["wstPreset","wstReset","wpStormHomeOpen"].forEach(function(id){var btn=document.getElementById(id);if(btn)btn.addEventListener("click",function(){requestAnimationFrame(updateStormPhoto)})});
 updateStormPhoto();
 })();
