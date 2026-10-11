@@ -426,3 +426,19 @@
   right:9px;top:9px;font-size:11px;max-width:55%
  }
 }
+
+
+/* Tornado atmospheric renderer v4: remove obsolete game-style DOM graphics.
+   The animated canvas draws soft condensation, rain, and real-looking debris;
+   the original photograph remains visible below it. */
+#weatherLabPage #wpScienceVisual[data-scene="tornadoes"] .wpTornadoFunnel,
+#weatherLabPage #wpScienceVisual[data-scene="tornadoes"] .wpTornadoSpiral,
+#weatherLabPage #wpScienceVisual[data-scene="tornadoes"] .wpTornadoClouds,
+#weatherLabPage #wpScienceVisual[data-scene="tornadoes"] .wpTornadoRain,
+#weatherLabPage #wpScienceVisual[data-scene="tornadoes"] .wpTornadoDust{
+ display:none!important;
+}
+#weatherLabPage #wpScienceVisual[data-scene="tornadoes"] #wtTornadoMotion{
+ opacity:1!important;mix-blend-mode:normal!important;
+ image-rendering:auto!important;
+}
