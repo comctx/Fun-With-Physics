@@ -164,65 +164,63 @@
 }
 #weatherLabPage #wpStormLab canvas#wstFXCanvas{background:transparent!important;opacity:1!important;mix-blend-mode:normal!important;}
 
-/* Weather Science — visible lightning strikes over the still photograph */
+/* Weather Science — realistic, frequent lightning over the storm photograph */
 #weatherLabPage #wpScienceVisual[data-scene="lightning"]{isolation:isolate;position:relative}
 #weatherLabPage #wpScienceVisual[data-scene="lightning"] .wlfxLayer{
  position:absolute;inset:0;z-index:7;overflow:hidden;pointer-events:none;
 }
 #weatherLabPage #wpScienceVisual[data-scene="lightning"] .wlfxSkyFlash{
- position:absolute;inset:0;opacity:0;
- background:radial-gradient(ellipse 65% 85% at 70% 31%,rgba(247,250,255,.95) 0%,rgba(170,195,246,.72) 37%,rgba(114,133,210,.39) 70%,rgba(230,239,255,.24) 100%);
- mix-blend-mode:screen;
+ position:absolute;inset:0;opacity:0;mix-blend-mode:screen;
+ background:radial-gradient(ellipse 70% 85% at 67% 30%,
+ rgba(252,254,255,.96) 0%,rgba(210,225,255,.77) 34%,rgba(119,137,211,.32) 73%,transparent 100%);
 }
 #weatherLabPage #wpScienceVisual[data-scene="lightning"] .wlfxSvg{
- position:absolute;inset:0;width:100%;height:100%;overflow:visible;opacity:0;
- background:transparent!important;background-image:none!important;filter:none;pointer-events:none;
+ position:absolute;inset:0;width:100%;height:100%;overflow:hidden;opacity:0;
+ background:none!important;background-color:transparent!important;pointer-events:none;
 }
 #weatherLabPage #wpScienceVisual[data-scene="lightning"] .wlfxBoltGlow{
- stroke:rgba(101,167,255,.75);stroke-width:24;
- filter:drop-shadow(0 0 21px #d4e8ff);
+ stroke:#82a9ffad;stroke-width:22;filter:drop-shadow(0 0 18px #cde7ff);
 }
 #weatherLabPage #wpScienceVisual[data-scene="lightning"] .wlfxBoltBody{
- stroke:#bcd9ff;stroke-width:10;
- filter:drop-shadow(0 0 10px #d1e8ff);
+ stroke:#d1e8ff;stroke-width:8;filter:drop-shadow(0 0 9px #eff8ff);
 }
 #weatherLabPage #wpScienceVisual[data-scene="lightning"] .wlfxBoltCore{
- stroke:#fff;stroke-width:3.9;
- filter:drop-shadow(0 0 6px #fff);
+ stroke:#fff;stroke-width:3.4;filter:drop-shadow(0 0 5px #fff);
 }
 #weatherLabPage #wpScienceVisual[data-scene="lightning"] .wlfxBranchGlow{
- stroke:rgba(115,190,255,.76);stroke-width:9;filter:drop-shadow(0 0 9px #b3d9ff);
+ stroke:#7fc9ffb3;stroke-width:6.5;filter:drop-shadow(0 0 8px #c9eaff);
 }
-#weatherLabPage #wpScienceVisual[data-scene="lightning"] .wlfxBranchCore{stroke:#f8fcff;stroke-width:2.3}
+#weatherLabPage #wpScienceVisual[data-scene="lightning"] .wlfxBranchCore{
+ stroke:#f5fcff;stroke-width:1.7;
+}
 #weatherLabPage #wpScienceVisual[data-scene="lightning"] .wlfxActive .wlfxSkyFlash{
- animation:wlfxSkyPulse 1.05s ease-out both;
+ animation:wlfxSkyPulse .65s ease-out both;
 }
 #weatherLabPage #wpScienceVisual[data-scene="lightning"] .wlfxActive .wlfxSvg{
- animation:wlfxElectricChannel 1.08s ease-out both;
+ animation:wlfxElectricChannel .59s ease-out both;
 }
 @keyframes wlfxSkyPulse{
- 0%{opacity:0}12%{opacity:.82}25%{opacity:.53}44%{opacity:.23}66%{opacity:.08}100%{opacity:0}
+ 0%{opacity:0}6%{opacity:.94}18%{opacity:.60}36%{opacity:.25}60%{opacity:.10}100%{opacity:0}
 }
 @keyframes wlfxElectricChannel{
- 0%{opacity:0}7%{opacity:1}27%{opacity:1}46%{opacity:.65}67%{opacity:.18}100%{opacity:0}
+ 0%{opacity:0}4%{opacity:1}17%{opacity:1}32%{opacity:.83}59%{opacity:.22}100%{opacity:0}
 }
 #weatherLabPage #wpScienceVisual[data-scene="lightning"] .wlfxTrigger{
- position:absolute;z-index:10;top:19px;right:20px;
- border:2px solid #caf0ff;border-radius:12px;
- background:linear-gradient(165deg,#1376c2ed,#084878ee);color:#fff;
- box-shadow:0 7px 24px #0009,0 0 19px #6bbbf655;
- padding:11px 17px;font-size:15px!important;font-weight:850;line-height:1.2;
+ position:absolute;z-index:10;top:18px;right:18px;
+ border:2px solid #d2efff;border-radius:12px;
+ background:linear-gradient(165deg,#1676c6f0,#0b4c85f0);color:#fff;
+ box-shadow:0 8px 24px #0009,0 0 18px #50b4ff59;
+ padding:10px 16px;font-size:15px!important;font-weight:800;
  text-shadow:0 1px 2px #0009;cursor:pointer;
 }
-#weatherLabPage #wpScienceVisual[data-scene="lightning"] .wlfxTrigger:hover{background:#1d8cde}
+#weatherLabPage #wpScienceVisual[data-scene="lightning"] .wlfxTrigger:hover{background:#258bd4}
 #weatherLabPage #wpScienceVisual[data-scene="lightning"] .wlfxTrigger:active{transform:translateY(1px)}
 #weatherLabPage #wpScienceVisual[data-scene="lightning"] .wlfxTrigger:focus-visible{outline:3px solid #fff;outline-offset:3px}
 #weatherLabPage #wpScienceVisual[data-scene="lightning"] .wlfxCaption{
- position:absolute;bottom:12px;right:12px;z-index:8;max-width:45%;
- color:#ecf9ff;background:#001a32c9;border:1px solid #a5d9f477;
- padding:7px 11px;border-radius:8px;
- font-size:12px!important;line-height:1.3;text-align:right;
- text-shadow:0 2px 4px #000;
+ position:absolute;right:12px;bottom:12px;z-index:8;max-width:46%;
+ color:#f2fbff;background:#00182dcc;border:1px solid #aadcff73;
+ border-radius:8px;padding:7px 11px;font-size:12px!important;
+ line-height:1.3;text-align:right;text-shadow:0 2px 4px #000;
 }
 @media(max-width:660px){
  #weatherLabPage #wpScienceVisual[data-scene="lightning"] .wlfxTrigger{
@@ -231,6 +229,10 @@
  #weatherLabPage #wpScienceVisual[data-scene="lightning"] .wlfxCaption{font-size:10px!important;max-width:65%}
 }
 @media(prefers-reduced-motion:reduce){
- #weatherLabPage #wpScienceVisual[data-scene="lightning"] .wlfxActive .wlfxSkyFlash{animation:wlfxSkyPulse 1.6s linear both}
- #weatherLabPage #wpScienceVisual[data-scene="lightning"] .wlfxActive .wlfxSvg{animation:wlfxElectricChannel 1.6s linear both}
+ #weatherLabPage #wpScienceVisual[data-scene="lightning"] .wlfxActive .wlfxSkyFlash{
+  animation:wlfxSkyPulse 1.6s linear both;
+ }
+ #weatherLabPage #wpScienceVisual[data-scene="lightning"] .wlfxActive .wlfxSvg{
+  animation:wlfxElectricChannel 1.6s linear both;
+ }
 }
