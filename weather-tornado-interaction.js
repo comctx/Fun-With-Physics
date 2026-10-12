@@ -101,12 +101,12 @@ function rainForeground(cx,wind){
 function paintCloudDeck(cx,baseY,wind){
  // The supercell darkens around a powerful vortex, not equally over the sky.
  const severity=clamp((wind-1)/9,0,1);
- cloudPuff(cx,baseY+height*.14,width*.31,height*.30,
-           "15,22,30",.05+severity*.19);
+ cloudPuff(cx,baseY+height*.13,width*.36,height*.34,
+           "10,16,22",.08+severity*.23);
  // Slowly layered, textured wall cloud visually merges into the funnel top.
  const shade=ctx.createLinearGradient(0,0,0,height*.64);
  shade.addColorStop(0,"rgba(18,25,35,0)");
- shade.addColorStop(.53,"rgba(18,25,34,"+(.045+severity*.17)+")");
+ shade.addColorStop(.53,"rgba(14,20,28,"+(.065+severity*.20)+")");
  shade.addColorStop(1,"rgba(19,27,35,0)");
  ctx.fillStyle=shade;ctx.fillRect(0,0,width,height*.66);
  for(let i=0;i<20;i++){
@@ -129,101 +129,90 @@ function paintCloudDeck(cx,baseY,wind){
  }
 }
 function paintFunnel(cx,top,bottom,wind){
- // The funnel has no polygon edge. Its silhouette is the overlap of many
- // semi-transparent, feathered condensation packets at different depths.
- const length=bottom-top;
- const severity=clamp((wind-1)/9,0,1);
- // A strong tornado should read as a dense condensation column, not faint mist.
- // More overlapping feathered packets build opacity without a hard outline.
- const count=42+Math.round(severity*14);
- for(let i=0;i<count;i++){
-  const p=(i+.45)/count;
+ // Volumetric turbulent condensation: no solid cone and no visible stacked rings.
+ const length=bottom-top, severity=clamp((wind-1)/9,0,1);
+ const layers=52+Math.round(severity*18);
+ for(let i=0;i<layers;i++){
+  const p=(i+.4)/layers;
   const radius=funnelRadius(p,wind);
   const x=funnelAxis(cx,p,time)+
-          Math.sin(time*.92+p*8.5)*width*.0022+
-          Math.sin(time*1.7-p*6.3)*width*.0012;
+          Math.sin(time*.95+p*8.8)*width*.0024+
+          Math.sin(time*1.8-p*6.2)*width*.0014;
   const y=top+length*p+
-          Math.sin(time*1.22+i*.39)*height*.0015+
-          Math.sin(time*2.1+p*10.5)*height*.0008;
-  const roll=Math.sin(p*16.2-time*.55);
-  const density=.09+severity*.235+roll*.016;
-  const softness=height*(.036+severity*.013);
-  // Darker inner condensation at higher wind, with translucent, feathered edges.
-  cloudPuff(x,y,radius*(1.04+severity*.14),softness,
-            p>.72?"34,39,41":"18,28,36",density);
-  // Asymmetric illumination and darker rear streaks preserve depth and rotation.
-  cloudPuff(x-radius*.38,y-height*.008,radius*.69,softness*.90,
-            "112,126,133",.028+severity*.058);
-  cloudPuff(x+radius*.28,y+height*.004,radius*.70,softness*.95,
-            "22,31,35",.060+severity*.17);
+          Math.sin(time*1.25+i*.37)*height*.0017+
+          Math.sin(time*2.15+p*11.5)*height*.0009;
+  const density=.095+severity*.26+Math.sin(p*17-time*.65)*.018;
+  const softness=height*(.040+severity*.015);
+  cloudPuff(x,y,radius*(1.04+severity*.15),softness,
+            p>.70?"32,38,40":"16,25,32",density);
+  cloudPuff(x-radius*.40,y-height*.008,radius*.70,softness*.92,
+            "104,118,126",.028+severity*.08);
+  cloudPuff(x+radius*.26,y+height*.004,radius*.76,softness*.98,
+            "18,26,31",.065+severity*.19);
  }
- // Irregular density pockets rotate around the funnel rather than painting
- // a uniform dark cone; behind-the-funnel clouds are more transparent.
- const packets=88+Math.round(wind*4)+Math.round(severity*28);
+ // Irregular cloud pockets revolve with independent vertical and orbital motion.
+ const packets=120+Math.round(severity*45);
  for(let i=0;i<packets;i++){
   const p=.015+noise(i*11+7)*.96;
-  const y=top+length*p+
-           Math.sin(time*(.85+noise(i*2)) + i*.41)*height*.0032;
   const radius=funnelRadius(p,wind);
-  const basePhase=time*(.35+wind*.075)*(1+p*.6)+i*2.399;
-  const phase=basePhase+
-      Math.sin(time*.91+i*.67)*(.07+severity*.035);
-  const depth=Math.sin(phase),radialPosition=.25+noise(i*19)*.83;
-  // Orbiting cloudy eddies move asynchronously but remain within the vortex.
-  const flutterX=Math.sin(time*2.0+i*.73+p*11)*radius*.070;
-  const flutterY=Math.sin(time*1.58-i*.42+p*15)*height*.0022;
+  const basePhase=time*(.38+wind*.085)*(1+p*.6)+i*2.399;
+  const phase=basePhase+Math.sin(time*1.08+i*.67)*(.10+severity*.06);
+  const radialPosition=.18+noise(i*19)*.92;
+  const depth=Math.sin(phase);
   const x=funnelAxis(cx,p,time)+
-          Math.cos(phase)*radius*radialPosition+flutterX;
-  const rx=radius*(.15+noise(i*17)*.35)+width*.001;
-  const ry=height*(.005+noise(i*23)*.019)*
-           (1+Math.sin(time*.84+i*.31)*.11);
-  const tone=depth>.3?
-     (i%3===0?"147,158,163":"92,105,111"):
-     (i%4===0?"85,102,113":"26,37,44");
-  const alpha=(.05+noise(i*13)*.095+severity*.085)*
-             (depth>=0?1:.62)*(1-p*.14);
-  cloudPuff(x,y+flutterY,rx,ry,tone,alpha);
+          Math.cos(phase)*radius*radialPosition+
+          Math.sin(time*2.1+i*.73+p*11)*radius*.08;
+  const y=top+length*p+
+          Math.sin(time*(.95+noise(i*2))+i*.45)*height*.0042+
+          Math.sin(time*1.62-i*.42+p*15)*height*.0025;
+  const rx=radius*(.17+noise(i*17)*.42)+width*.001;
+  const ry=height*(.006+noise(i*23)*.024)*
+           (1+Math.sin(time*.95+i*.31)*.18);
+  const tone=depth>.3 ?
+    (i%3===0?"140,152,158":"82,96,104"):
+    (i%4===0?"74,88,98":"18,28,35");
+  const alpha=(.055+noise(i*13)*.10+severity*.10)*
+              (depth>=0?1:.60)*(1-p*.12);
+  cloudPuff(x,y,rx,ry,tone,alpha);
  }
- // Partial, broken horizontal condensation streaks that wrap around
- // the rotating column. Never draw full circles or graphic guide-lines.
+ // Small wisps imply turbulent rotation without conspicuous spiral guide lines.
+ // Rotate with the funnel, but break up both position and opacity.
  ctx.save();ctx.lineCap="round";ctx.lineJoin="round";
- for(let j=0;j<44;j++){
-  const p=.035+noise(j*31+3)*.90;
+ for(let j=0;j<18;j++){
+  const p=.05+noise(j*31+3)*.88;
   const rr=funnelRadius(p,wind);
   const y=top+length*p;
-  const phase=time*(.36+wind*.083)+j*1.618+
-              Math.sin(time*.72+j*.38)*.08;
+  const phase=time*(.43+wind*.10)+j*1.7+
+              Math.sin(time*.78+j*.41)*.12;
   const front=Math.sin(phase);
-  const x=funnelAxis(cx,p,time)+Math.cos(phase)*rr*.64;
-  const arc=rr*(.15+noise(j*17)*.38)*
-            (1+Math.sin(time*1.11+j*.37)*.14);
-  const color=front>.0?"162,180,181":"57,78,87";
-  const a=(.021+noise(j*11)*.045+severity*.020)*(front>.0?1:.56);
+  const x=funnelAxis(cx,p,time)+Math.cos(phase)*rr*.60;
+  const arc=rr*(.12+noise(j*17)*.24)*
+            (1+Math.sin(time*1.2+j*.37)*.16);
+  const color=front>0?"155,172,178":"46,64,74";
+  const a=(.010+noise(j*11)*.021+severity*.012)*(front>0?1:.48);
   ctx.strokeStyle="rgba("+color+","+a+")";
-  ctx.lineWidth=.55+noise(j*7)*1.4;
+  ctx.lineWidth=.45+noise(j*7)*.8;
   ctx.beginPath();
-  ctx.moveTo(x-arc*.65,y+rr*.05*Math.sin(phase));
-  ctx.bezierCurveTo(x-arc*.2,y-rr*.045,
-                    x+arc*.35,y-rr*.036+Math.sin(phase)*2,
-                    x+arc*.72,y+rr*.047);
+  ctx.moveTo(x-arc*.6,y+rr*.04*Math.sin(phase));
+  ctx.bezierCurveTo(x-arc*.15,y-rr*.04,
+                    x+arc*.28,y-rr*.03+Math.sin(phase)*1.5,
+                    x+arc*.62,y+rr*.04);
   ctx.stroke();
  }
  ctx.restore();
- // Very soft stray condensation across the edges creates an irregular,
- // continuously changing boundary, not hard corners or jagged pixels.
- for(let i=0;i<33;i++){
+ // Uneven, diffused wisps fray the funnel boundary.
+ for(let i=0;i<42;i++){
   const p=noise(i*29+15)*.96;
   const r=funnelRadius(p,wind);
-  const side=i%2?-1:1;
-  const drift=.70+noise(i*7)*.54;
+  const side=i%2?-1:1, drift=.65+noise(i*7)*.62;
   const x=funnelAxis(cx,p,time)+side*r*drift+
-      Math.sin(time*(.39+wind*.04)+i*2.5)*r*.17+
-      Math.sin(time*1.48+i*.73)*r*.065;
+          Math.sin(time*(.44+wind*.05)+i*2.6)*r*.19+
+          Math.sin(time*1.7+i*.75)*r*.08;
   const y=top+length*p+
-          Math.sin(time*1.07+i*.91)*height*.002;
-  cloudPuff(x,y,r*(.17+noise(i*8)*.24),
-    height*(.011+noise(i*13)*.007),
-    i%3?"95,110,118":"164,169,167",.034+wind*.002);
+          Math.sin(time*1.14+i*.88)*height*.0026;
+  cloudPuff(x,y,r*(.16+noise(i*8)*.28),
+            height*(.012+noise(i*13)*.010),
+            i%3?"88,102,110":"154,160,158",.042+wind*.003);
  }
 }
 /* Lightning stays in the distant storm; a short cloud flash may reveal a faint bolt.
@@ -238,12 +227,12 @@ function paintLightning(wind){
               age<.28?.44-(age-.21)/.07*.35:
               .09*Math.max(0,1-(age-.28)/.27));
  if(pulse<=0)return;
- const strength=pulse*(.75+wind*.045);
+ const strength=pulse*(.90+wind*.055);
  ctx.save();
  ctx.globalCompositeOperation="screen";
  // Illuminated upper cloud cells fade unevenly, not the entire sky.
  radial(width*flashX,height*.27,width*.18,height*.21,
-        "205,224,245",Math.min(.28,strength*.20));
+        "215,232,250",Math.min(.34,strength*.24));
  radial(width*(flashX+.08),height*.39,width*.12,height*.15,
         "170,198,232",Math.min(.16,strength*.11));
  if(flashIsBolt){
@@ -265,9 +254,9 @@ function dust(cx,ground,wind){
  const severity=clamp((wind-1)/9,0,1);
  const turbulentPulse=1+Math.sin(time*.72)*.048+
                          Math.sin(time*1.33+1.9)*.024;
- const spread=Math.max(width*(.09+severity*.10),5.9*funnelFoot)*turbulentPulse;
- const depth=height*(.08+severity*.107)*
-             (1+Math.sin(time*.98+1.4)*.034);
+ const spread=Math.max(width*(.11+severity*.12),6.2*funnelFoot)*turbulentPulse;
+ const depth=height*(.09+severity*.12)*
+             (1+Math.sin(time*.98+1.4)*.038);
  // Slight turbulence stays close to the anchored ground contact.
  cx+=Math.sin(time*.55)*width*.0011;
  // Wide rolling dust at ground level, in layered muted earth tones.
@@ -285,8 +274,8 @@ function dust(cx,ground,wind){
     (.079+severity*.14)*(.62+noise(i*11)*.70));
  }
  // Layered opaque-looking heart, with completely soft edges.
- cloudPuff(cx,ground-depth*.16,spread*.92,depth*.76,
-           "42,47,45",.22+severity*.39);
+ cloudPuff(cx,ground-depth*.14,spread*.98,depth*.82,
+           "34,38,37",.28+severity*.45);
  cloudPuff(cx-spread*.18,ground-depth*.30,spread*.66,depth*.68,
            "124,123,112",.068+severity*.13);
  cloudPuff(cx+spread*.30,ground-depth*.10,spread*.85,depth*.51,
