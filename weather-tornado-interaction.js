@@ -19,6 +19,17 @@ const VIDEO_NAME="Sean_Waugh_NOAA_NSSL_-_Saint_Libory_Nebraska_EF3_Tornado_17_05
 const FILE_BASE="https://upload.wikimedia.org/wikipedia/commons/9/92/"+VIDEO_NAME;
 const TRANSCODE="https://upload.wikimedia.org/wikipedia/commons/transcoded/9/92/"+VIDEO_NAME+"/"+VIDEO_NAME;
 const FILE_PAGE="https://commons.wikimedia.org/wiki/File:"+VIDEO_NAME;
+const HD_NAME="Tornado_time_lapse.webm";
+const HD_BASE="https://upload.wikimedia.org/wikipedia/commons/f/fa/"+HD_NAME;
+const HD_TRANSCODE="https://upload.wikimedia.org/wikipedia/commons/transcoded/f/fa/"+HD_NAME+"/"+HD_NAME;
+const HD_PAGE="https://commons.wikimedia.org/wiki/File:Tornado_time_lapse.webm";
+const CLIPS={
+ hd:{page:HD_PAGE,label:"1080p time-lapse • Colorado 2018",
+  credit:"HD: Runningonbrains • CC BY-SA 4.0",rate:.5},
+ noaa:{page:FILE_PAGE,label:"720p NOAA footage • Nebraska 2026",
+  credit:"NOAA/NSSL • public domain",rate:1}
+};
+let clip="hd",qualityToggle=null,creditLink=null;
 const STILL="https://upload.wikimedia.org/wikipedia/commons/3/30/2016-05-16_Tornado_north_of_Solomon%2C_Kansas.jpg";
 let canvas=null,ctx=null,video=null,toggle=null,status=null;
 let raf=0,lastFrame=0,time=0,level=5,width=0,height=0,nextLightning=7,flashAt=-100,flashX=.45;
@@ -34,6 +45,46 @@ function setVideoState(label){
 }
 function setStatus(message){
  if(status){status.textContent=message;status.hidden=!message;}
+}
+function describeClip(){
+ const mode=CLIPS[clip];
+ if(qualityToggle){
+  qualityToggle.textContent=clip==="hd"?"Switch to NOAA 720p":"Switch to HD 1080p";
+  qualityToggle.setAttribute("aria-label",qualityToggle.textContent);
+ }
+ if(creditLink){
+  creditLink.href=mode.page;
+  creditLink.textContent=mode.credit;
+ }
+ const caption=visual.querySelector(".wpTornadoCaption small");
+ if(caption)caption.textContent=clip==="hd"?
+  "Real Colorado tornado filmed in 1080p time-lapse. Motion is accelerated; storm effects are simulated.":
+  "Real NOAA tornado footage from Nebraska in 720p. The storm effects are simulated.";
+}
+function configureSources(){
+ if(!video)return;
+ const wasPlaying=!video.paused;
+ video.pause();
+ // A fresh set of source children ensures each change reloads the right clip.
+ video.replaceChildren();
+ if(clip==="hd"){
+  video.appendChild(sourceNode(HD_BASE,'video/webm; codecs="vp8, vorbis"'));
+  video.appendChild(sourceNode(HD_TRANSCODE+".1080p.vp9.webm",'video/webm; codecs="vp9, opus"'));
+  video.appendChild(sourceNode("https://upload.wikimedia.org/wikipedia/commons/transcoded/f/fa/"+HD_NAME+"/"+HD_NAME+".360p.mpeg4.mov","video/quicktime"));
+  video.setAttribute("aria-label","High-definition 2018 Colorado tornado time-lapse, accelerated footage");
+ }else{
+  video.appendChild(sourceNode(FILE_BASE,'video/webm; codecs="av01, opus"'));
+  video.appendChild(sourceNode(TRANSCODE+".480p.vp9.webm",'video/webm; codecs="vp9, opus"'));
+  video.appendChild(sourceNode(TRANSCODE+".360p.mpeg4.mov","video/quicktime"));
+  video.setAttribute("aria-label","Real-time 2026 NOAA/NSSL tornado footage from Nebraska");
+ }
+ video.playbackRate=CLIPS[clip].rate;
+ video.style.display="";
+ if(toggle)toggle.disabled=false;
+ video.load();
+ describeClip();
+ setStatus("Loading "+CLIPS[clip].label+"…");
+ if(wasPlaying||!prefersReduced?.matches)playVideo();
 }
 function playVideo(){
  if(!video||!video.isConnected||video.error)return;
@@ -57,12 +108,7 @@ function createVideo(){
  video.setAttribute("muted","");
  video.setAttribute("loop","");
  video.setAttribute("playsinline","");
- video.setAttribute("aria-label","Real NOAA tornado footage filmed near St. Libory, Nebraska in 2026");
- // Original AV1, widely compatible VP9 transcode, then QuickTime MPEG-4
- // transcode for WebKit devices. The photo remains behind the video.
- video.appendChild(sourceNode(FILE_BASE,'video/webm; codecs="av01, opus"'));
- video.appendChild(sourceNode(TRANSCODE+".480p.vp9.webm",'video/webm; codecs="vp9, opus"'));
- video.appendChild(sourceNode(TRANSCODE+".360p.mpeg4.mov","video/quicktime"));
+ video.setAttribute("aria-label","Real tornado video");
  visual.insertBefore(video,visual.firstChild);
  toggle=document.createElement("button");
  toggle.type="button";toggle.id="wtTornadoVideoToggle";
@@ -71,19 +117,31 @@ function createVideo(){
  toggle.addEventListener("click",()=>{if(!video||video.error)return;
   if(video.paused)playVideo();else video.pause();});
  visual.appendChild(toggle);
+ qualityToggle=document.createElement("button");
+ qualityToggle.type="button";
+ qualityToggle.id="wtTornadoQualityToggle";
+ qualityToggle.className="wtTornadoQualityToggle";
+ qualityToggle.addEventListener("click",()=>{
+  clip=clip==="hd"?"noaa":"hd";
+  configureSources();
+ });
+ visual.appendChild(qualityToggle);
  status=document.createElement("div");
  status.id="wtTornadoVideoStatus";
  status.className="wtTornadoVideoStatus";
  status.setAttribute("role","status");
  status.hidden=true;
  visual.appendChild(status);
- const credit=document.createElement("a");
- credit.className="wtTornadoVideoCredit";
- credit.href=FILE_PAGE;credit.target="_blank";credit.rel="noopener noreferrer";
- credit.textContent="Real footage: NOAA/NSSL • 2026";
- visual.appendChild(credit);
+ creditLink=document.createElement("a");
+ creditLink.className="wtTornadoVideoCredit";
+ creditLink.href=CLIPS[clip].page;creditLink.target="_blank";creditLink.rel="noopener noreferrer";
+ visual.appendChild(creditLink);
  video.addEventListener("playing",()=>{
-  setVideoState("Pause tornado video");setStatus("");
+  setVideoState("Pause tornado video");
+  // Browser-decoded resolution is more truthful than assuming HD on every device.
+  const h=video.videoHeight||0;
+  if(h>0&&h<720)setStatus("Playing at "+h+"p on this browser; HD requires a supported WebM codec.");
+  else setStatus("");
  });
  video.addEventListener("pause",()=>setVideoState("Play tornado video"));
  video.addEventListener("error",()=>{
@@ -92,8 +150,8 @@ function createVideo(){
   setVideoState("Video unavailable");
   setStatus("Video unavailable on this device. Showing a tornado photograph instead.");
  });
- if(!prefersReduced?.matches)playVideo();
- else setStatus("Press Play to view tornado footage.");
+ configureSources();
+ if(prefersReduced?.matches)setStatus("Press Play to view the selected tornado clip.");
 }
 function glow(x,y,rx,ry,tint,alpha){
  if(alpha<.002||rx<2||ry<2)return;
@@ -192,7 +250,9 @@ function update(){
  const readout=document.getElementById("wtTornadoReadout");
  if(readout)readout.textContent=label+" • "+level+"/10";
  const caption=visual.querySelector(".wpTornadoCaption small");
- if(caption)caption.textContent="Real moving tornado footage from NOAA. The slider changes simulated storm effects; the recorded tornado is unchanged.";
+ if(caption)caption.textContent=clip==="hd"?
+  "1080p Colorado tornado time-lapse (accelerated footage). Slider changes simulated storm effects.":
+  "720p NOAA tornado footage from Nebraska. Slider changes simulated storm effects.";
  requestDraw();
 }
 function stop(){
