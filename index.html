@@ -1082,7 +1082,7 @@ header{min-height:50px;padding:5px 10px;background:#102839}
 @media(max-width:1000px){#weatherLabPage #wpDashboard .wpConditions{grid-template-columns:repeat(2,minmax(0,1fr))}#weatherLabPage #wpDashboard .wpConditions>button{grid-column:1/-1}}
 @media(max-width:580px){#weatherLabPage #wpDashboard .wpConditions{grid-template-columns:1fr 1fr}#weatherLabPage #wpDashboard .wpConditions strong{font-size:22px}#weatherLabPage #wpDashboard .wpSceneTitle{max-width:90%}}
 </style>
-<link rel="stylesheet" href="weather-cinematic.css?v=20261012video1">
+<link rel="stylesheet" href="weather-cinematic.css?v=20261012HD2">
 <link rel="stylesheet" href="atom-builder.css?v=20261010a">
 </head>
 <body>
@@ -6700,7 +6700,7 @@ setTimeout(()=>{
  tornadoButton.addEventListener('click',()=>{
   visual.dataset.scene='tornadoes';visual.dataset.label='';
   visual.setAttribute('aria-hidden','false');
-  visual.innerHTML='<div class="wpTornadoCaption"><strong>Real Tornado Footage</strong><small>NOAA tornado video • Nebraska, May 2026. Wind, rain, and lightning controls below.</small></div>';
+  visual.innerHTML='<div class="wpTornadoCaption"><strong>Real Tornado Footage</strong><small>HD 1080p Colorado time-lapse or original NOAA 720p footage. Wind, rain, and lightning controls below.</small></div>';
   let controls=document.getElementById('wpTornadoControl');
   if(!controls){
    controls=document.createElement('div');controls.id='wpTornadoControl';controls.className='wpTornadoControl';
@@ -6708,7 +6708,7 @@ setTimeout(()=>{
    visual.after(controls);
   }
   controls.hidden=false;
-  info.textContent='Watch real video of a tornado recorded near St. Libory, Nebraska during a NOAA field project. Wind shear, atmospheric instability and a powerful rotating updraft are important ingredients in tornado development. Adjust the slider to change the simulated rain, wind and cloud-lightning overlays; the real tornado video remains unchanged.';
+  info.textContent='Watch real tornado footage: choose high-definition time-lapse recorded in Colorado in 2018, or real-time NOAA video recorded near St. Libory, Nebraska in 2026. Wind shear, atmospheric instability and a powerful rotating updraft are important ingredients in tornado development. Adjust the slider to change the simulated rain, wind and cloud-lightning overlays; the real tornado video remains unchanged.';
  });
  function hideTornadoControls(){
   const controls=document.getElementById('wpTornadoControl');
@@ -6765,9 +6765,9 @@ function update(){
  update();requestAnimationFrame(render);
 })();
 </script>
-<script defer src="weather-cinematic.js?v=20261012video1"></script>
+<script defer src="weather-cinematic.js?v=20261012HD2"></script>
 <script defer src="weather-storm-effects.js?v=20261010f"></script>
-<script defer src="weather-tornado-interaction.js?v=20261012video1"></script>
+<script defer src="weather-tornado-interaction.js?v=20261012HD2"></script>
 <script defer src="atom-builder.js?v=20261010b"></script>
 <script defer src="atom-graphics.js?v=20261010a"></script>
 <script defer src="weather-lightning-effects.js?v=20261011thunder1"></script>
