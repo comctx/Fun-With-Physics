@@ -449,25 +449,25 @@
    Wikimedia Commons, CC BY-SA 4.0. The scene is cropped and darkened.
    https://commons.wikimedia.org/wiki/File:Low_Precipitation_Supercell_Thunderstorm.jpg */
 #weatherLabPage #wpScienceVisual[data-scene="tornadoes"]{
- /* Strong supercell storm, without a second photographed tornado. */
+ /* Deeply overcast supercell, while preserving detail at the horizon. */
  background-image:
-  linear-gradient(180deg,rgba(5,10,16,.68) 0%,
-    rgba(8,14,22,.58) 20%,rgba(14,20,28,.38) 46%,
-    rgba(18,24,30,.18) 72%,rgba(10,16,18,.10) 100%),
+  linear-gradient(180deg,rgba(3,7,12,.76) 0%,
+    rgba(7,12,19,.66) 18%,rgba(12,18,26,.45) 44%,
+    rgba(18,24,30,.20) 72%,rgba(10,16,18,.10) 100%),
   url('https://upload.wikimedia.org/wikipedia/commons/2/2a/Low_Precipitation_Supercell_Thunderstorm.jpg')!important;
- background-color:#2e3943!important;
+ background-color:#25303a!important;
  background-size:cover!important;
  background-position:center bottom!important;
 }
 #weatherLabPage #wpScienceVisual[data-scene="tornadoes"] .wtTornadoShade{
- /* Storm darkness scales with the tornado intensity slider. */
- opacity:var(--wtAtmosphere,.12)!important;
+ /* Shadow is darkest around the cloud base, scaled by vortex intensity. */
+ opacity:var(--wtAtmosphere,.14)!important;
  background:
-  radial-gradient(ellipse 44% 58% at 58.5% 45%,
-    rgba(6,10,15,.86) 0%,rgba(12,18,24,.54) 40%,
-    rgba(16,22,28,.24) 66%,transparent 100%),
-  linear-gradient(180deg,rgba(7,13,20,.30),
-    rgba(12,18,24,.26) 42%,rgba(16,22,28,.11) 70%,
+  radial-gradient(ellipse 46% 60% at 58.5% 44%,
+    rgba(4,8,12,.90) 0%,rgba(10,16,22,.62) 38%,
+    rgba(14,20,26,.28) 64%,transparent 100%),
+  linear-gradient(180deg,rgba(5,10,16,.34),
+    rgba(10,16,22,.30) 42%,rgba(14,20,26,.14) 70%,
     transparent 90%)!important;
  transition:opacity .2s ease!important;
 }
