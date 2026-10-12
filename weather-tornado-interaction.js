@@ -11,7 +11,7 @@ const visual=document.getElementById("wpScienceVisual");
 const opener=page?.querySelector('[data-weather-topic="tornadoes"]');
 if(!page||!science||!visual||!opener)return;
 const prefersReduced=window.matchMedia?.("(prefers-reduced-motion: reduce)");
-let canvas=null,ctx=null,raf=0,lastFrame=0,time=0,level=5,width=0,height=0,texture=null;
+let canvas=null,ctx=null,raf=0,lastFrame=0,time=0,level=5,width=0,height=0;
 // Brief, irregular distant cloud flashes. Scheduled once per event, not randomly per frame.
 let nextLightningAt=0,flashStart=-100,flashX=.35,flashIsBolt=false;
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
@@ -380,7 +380,7 @@ function start(){
  }
  ctx=canvas.getContext("2d");
  if(!ctx)return;
- if(!texture)texture=noisePattern();
+ // The redesigned renderer no longer needs the old precomputed texture.
  if(!visual.querySelector(".wtTornadoShade")){
   const shade=document.createElement("div");
   shade.className="wtTornadoShade";shade.setAttribute("aria-hidden","true");
