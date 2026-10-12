@@ -1082,7 +1082,7 @@ header{min-height:50px;padding:5px 10px;background:#102839}
 @media(max-width:1000px){#weatherLabPage #wpDashboard .wpConditions{grid-template-columns:repeat(2,minmax(0,1fr))}#weatherLabPage #wpDashboard .wpConditions>button{grid-column:1/-1}}
 @media(max-width:580px){#weatherLabPage #wpDashboard .wpConditions{grid-template-columns:1fr 1fr}#weatherLabPage #wpDashboard .wpConditions strong{font-size:22px}#weatherLabPage #wpDashboard .wpSceneTitle{max-width:90%}}
 </style>
-<link rel="stylesheet" href="weather-cinematic.css?v=20261011tornado12">
+<link rel="stylesheet" href="weather-cinematic.css?v=20261011rainbowfix1">
 <link rel="stylesheet" href="atom-builder.css?v=20261010a">
 </head>
 <body>
@@ -6709,8 +6709,17 @@ setTimeout(()=>{
   controls.hidden=false;
   info.textContent='A tornado is a violently rotating column of air connected to a thunderstorm. Wind shear, atmospheric instability, and a strong updraft can help organize rotation. Move the slider to explore a visual model of a tightening, faster-moving vortex; it is illustrative, not a forecast.';
  });
- document.querySelectorAll('[data-weather-topic]').forEach(b=>{if(b!==tornadoButton)b.addEventListener('click',()=>{const c=document.getElementById('wpTornadoControl');if(c)c.hidden=true})});
- document.getElementById('wpScienceBack')?.addEventListener('click',()=>{const c=document.getElementById('wpTornadoControl');if(c)c.hidden=true});
+ function hideTornadoControls(){
+  const controls=document.getElementById('wpTornadoControl');
+  if(controls)controls.hidden=true;
+ }
+ // Keep lesson-specific controls out of Rainbow, Lightning, Hurricane and Snow screens.
+ document.querySelectorAll('[data-weather-topic]').forEach(button=>{
+  if(button!==tornadoButton)button.addEventListener('click',hideTornadoControls);
+ });
+ document.querySelectorAll('[data-weather-open]').forEach(button=>
+  button.addEventListener('click',hideTornadoControls));
+ document.getElementById('wpScienceBack')?.addEventListener('click',hideTornadoControls);
 })();
 </script>
 <script>
