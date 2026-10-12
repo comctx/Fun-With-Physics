@@ -457,9 +457,10 @@
 #weatherLabPage #wpScienceVisual[data-scene="tornadoes"]{
  /* Deeply overcast supercell, while preserving detail at the horizon. */
  background-image:
-  linear-gradient(180deg,rgba(3,7,12,.76) 0%,
-    rgba(7,12,19,.66) 18%,rgba(12,18,26,.45) 44%,
-    rgba(18,24,30,.20) 72%,rgba(10,16,18,.10) 100%),
+  /* Slightly brighter surrounding sky helps the denser, darker wedge stand out. */
+  linear-gradient(180deg,rgba(3,7,12,.64) 0%,
+    rgba(7,12,19,.54) 18%,rgba(12,18,26,.33) 44%,
+    rgba(18,24,30,.15) 72%,rgba(10,16,18,.07) 100%),
   url('https://upload.wikimedia.org/wikipedia/commons/2/2a/Low_Precipitation_Supercell_Thunderstorm.jpg')!important;
  background-color:#25303a!important;
  background-size:cover!important;
