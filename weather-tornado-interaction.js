@@ -130,24 +130,15 @@ function paintCloudDeck(cx,baseY,wind){
   cloudPuff(px,y,rx,height*(.06+noise(i*7)*.066),
             tone,.060+severity*.072);
  }
- // Hanging scud merges with upper funnel: irregular, shifting, darker under the wall cloud.
- const scudCount=24+Math.round(severity*12);
- for(let i=0;i<scudCount;i++){
-  const n=noise(i*17+3),side=n<.49?-1:1;
-  const x=cx+(n-.5)*width*.31+
-          Math.sin(time*(.22+noise(i*7)*.15)+i*1.91)*width*.009;
-  const y=baseY+height*(.012+noise(i*9)*(.055+severity*.065));
-  const rx=width*(.027+noise(i*21)*.033)*(1+severity*.19);
-  const ry=height*(.025+noise(i*14)*.048);
-  cloudPuff(x,y,rx,ry,
-           i%4===0?"105,119,123":"26,35,42",
-           (.045+severity*.042)*(side<0?.88:1.14));
+ // Wisps spill downward from cloud base, softening the attachment.
+ for(let i=0;i<24;i++){
+  const p=noise(i*17+3);
+  const x=cx+(p-.5)*width*.23;
+  const y=baseY+height*(noise(i*9)*.035);
+  cloudPuff(x,y,width*(.023+noise(i*21)*.027),
+           height*(.025+noise(i*14)*.038),
+           i%3?"76,89,96":"142,153,155",.043+wind*.002);
  }
- // One side of the rotating wall cloud occasionally bulges lower into the funnel.
- const surge=Math.sin(time*.29+.7)*.5+.5;
- cloudPuff(cx+width*(.064+surge*.024),baseY+height*(.075+surge*.018),
-           width*.11,height*(.085+surge*.028),
-           "19,28,34",.035+severity*.115);
 }
 function paintFunnel(cx,top,bottom,wind){
  // Volumetric turbulent condensation: no solid cone and no visible stacked rings.
@@ -156,31 +147,23 @@ function paintFunnel(cx,top,bottom,wind){
  for(let i=0;i<layers;i++){
   const p=(i+.4)/layers;
   const radius=funnelRadius(p,wind);
-  const asym=severity*(.004+Math.sin(time*.76+p*9)*.004);
   const x=funnelAxis(cx,p,time)+
           Math.sin(time*.95+p*8.8)*width*.0024+
-          Math.sin(time*1.8-p*6.2)*width*.0014+
-          width*asym*Math.sin(p*7.8-time*.32)*(1-p*.78);
+          Math.sin(time*1.8-p*6.2)*width*.0014;
   const y=top+length*p+
           Math.sin(time*1.25+i*.37)*height*.0017+
           Math.sin(time*2.15+p*11.5)*height*.0009;
-  const turbulentSurge=Math.sin(time*.58+p*11.8)*Math.sin(time*.95-p*8.5);
-  const density=.095+severity*.26+Math.sin(p*17-time*.65)*.018+
-                severity*turbulentSurge*.037;
-  const softness=height*(.040+severity*.015)*
-                 (1+severity*Math.sin(time*.55+p*12)*.13);
+  const density=.095+severity*.26+Math.sin(p*17-time*.65)*.018;
+  const softness=height*(.040+severity*.015);
   cloudPuff(x,y,radius*(1.04+severity*.15),softness,
             p>.70?"27,32,34":"12,21,28",density);
   // Shadowed condensation core is darkest in the wedge, not across the whole sky.
   cloudPuff(x+radius*.04,y,radius*.52,softness*.82,
             "11,18,22",(.05+severity*.13)*(p>.25?1:.55));
-  const swirlSide=Math.sin(time*.43+p*4.2);
-  cloudPuff(x-radius*(.40+swirlSide*.10),y-height*.008,
-            radius*(.70+severity*.10),softness*.92,
-            "104,118,126",.028+severity*(.070+.026*swirlSide));
-  cloudPuff(x+radius*(.26-swirlSide*.07),y+height*.004,
-            radius*(.76+severity*.10),softness*.98,
-            "18,26,31",.065+severity*(.19-.032*swirlSide));
+  cloudPuff(x-radius*.40,y-height*.008,radius*.70,softness*.92,
+            "104,118,126",.028+severity*.08);
+  cloudPuff(x+radius*.26,y+height*.004,radius*.76,softness*.98,
+            "18,26,31",.065+severity*.19);
  }
  // Irregular cloud pockets revolve with independent vertical and orbital motion.
  const packets=120+Math.round(severity*45);
@@ -312,7 +295,7 @@ function dust(cx,ground,wind){
                          Math.sin(time*1.33+1.9)*.024;
  // A 30–45% wider dust field at maximum intensity, not at mild settings.
  const spread=Math.max(width*(.11+severity*.12),6.2*funnelFoot)*
-              turbulentPulse*(1+severity*.38)*(1+severity*.12);
+              turbulentPulse*(1+severity*.38);
  const depth=height*(.09+severity*.12)*
              (1+Math.sin(time*.98+1.4)*.038)*(1+severity*.22);
  // Slight turbulence stays close to the anchored ground contact.
@@ -322,9 +305,7 @@ function dust(cx,ground,wind){
   const angle=noise(i*17+5)*6.283+time*(.15+wind*.052);
   const dist=(.22+noise(i*41)*1.12)*spread;
   const side=Math.cos(angle);
-  const asymmetry=1+severity*.13*Math.sin(time*.31+i*1.37);
-  const x=cx+side*dist*asymmetry+
-          Math.sin(time*.18+i)*width*.003;
+  const x=cx+side*dist+Math.sin(time*.18+i)*width*.003;
   const y=ground-Math.abs(Math.sin(angle))*depth*.38+
      (noise(i*29)-.55)*depth*.42;
   const rx=width*(.010+noise(i*13)*.023)*(1+wind*.013);
@@ -337,35 +318,19 @@ function dust(cx,ground,wind){
  cloudPuff(cx,ground-depth*.14,spread*.98,depth*.82,
            "31,34,33",.28+severity*.54);
  // Fragmented turbulent dust rising from the wedge's outer edges.
- for(let k=0;k<12+Math.round(severity*24);k++){
-  const shift=(noise(k*17+4)-.5)*spread*(2.3+severity*.27);
+ for(let k=0;k<12+Math.round(severity*15);k++){
+  const shift=(noise(k*17+4)-.5)*spread*2.3;
   const altitude=noise(k*7+3);
   cloudPuff(cx+shift+Math.sin(time*.42+k)*spread*.05,
     ground-depth*(.20+altitude*.70),
     spread*(.08+noise(k*21)*.11),
     depth*(.15+noise(k*19)*.18),
-    k%3===0?"115,111,101":"61,61,57",.032+severity*.094);
+    k%3===0?"115,111,101":"61,61,57",.032+severity*.075);
  }
  cloudPuff(cx-spread*.18,ground-depth*.30,spread*.66,depth*.68,
            "124,123,112",.068+severity*.13);
  cloudPuff(cx+spread*.30,ground-depth*.10,spread*.85,depth*.51,
            "79,77,68",.09+severity*.20);
- // Dust footprint spreads asymmetrically well beyond the condensation wedge.
- if(severity>.5){
-  const outer=(severity-.5)*2;
-  for(let i=0;i<14;i++){
-   const side=i%2===0?-1:1;
-   const distance=spread*(.86+noise(i*31)*.48);
-   const x=cx+side*distance+
-           Math.sin(time*.27+i*2.1)*spread*.09;
-   const y=ground-depth*(.06+noise(i*17)*.25);
-   cloudPuff(x,y,
-             spread*(.085+noise(i*13)*.085),
-             depth*(.16+noise(i*23)*.16),
-             i%3===0?"126,117,105":"78,74,67",
-             (.04+outer*.048)*(1+Math.sin(time*.44+i)*.12));
-  }
- }
  // Eddies and debris of many sizes; no concentric circles.
  const pieces=70+wind*16+Math.round(severity*61);
  for(let i=0;i<pieces;i++){
