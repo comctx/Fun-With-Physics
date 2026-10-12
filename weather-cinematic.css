@@ -501,11 +501,22 @@
 #weatherLabPage #wpScienceVisual[data-scene="tornadoes"] #wtTornadoVideoToggle:focus-visible{
  outline:3px solid #fff;outline-offset:3px;
 }
+#weatherLabPage #wpScienceVisual[data-scene="tornadoes"] #wtTornadoQualityToggle{
+ position:absolute;top:61px;right:14px;z-index:12;
+ padding:8px 12px;min-height:34px;
+ background:rgba(8,29,42,.85);color:#eaf6ff;
+ border:1px solid rgba(185,218,229,.80);border-radius:10px;
+ font-size:12px!important;font-weight:700;cursor:pointer;
+}
+#weatherLabPage #wpScienceVisual[data-scene="tornadoes"] #wtTornadoQualityToggle:focus-visible{
+ outline:3px solid #fff;outline-offset:3px;
+}
+
 #weatherLabPage #wpScienceVisual[data-scene="tornadoes"] #wtTornadoVideoToggle:disabled{
  cursor:not-allowed;opacity:.64;
 }
 #weatherLabPage #wpScienceVisual[data-scene="tornadoes"] #wtTornadoVideoStatus{
- position:absolute;top:64px;right:14px;z-index:12;
+ position:absolute;top:104px;right:14px;z-index:12;
  max-width:260px;padding:7px 11px;
  border-radius:9px;background:rgba(8,25,33,.85);
  color:#eef8fb;font-size:12px!important;line-height:1.35;
@@ -526,8 +537,11 @@
  #weatherLabPage #wpScienceVisual[data-scene="tornadoes"] #wtTornadoVideoToggle{
   top:9px;right:9px;padding:7px 10px;font-size:11px!important;
  }
+ #weatherLabPage #wpScienceVisual[data-scene="tornadoes"] #wtTornadoQualityToggle{
+  top:47px;right:9px;padding:6px 9px;font-size:10px!important;
+ }
  #weatherLabPage #wpScienceVisual[data-scene="tornadoes"] #wtTornadoVideoStatus{
-  top:51px;right:9px;max-width:50%;font-size:11px!important;
+  top:90px;right:9px;max-width:50%;font-size:11px!important;
  }
  #weatherLabPage #wpScienceVisual[data-scene="tornadoes"] .wtTornadoVideoCredit{
   right:7px;bottom:6px;font-size:9px!important;
