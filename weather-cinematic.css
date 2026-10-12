@@ -450,28 +450,24 @@
 }
 
 
-/* Tornado simulation scene v5: storm without a photographed tornado.
-   Photo: Stefan Klein, "Low Precipitation Supercell Thunderstorm"
-   Wikimedia Commons, CC BY-SA 4.0. The scene is cropped and darkened.
-   https://commons.wikimedia.org/wiki/File:Low_Precipitation_Supercell_Thunderstorm.jpg */
+/* Photographic tornado scene. No generated funnel or opaque artificial cloud.
+   Real photograph: Ks0stm / Wikimedia Commons, CC BY 4.0.
+   https://commons.wikimedia.org/wiki/File:2016-05-16_Tornado_north_of_Solomon,_Kansas.jpg
+   Cropped for viewport, subtly color-graded; animated atmospheric effects
+   are simulated in weather-tornado-interaction.js. */
 #weatherLabPage #wpScienceVisual[data-scene="tornadoes"]{
- /* Natural prairie and pale horizon below the simulated low wall cloud. */
  background-image:
-  linear-gradient(180deg,rgba(10,19,22,.31) 0%,
-    rgba(17,27,29,.23) 28%,rgba(36,47,46,.11) 52%,
-    rgba(55,65,62,.03) 76%,transparent 100%),
-  url('https://upload.wikimedia.org/wikipedia/commons/2/2a/Low_Precipitation_Supercell_Thunderstorm.jpg')!important;
- background-color:#677878!important;
+  linear-gradient(180deg,rgba(12,21,26,.095) 0%,
+    rgba(14,21,23,.035) 48%,transparent 100%),
+  url('https://upload.wikimedia.org/wikipedia/commons/3/30/2016-05-16_Tornado_north_of_Solomon%2C_Kansas.jpg')!important;
+ background-color:#9ca49a!important;
  background-size:cover!important;
- background-position:center bottom!important;
+ background-position:center center!important;
 }
 #weatherLabPage #wpScienceVisual[data-scene="tornadoes"] .wtTornadoShade{
- /* Let the canvas supply the parent storm, not an oversized dark halo. */
- opacity:calc(var(--wtAtmosphere,.12) * .22)!important;
- background:
-  radial-gradient(ellipse 33% 32% at 58% 51%,
-    rgba(17,27,28,.54) 0%,
-    rgba(36,49,48,.21) 55%,transparent 100%)!important;
+ opacity:var(--wtAtmosphere,.09)!important;
+ background:linear-gradient(180deg,rgba(12,19,24,.12) 0%,
+    rgba(33,42,42,.035) 52%,transparent 78%)!important;
  transition:opacity .2s ease!important;
 }
 #weatherLabPage #wpScienceVisual[data-scene="tornadoes"] .wpTornadoCaption{
