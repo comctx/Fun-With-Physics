@@ -1082,7 +1082,7 @@ header{min-height:50px;padding:5px 10px;background:#102839}
 @media(max-width:1000px){#weatherLabPage #wpDashboard .wpConditions{grid-template-columns:repeat(2,minmax(0,1fr))}#weatherLabPage #wpDashboard .wpConditions>button{grid-column:1/-1}}
 @media(max-width:580px){#weatherLabPage #wpDashboard .wpConditions{grid-template-columns:1fr 1fr}#weatherLabPage #wpDashboard .wpConditions strong{font-size:22px}#weatherLabPage #wpDashboard .wpSceneTitle{max-width:90%}}
 </style>
-<link rel="stylesheet" href="weather-cinematic.css?v=20261012photoreal1">
+<link rel="stylesheet" href="weather-cinematic.css?v=20261012video1">
 <link rel="stylesheet" href="atom-builder.css?v=20261010a">
 </head>
 <body>
@@ -6699,7 +6699,8 @@ setTimeout(()=>{
  if(!tornadoButton)return;
  tornadoButton.addEventListener('click',()=>{
   visual.dataset.scene='tornadoes';visual.dataset.label='';
-  visual.innerHTML='<div class="wpTornadoCaption"><strong>Real Tornado • Kansas</strong><small>Real storm photograph with animated wind, rain, and lightning effects.</small></div>';
+  visual.setAttribute('aria-hidden','false');
+  visual.innerHTML='<div class="wpTornadoCaption"><strong>Real Tornado Footage</strong><small>NOAA tornado video • Nebraska, May 2026. Wind, rain, and lightning controls below.</small></div>';
   let controls=document.getElementById('wpTornadoControl');
   if(!controls){
    controls=document.createElement('div');controls.id='wpTornadoControl';controls.className='wpTornadoControl';
@@ -6707,11 +6708,12 @@ setTimeout(()=>{
    visual.after(controls);
   }
   controls.hidden=false;
-  info.textContent='A tornado is a violently rotating column of air connected to a thunderstorm. Wind shear, atmospheric instability, and a strong updraft can help organize rotation. The tornado in the image is real; the slider changes simulated rain, wind, and cloud-lightning effects, not the shape of the photographed funnel.';
+  info.textContent='Watch real video of a tornado recorded near St. Libory, Nebraska during a NOAA field project. Wind shear, atmospheric instability and a powerful rotating updraft are important ingredients in tornado development. Adjust the slider to change the simulated rain, wind and cloud-lightning overlays; the real tornado video remains unchanged.';
  });
  function hideTornadoControls(){
   const controls=document.getElementById('wpTornadoControl');
   if(controls)controls.hidden=true;
+  visual.setAttribute('aria-hidden','true');
  }
  // Keep lesson-specific controls out of Rainbow, Lightning, Hurricane and Snow screens.
  document.querySelectorAll('[data-weather-topic]').forEach(button=>{
@@ -6763,9 +6765,9 @@ function update(){
  update();requestAnimationFrame(render);
 })();
 </script>
-<script defer src="weather-cinematic.js?v=20261012photoreal1"></script>
+<script defer src="weather-cinematic.js?v=20261012video1"></script>
 <script defer src="weather-storm-effects.js?v=20261010f"></script>
-<script defer src="weather-tornado-interaction.js?v=20261012photoreal1"></script>
+<script defer src="weather-tornado-interaction.js?v=20261012video1"></script>
 <script defer src="atom-builder.js?v=20261010b"></script>
 <script defer src="atom-graphics.js?v=20261010a"></script>
 <script defer src="weather-lightning-effects.js?v=20261011thunder1"></script>
